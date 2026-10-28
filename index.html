@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Compra y vende artículos académicos, tecnológicos y de entretenimiento dentro de tu comunidad universitaria de Lima.">
+  <title>CampusLoop — De estudiantes, para estudiantes</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <p id="pagina-pendiente" class="visually-hidden">Esta página es estática. Esta opción estará disponible cuando se implemente la pantalla correspondiente.</p>
+
+  <header class="site-header page-width" id="cabecera">
+    <a class="brand" href="#inicio" aria-label="CampusLoop, inicio"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+    <nav class="primary-nav" aria-label="Navegación principal">
+      <ul>
+        <li><a href="#inicio">Inicio</a></li>
+        <li><a href="#categorias">Categorías</a></li>
+        <li><a href="#como-funciona">Cómo funciona</a></li>
+        <li><a href="#beneficios">Beneficios</a></li>
+      </ul>
+    </nav>
+    <div class="header-actions">
+      <a class="button button-outline" href="login.html">Iniciar sesión</a>
+      <a class="button button-primary" href="registro.html">Registrarse</a>
+    </div>
+
+    <!-- Menú móvil sin JavaScript -->
+    <div class="mobile-menu">
+
+      <nav id="menu-movil" aria-label="Navegación móvil">
+        <a href="#inicio">Inicio</a>
+        <a href="#categorias">Categorías</a>
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#beneficios">Beneficios</a>
+
+        <a href="login.html">
+          Iniciar sesión
+        </a>
+
+        <a href="registro.html">
+          Registrarse
+        </a>
+      </nav>
+
+      <a class="menu-control menu-open"
+         href="#menu-movil"
+         aria-controls="menu-movil">
+        Menú
+      </a>
+
+      <a class="menu-control menu-close"
+         href="#cabecera"
+         aria-controls="menu-movil">
+        Cerrar ×
+      </a>
+
+    </div>
+
+  </header>
+
+  <main id="contenido" class="page-width" tabindex="-1">
+    <!-- Composición responsive con Grid y Flexbox desde CSS global. -->
+    <section class="hero panel" id="inicio" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">De estudiantes, para estudiantes</p>
+        <h1 id="hero-title">Compra y vende artículos entre <span>estudiantes universitarios</span></h1>
+        <p class="hero-description">Una comunidad universitaria segura para comprar y vender artículos académicos, tecnológicos y de entretenimiento.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="pagina-pendiente" tabindex="0" title="Explorar artículos: pantalla pendiente de integración">Explorar artículos</a>
+          <a class="button button-outline" href="registro.html">Crear cuenta</a>
+        </div>
+        <p class="verification"><img src="assets/icons/verificado-20.svg" width="20" height="20" alt="">Solo estudiantes con correo universitario</p>
+      </div>
+      <img class="hero-photo" src="assets/images/estudiantes-campus.jpg" width="480" height="360" alt="Dos estudiantes conversan e intercambian artículos en el campus.">
+    </section>
+
+    <section class="categories" id="categorias" aria-labelledby="categories-title">
+      <h2 id="categories-title">Explora por categorías</h2>
+      <p class="section-intro">Encuentra lo que necesitas dentro de tu comunidad universitaria.</p>
+      <div class="category-list">
+        <article class="category">
+          <img src="assets/icons/libro-32.svg" width="32" height="32" alt="">
+          <div class="category-copy">
+            <h3>Académico</h3>
+            <p>Libros, apuntes, calculadoras y materiales.</p>
+          </div>
+        </article>
+        <article class="category">
+          <img src="assets/icons/laptop-32.svg" width="32" height="32" alt="">
+          <div class="category-copy">
+            <h3>Tecnológico</h3>
+            <p>Laptops, tablets, accesorios y componentes.</p>
+          </div>
+        </article>
+        <article class="category">
+          <img src="assets/icons/juegos-32.svg" width="32" height="32" alt="">
+          <div class="category-copy">
+            <h3>Entretenimiento</h3>
+            <p>Consolas, videojuegos y mandos.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="how-it-works" id="como-funciona" aria-labelledby="how-title">
+      <h2 id="how-title">¿Cómo funciona?</h2>
+      <p class="section-intro">En cuatro pasos, puedes comprar o vender con mayor confianza.</p>
+      <ol class="steps">
+        <li>
+          <span class="step-indicator" aria-hidden="true"><img src="assets/icons/usuarios.svg" width="24" height="24" alt=""><span>1</span></span>
+          <div class="step-copy"><h3>Regístrate</h3><p>Crea tu cuenta con tu correo universitario.</p></div>
+        </li>
+        <li>
+          <span class="step-indicator" aria-hidden="true"><img src="assets/icons/explorar.svg" width="24" height="24" alt=""><span>2</span></span>
+          <div class="step-copy"><h3>Explora o publica</h3><p>Encuentra un artículo o activa tu perfil para vender.</p></div>
+        </li>
+        <li>
+          <span class="step-indicator" aria-hidden="true"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>3</span></span>
+          <div class="step-copy"><h3>Coordina la entrega</h3><p>Acuerden fecha, hora y un punto seguro del campus.</p></div>
+        </li>
+        <li>
+          <span class="step-indicator" aria-hidden="true"><img src="assets/icons/estrella.svg" width="24" height="24" alt=""><span>4</span></span>
+          <div class="step-copy"><h3>Califica</h3><p>Al completar la operación, ambas partes pueden calificar.</p></div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="trust panel" id="beneficios" aria-labelledby="trust-title">
+      <div class="trust-copy">
+        <h2 id="trust-title">Compra con confianza</h2>
+        <p>Todos los usuarios verifican su correo universitario. Las operaciones completadas construyen una reputación en la comunidad.</p>
+        <p class="trust-principles"><img src="assets/icons/verificado.svg" width="24" height="24" alt="">Perfiles verificados · Calificación mutua</p>
+      </div>
+      <article class="seller-card" aria-labelledby="seller-name">
+        <div class="seller-identity">
+          <img class="seller-avatar" src="assets/images/avatares/carlos-perez.jpg" width="56" height="56" alt="Retrato de Carlos Pérez.">
+          <div class="seller-data"><h3 id="seller-name">Carlos Pérez</h3><p>PUCP · Campus San Miguel</p></div>
+        </div>
+        <div class="seller-rating">
+          <span class="stars" aria-hidden="true"><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""></span>
+          <p aria-label="Valoración de 4,8 sobre 5, con 32 calificaciones">4.8 · 32 calificaciones</p>
+        </div>
+        <p class="seller-completed">32 operaciones completadas</p>
+      </article>
+    </section>
+
+    <section class="join panel" aria-labelledby="join-title">
+      <div class="join-copy">
+        <p class="join-eyebrow">ÚNETE A CAMPUSLOOP</p>
+        <h2 id="join-title">Forma parte de la comunidad de estudiantes de Lima</h2>
+        <p>Compra, vende y da una segunda vida a tus artículos.</p>
+      </div>
+      <a class="button button-outline" href="registro.html">Crear cuenta gratis</a>
+    </section>
+  </main>
+
+  <footer class="site-footer page-width">
+    <a class="brand" href="#inicio" aria-label="CampusLoop, volver al inicio"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+    <nav class="footer-nav" aria-label="Navegación del pie de página">
+      <ul>
+        <li><a role="link" aria-disabled="true" aria-describedby="pagina-pendiente" tabindex="0">Contacto</a></li>
+        <li><a role="link" aria-disabled="true" aria-describedby="pagina-pendiente" tabindex="0">Términos</a></li>
+        <li><a role="link" aria-disabled="true" aria-describedby="pagina-pendiente" tabindex="0">Privacidad</a></li>
+        <li><a role="link" aria-disabled="true" aria-describedby="pagina-pendiente" tabindex="0">Ayuda</a></li>
+      </ul>
+    </nav>
+    <small>© 2026 CampusLoop</small>
+  </footer>
+</body>
+</html>

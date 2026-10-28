@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Crea tu cuenta de estudiante en CampusLoop, la comunidad universitaria para comprar y vender artículos en Lima.">
+  <title>Crear cuenta — CampusLoop</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="auth-page">
+  <a class="skip-link" href="#contenido">Saltar al formulario</a>
+  <p id="auth-pending" class="visually-hidden">Vista estática. La creación de cuentas, la validación y la verificación de correo están pendientes de implementación. No se envían ni se guardan tus datos o la aceptación de términos.</p>
+
+  <main id="contenido" class="auth-main page-width" tabindex="-1">
+    <div class="auth-layout">
+      <section class="auth-story" aria-labelledby="auth-story-title">
+        <a class="brand" href="index.html" aria-label="CampusLoop, inicio"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+        <p id="auth-story-title" class="auth-story-title">Compra y vende entre estudiantes universitarios</p>
+        <p class="auth-story-description">Una comunidad para encontrar oportunidades dentro de tu universidad.</p>
+        <img class="auth-story-photo" src="assets/images/estudiantes-biblioteca.jpg" width="496" height="440" alt="Estudiantes reunidos en la biblioteca de su universidad.">
+      </section>
+
+      <section class="auth-card" aria-labelledby="registro-title">
+        <a class="brand" href="index.html" aria-label="CampusLoop, inicio"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+        <img class="auth-mobile-photo" src="assets/images/estudiantes-biblioteca.jpg" width="310" height="136" alt="Estudiantes reunidos en la biblioteca de su universidad.">
+        <a class="auth-back" href="index.html">← Volver al inicio</a>
+
+        <div class="auth-heading">
+          <h1 id="registro-title">Crear cuenta</h1>
+          <p>Únete a la comunidad universitaria de Lima.</p>
+        </div>
+
+        <!-- Sin campos con name ni botón submit: esta etapa no envía datos. -->
+        <form class="auth-form" method="post" novalidate aria-describedby="auth-pending">
+          <div class="auth-field">
+            <label for="nombre">Nombre completo</label>
+            <input class="auth-control" id="nombre" type="text" autocomplete="name" placeholder="María López">
+          </div>
+
+          <div class="auth-field">
+            <label for="universidad">Universidad</label>
+            <input class="auth-control" id="universidad" type="text" autocomplete="organization" placeholder="Pontificia Universidad Católica del Perú">
+          </div>
+
+          <div class="auth-field">
+            <label for="campus">Campus</label>
+            <input class="auth-control" id="campus" type="text" autocomplete="off" placeholder="San Miguel · Lima">
+          </div>
+
+          <div class="auth-field">
+            <label for="correo">Correo universitario</label>
+            <input class="auth-control" id="correo" type="email" autocomplete="email" inputmode="email" spellcheck="false" placeholder="maria.lopez@pucp.edu.pe">
+          </div>
+
+          <div class="auth-field">
+            <label for="contrasena">Contraseña</label>
+            <input class="auth-control" id="contrasena" type="password" autocomplete="new-password" minlength="8" aria-describedby="password-hint" placeholder="••••••••">
+            <p id="password-hint" class="auth-hint">Mínimo 8 caracteres.</p>
+          </div>
+
+          <div class="auth-field">
+            <label for="confirmar-contrasena">Confirmar contraseña</label>
+            <input class="auth-control" id="confirmar-contrasena" type="password" autocomplete="new-password" placeholder="••••••••">
+          </div>
+
+          <label class="auth-remember auth-terms" for="terminos"><input id="terminos" type="checkbox" aria-describedby="auth-pending"><span>Acepto los Términos y Condiciones y la Política de Privacidad.</span></label>
+          <button class="button button-primary auth-submit" type="button" aria-disabled="true" aria-describedby="auth-pending" title="Creación de cuenta pendiente de implementación">Crear cuenta</button>
+          <a class="auth-register" href="login.html">¿Ya tienes una cuenta? Iniciar sesión</a>
+
+          <aside class="auth-info" aria-labelledby="student-account-title">
+            <h2 id="student-account-title">Una sola cuenta de estudiante</h2>
+            <p>Puedes comprar y reservar. Cuando quieras vender, activa tu perfil vendedor.</p>
+          </aside>
+        </form>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

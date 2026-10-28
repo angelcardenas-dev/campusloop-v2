@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Inicia sesión en CampusLoop, la comunidad de estudiantes universitarios para comprar y vender artículos.">
+  <title>Iniciar sesión — CampusLoop</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="auth-page">
+  <a class="skip-link" href="#contenido">Saltar al formulario</a>
+  <p id="auth-pending" class="visually-hidden">Vista estática. El ingreso y la recuperación de contraseña están pendientes de implementación. No se envían ni se guardan tus datos.</p>
+
+  <main id="contenido" class="auth-main page-width" tabindex="-1">
+    <div class="auth-layout">
+      <!-- Panel de presentación de Desktop; en Mobile la fotografía pasa a la tarjeta. -->
+      <section class="auth-story" aria-labelledby="auth-story-title">
+        <a class="brand" href="index.html" aria-label="CampusLoop, inicio"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+        <p id="auth-story-title" class="auth-story-title">Compra y vende entre estudiantes universitarios</p>
+        <p class="auth-story-description">Una comunidad para encontrar oportunidades dentro de tu universidad.</p>
+        <img class="auth-story-photo" src="assets/images/estudiantes-biblioteca.jpg" width="496" height="440" alt="Estudiantes reunidos en la biblioteca de su universidad.">
+      </section>
+
+      <section class="auth-card" aria-labelledby="login-title">
+        <a class="brand" href="index.html" aria-label="CampusLoop, inicio"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+        <img class="auth-mobile-photo" src="assets/images/estudiantes-biblioteca.jpg" width="310" height="136" alt="Estudiantes reunidos en la biblioteca de su universidad.">
+        <a class="auth-back" href="index.html">← Volver al inicio</a>
+
+        <div class="auth-heading">
+          <h1 id="login-title">Iniciar sesión</h1>
+          <p>Continúa con tu cuenta para comprar y vender entre estudiantes.</p>
+        </div>
+
+        <!-- Sin campos con name ni botón submit: esta etapa no envía credenciales. -->
+        <form class="auth-form" method="post" novalidate aria-describedby="auth-pending">
+          <div class="auth-field">
+            <label for="correo">Correo universitario</label>
+            <input class="auth-control" id="correo" type="email" autocomplete="username" inputmode="email" spellcheck="false" placeholder="maria.lopez@pucp.edu.pe">
+          </div>
+
+          <div class="auth-field">
+            <label for="contrasena">Contraseña</label>
+            <input class="auth-control" id="contrasena" type="password" autocomplete="current-password" placeholder="••••••••">
+          </div>
+
+          <div class="auth-options">
+            <label class="auth-remember" for="recordarme"><input id="recordarme" type="checkbox" aria-describedby="auth-pending"><span>Recordarme</span></label>
+            <a class="auth-recovery" role="link" aria-disabled="true" aria-describedby="auth-pending" tabindex="0" title="Recuperación de contraseña pendiente">¿Olvidaste tu contraseña?</a>
+          </div>
+
+          <button class="button button-primary auth-submit" type="button" aria-disabled="true" aria-describedby="auth-pending" title="Inicio de sesión pendiente de implementación">Ingresar</button>
+          <a class="auth-register" href="registro.html">¿Aún no tienes una cuenta? Crear cuenta</a>
+        </form>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

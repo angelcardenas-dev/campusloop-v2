@@ -1,0 +1,3585 @@
+{
+  "version": "CampusLoop V2",
+  "fecha": "2026-10-23",
+  "figma_file": "b14UnSTg43slwvD1fV0XCG",
+  "images": [
+    {
+      "file": "images/estudiantes-campus.jpg",
+      "figma_image_hash": "a1825ff71bcc15c97236e55cf9d184637b3e84f1",
+      "sha256": "c8282a606c7999549b658c8dfb6fb9c3058ec00dd6be1386ca590e1b51938f26",
+      "dimensions": [
+        1152,
+        928
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "290:40",
+          "frames": [
+            {
+              "id": "278:2735",
+              "name": "V2 / Desktop / 01 · Landing pública"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "291:29",
+          "frames": [
+            {
+              "id": "278:2816",
+              "name": "V2 / Mobile / 01 · Landing pública"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/avatares/carlos-perez.jpg",
+      "figma_image_hash": "ccec4eaed1434dcae14d70c04e9b56d1f2014e58",
+      "sha256": "2d16d07aacd6f0252ce7a58a60ea44a04d387dd8e1894eff10da95d623a946f4",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "290:112",
+          "frames": [
+            {
+              "id": "278:2735",
+              "name": "V2 / Desktop / 01 · Landing pública"
+            },
+            {
+              "id": "278:3486",
+              "name": "V2 / Desktop / 06 · Detalle de artículo"
+            },
+            {
+              "id": "278:3597",
+              "name": "V2 / Desktop / 07 · Perfil público de vendedor"
+            },
+            {
+              "id": "278:3929",
+              "name": "V2 / Desktop / 10 · Reservas"
+            },
+            {
+              "id": "296:943",
+              "name": "V2 / Desktop / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "296:1052",
+              "name": "V2 / Desktop / 06V · Detalle — Vendido"
+            },
+            {
+              "id": "302:1285",
+              "name": "V2 / Desktop / 10R · Reservas — Reserva"
+            },
+            {
+              "id": "302:1422",
+              "name": "V2 / Desktop / 10C · Reservas — Confirmado"
+            },
+            {
+              "id": "302:1566",
+              "name": "V2 / Desktop / 10W · Reservas — Esperando confirmación"
+            },
+            {
+              "id": "302:1713",
+              "name": "V2 / Desktop / 10S · Reservas — Vista vendedor por confirmar"
+            },
+            {
+              "id": "302:1860",
+              "name": "V2 / Desktop / 10B · Reserva completada — Comprador pendiente"
+            },
+            {
+              "id": "302:2013",
+              "name": "V2 / Desktop / 10V · Reserva completada — Vendedor pendiente"
+            },
+            {
+              "id": "302:2166",
+              "name": "V2 / Desktop / 10BE · Reserva completada — Comprador calificó"
+            },
+            {
+              "id": "302:2317",
+              "name": "V2 / Desktop / 10VE · Reserva completada — Vendedor calificó"
+            },
+            {
+              "id": "304:2227",
+              "name": "V2 / Desktop / 11S · Mi cuenta — Vendedor Carlos Pérez"
+            },
+            {
+              "id": "304:2620",
+              "name": "V2 / Desktop / 11PR · Mi cuenta — Mis publicaciones"
+            },
+            {
+              "id": "304:2706",
+              "name": "V2 / Desktop / 14R · Historial de calificaciones recibidas"
+            },
+            {
+              "id": "304:2744",
+              "name": "V2 / Desktop / 14E · Historial de calificaciones realizadas"
+            },
+            {
+              "id": "304:2783",
+              "name": "V2 / Desktop / 14RS · Historial recibido — Vendedor"
+            },
+            {
+              "id": "304:2821",
+              "name": "V2 / Desktop / 14ES · Historial realizado — Vendedor"
+            },
+            {
+              "id": "304:2987",
+              "name": "V2 / Desktop / 10P · Proponer entrega"
+            },
+            {
+              "id": "304:3063",
+              "name": "V2 / Desktop / 10PS · Vendedor — Aceptar propuesta"
+            },
+            {
+              "id": "314:2978",
+              "name": "V2 / Desktop / 10SC · Reservas — Vendedor Confirmado"
+            },
+            {
+              "id": "314:3035",
+              "name": "V2 / Desktop / 10SW · Reservas — Vendedor espera a comprador"
+            },
+            {
+              "id": "321:7063",
+              "name": "V2 / Desktop / 10IP · Reserva iPad — Entrega próxima"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "291:101",
+          "frames": [
+            {
+              "id": "278:2816",
+              "name": "V2 / Mobile / 01 · Landing pública"
+            },
+            {
+              "id": "278:3554",
+              "name": "V2 / Mobile / 06 · Detalle de artículo"
+            },
+            {
+              "id": "278:3669",
+              "name": "V2 / Mobile / 07 · Perfil público de vendedor"
+            },
+            {
+              "id": "278:4006",
+              "name": "V2 / Mobile / 10 · Reservas"
+            },
+            {
+              "id": "297:883",
+              "name": "V2 / Mobile / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "297:1006",
+              "name": "V2 / Mobile / 06V · Detalle — Vendido"
+            },
+            {
+              "id": "303:1433",
+              "name": "V2 / Mobile / 10Q · Reservas — Consulta"
+            },
+            {
+              "id": "303:1504",
+              "name": "V2 / Mobile / 10R · Reservas — Reserva"
+            },
+            {
+              "id": "303:1583",
+              "name": "V2 / Mobile / 10C · Reservas — Confirmado"
+            },
+            {
+              "id": "303:1670",
+              "name": "V2 / Mobile / 10W · Reservas — Esperando confirmación"
+            },
+            {
+              "id": "303:1757",
+              "name": "V2 / Mobile / 10S · Reservas — Vista vendedor por confirmar"
+            },
+            {
+              "id": "303:1844",
+              "name": "V2 / Mobile / 10B · Reserva completada — Comprador pendiente"
+            },
+            {
+              "id": "303:1935",
+              "name": "V2 / Mobile / 10V · Reserva completada — Vendedor pendiente"
+            },
+            {
+              "id": "303:2026",
+              "name": "V2 / Mobile / 10BE · Reserva completada — Comprador calificó"
+            },
+            {
+              "id": "303:2117",
+              "name": "V2 / Mobile / 10VE · Reserva completada — Vendedor calificó"
+            },
+            {
+              "id": "303:2582",
+              "name": "V2 / Mobile / 10DS · Detalle de reserva — Vendedor por confirmar"
+            },
+            {
+              "id": "303:2732",
+              "name": "V2 / Mobile / 10DV · Detalle de reserva — Vendedor pendiente"
+            },
+            {
+              "id": "303:2882",
+              "name": "V2 / Mobile / 10DVE · Detalle de reserva — Vendedor calificó"
+            },
+            {
+              "id": "305:2668",
+              "name": "V2 / Mobile / 11S · Mi cuenta — Vendedor Carlos Pérez"
+            },
+            {
+              "id": "305:3126",
+              "name": "V2 / Mobile / 11PR · Mi cuenta — Mis publicaciones"
+            },
+            {
+              "id": "305:3225",
+              "name": "V2 / Mobile / 14R · Historial de calificaciones recibidas"
+            },
+            {
+              "id": "305:3276",
+              "name": "V2 / Mobile / 14E · Historial de calificaciones realizadas"
+            },
+            {
+              "id": "305:3328",
+              "name": "V2 / Mobile / 14RS · Historial recibido — Vendedor"
+            },
+            {
+              "id": "305:3379",
+              "name": "V2 / Mobile / 14ES · Historial realizado — Vendedor"
+            },
+            {
+              "id": "305:3558",
+              "name": "V2 / Mobile / 10P · Proponer entrega"
+            },
+            {
+              "id": "305:3660",
+              "name": "V2 / Mobile / 10PS · Vendedor — Aceptar propuesta"
+            },
+            {
+              "id": "314:6996",
+              "name": "V2 / Mobile / 10SC · Reservas — Vendedor Confirmado"
+            },
+            {
+              "id": "314:7027",
+              "name": "V2 / Mobile / 10SW · Reservas — Vendedor espera a comprador"
+            },
+            {
+              "id": "314:7058",
+              "name": "V2 / Mobile / 10DSC · Detalle — Vendedor Confirmado"
+            },
+            {
+              "id": "314:7132",
+              "name": "V2 / Mobile / 10DSW · Detalle — Vendedor espera a comprador"
+            },
+            {
+              "id": "320:7121",
+              "name": "V2 / Mobile / 10IP · Reserva iPad — Entrega próxima"
+            }
+          ]
+        },
+        {
+          "page": "Componentes",
+          "node": "301:328",
+          "frames": [
+            {
+              "id": "301:335",
+              "name": "V2 / Interaction"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/fondos/autenticacion-ondas.png",
+      "figma_image_hash": "6208fdfe5a07add9dd521043d4b06c54b4304f19",
+      "sha256": "5eccfedc4dd877bf8fe240b0f40bf87151e185f6f83a83b46502e75afee950b6",
+      "dimensions": [
+        1600,
+        800
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "278:2880",
+          "frames": [
+            {
+              "id": "278:2880",
+              "name": "V2 / Desktop / 02 · Iniciar sesión"
+            },
+            {
+              "id": "278:2946",
+              "name": "V2 / Desktop / 03 · Crear cuenta"
+            },
+            {
+              "id": "290:365",
+              "name": "V2 / Desktop / 02E · Iniciar sesión — Error"
+            },
+            {
+              "id": "290:409",
+              "name": "V2 / Desktop / 02R · Recuperar contraseña"
+            },
+            {
+              "id": "290:441",
+              "name": "V2 / Desktop / 03E · Crear cuenta — Error"
+            },
+            {
+              "id": "290:507",
+              "name": "V2 / Desktop / 03V · Verificación de correo"
+            },
+            {
+              "id": "306:2979",
+              "name": "V2 / Desktop / 03L · Crear cuenta — Datos válidos y términos aceptados"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "278:2921",
+          "frames": [
+            {
+              "id": "278:2921",
+              "name": "V2 / Mobile / 02 · Iniciar sesión"
+            },
+            {
+              "id": "278:3001",
+              "name": "V2 / Mobile / 03 · Crear cuenta"
+            },
+            {
+              "id": "291:356",
+              "name": "V2 / Mobile / 02E · Iniciar sesión — Error"
+            },
+            {
+              "id": "291:390",
+              "name": "V2 / Mobile / 02R · Recuperar contraseña"
+            },
+            {
+              "id": "291:412",
+              "name": "V2 / Mobile / 03E · Crear cuenta — Error"
+            },
+            {
+              "id": "291:468",
+              "name": "V2 / Mobile / 03V · Verificación de correo"
+            },
+            {
+              "id": "307:3638",
+              "name": "V2 / Mobile / 03L · Crear cuenta — Datos válidos y términos aceptados"
+            }
+          ]
+        },
+        {
+          "page": "Recursos",
+          "node": "285:2",
+          "frames": [
+            {
+              "id": "285:2",
+              "name": "bg-autenticacion-ondas-v2.png"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/estudiantes-biblioteca.jpg",
+      "figma_image_hash": "d5e14371165c61902dbd04e7cca961c7ac4e68e1",
+      "sha256": "e458111b4fa7b4d0ae60e3e57c8ac425241e3436accbcd1040c8f2a63a7e8b27",
+      "dimensions": [
+        896,
+        1200
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "290:149",
+          "frames": [
+            {
+              "id": "278:2880",
+              "name": "V2 / Desktop / 02 · Iniciar sesión"
+            },
+            {
+              "id": "278:2946",
+              "name": "V2 / Desktop / 03 · Crear cuenta"
+            },
+            {
+              "id": "290:365",
+              "name": "V2 / Desktop / 02E · Iniciar sesión — Error"
+            },
+            {
+              "id": "290:409",
+              "name": "V2 / Desktop / 02R · Recuperar contraseña"
+            },
+            {
+              "id": "290:441",
+              "name": "V2 / Desktop / 03E · Crear cuenta — Error"
+            },
+            {
+              "id": "290:507",
+              "name": "V2 / Desktop / 03V · Verificación de correo"
+            },
+            {
+              "id": "306:2979",
+              "name": "V2 / Desktop / 03L · Crear cuenta — Datos válidos y términos aceptados"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "295:862",
+          "frames": [
+            {
+              "id": "278:2921",
+              "name": "V2 / Mobile / 02 · Iniciar sesión"
+            },
+            {
+              "id": "278:3001",
+              "name": "V2 / Mobile / 03 · Crear cuenta"
+            },
+            {
+              "id": "291:356",
+              "name": "V2 / Mobile / 02E · Iniciar sesión — Error"
+            },
+            {
+              "id": "291:390",
+              "name": "V2 / Mobile / 02R · Recuperar contraseña"
+            },
+            {
+              "id": "291:412",
+              "name": "V2 / Mobile / 03E · Crear cuenta — Error"
+            },
+            {
+              "id": "291:468",
+              "name": "V2 / Mobile / 03V · Verificación de correo"
+            },
+            {
+              "id": "307:3638",
+              "name": "V2 / Mobile / 03L · Crear cuenta — Datos válidos y términos aceptados"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/avatares/maria-lopez.jpg",
+      "figma_image_hash": "f97c8d9d09a5f19aae85501920e8870bdde79987",
+      "sha256": "5a27eaf899756e3c201e4c9d168ab2b87b06dbcaf3e1bc2db1c1f4f09c73b471",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "I290:240;284:21",
+          "frames": [
+            {
+              "id": "278:3030",
+              "name": "V2 / Desktop / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3154",
+              "name": "V2 / Desktop / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3486",
+              "name": "V2 / Desktop / 06 · Detalle de artículo"
+            },
+            {
+              "id": "278:3597",
+              "name": "V2 / Desktop / 07 · Perfil público de vendedor"
+            },
+            {
+              "id": "278:3711",
+              "name": "V2 / Desktop / 08 · Publicar artículo"
+            },
+            {
+              "id": "278:3813",
+              "name": "V2 / Desktop / 09 · Activar perfil vendedor"
+            },
+            {
+              "id": "278:3929",
+              "name": "V2 / Desktop / 10 · Reservas"
+            },
+            {
+              "id": "278:4040",
+              "name": "V2 / Desktop / 11 · Mi cuenta"
+            },
+            {
+              "id": "290:536",
+              "name": "V2 / Desktop / 04A · Inicio — Vendedor activo"
+            },
+            {
+              "id": "290:654",
+              "name": "V2 / Desktop / 04N · Inicio — Usuario nuevo"
+            },
+            {
+              "id": "296:756",
+              "name": "V2 / Desktop / 05V · Explorar — Sin resultados"
+            },
+            {
+              "id": "296:850",
+              "name": "V2 / Desktop / 05E · Explorar — Error de carga"
+            },
+            {
+              "id": "296:943",
+              "name": "V2 / Desktop / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "296:1052",
+              "name": "V2 / Desktop / 06V · Detalle — Vendido"
+            },
+            {
+              "id": "296:1161",
+              "name": "V2 / Desktop / 07N · Perfil vendedor — Nuevo"
+            },
+            {
+              "id": "298:2037",
+              "name": "V2 / Desktop / 09X · Activación — Con experiencia"
+            },
+            {
+              "id": "298:2116",
+              "name": "V2 / Desktop / 09P · Activación — Solicitud pendiente"
+            },
+            {
+              "id": "298:2161",
+              "name": "V2 / Desktop / 09A · Activación — Perfil activo"
+            },
+            {
+              "id": "298:2205",
+              "name": "V2 / Desktop / 08E · Publicar — Validación de errores"
+            },
+            {
+              "id": "298:2298",
+              "name": "V2 / Desktop / 08B · Publicar — Borrador guardado"
+            },
+            {
+              "id": "298:2331",
+              "name": "V2 / Desktop / 08S · Publicar — Publicación exitosa"
+            },
+            {
+              "id": "302:1285",
+              "name": "V2 / Desktop / 10R · Reservas — Reserva"
+            },
+            {
+              "id": "302:1422",
+              "name": "V2 / Desktop / 10C · Reservas — Confirmado"
+            },
+            {
+              "id": "302:1566",
+              "name": "V2 / Desktop / 10W · Reservas — Esperando confirmación"
+            },
+            {
+              "id": "302:1713",
+              "name": "V2 / Desktop / 10S · Reservas — Vista vendedor por confirmar"
+            },
+            {
+              "id": "302:1860",
+              "name": "V2 / Desktop / 10B · Reserva completada — Comprador pendiente"
+            },
+            {
+              "id": "302:2013",
+              "name": "V2 / Desktop / 10V · Reserva completada — Vendedor pendiente"
+            },
+            {
+              "id": "302:2166",
+              "name": "V2 / Desktop / 10BE · Reserva completada — Comprador calificó"
+            },
+            {
+              "id": "302:2317",
+              "name": "V2 / Desktop / 10VE · Reserva completada — Vendedor calificó"
+            },
+            {
+              "id": "302:2468",
+              "name": "V2 / Desktop / 10N · Reservas — Vacío"
+            },
+            {
+              "id": "302:2499",
+              "name": "V2 / Desktop / 10E · Reservas — Error de carga"
+            },
+            {
+              "id": "304:2074",
+              "name": "V2 / Desktop / 11N · Mi cuenta — Usuario nuevo"
+            },
+            {
+              "id": "304:2144",
+              "name": "V2 / Desktop / 11P · Mi cuenta — Solicitud pendiente"
+            },
+            {
+              "id": "304:2314",
+              "name": "V2 / Desktop / 11A · Mi cuenta — Vendedor recién activado"
+            },
+            {
+              "id": "304:2401",
+              "name": "V2 / Desktop / 11E · Mi cuenta — Error de carga"
+            },
+            {
+              "id": "304:2461",
+              "name": "V2 / Desktop / 11C · Mi cuenta — Configuración"
+            },
+            {
+              "id": "304:2536",
+              "name": "V2 / Desktop / 11M · Mi cuenta — Mis compras"
+            },
+            {
+              "id": "304:2706",
+              "name": "V2 / Desktop / 14R · Historial de calificaciones recibidas"
+            },
+            {
+              "id": "304:2744",
+              "name": "V2 / Desktop / 14E · Historial de calificaciones realizadas"
+            },
+            {
+              "id": "304:2783",
+              "name": "V2 / Desktop / 14RS · Historial recibido — Vendedor"
+            },
+            {
+              "id": "304:2821",
+              "name": "V2 / Desktop / 14ES · Historial realizado — Vendedor"
+            },
+            {
+              "id": "304:2987",
+              "name": "V2 / Desktop / 10P · Proponer entrega"
+            },
+            {
+              "id": "304:3030",
+              "name": "V2 / Desktop / 10PA · Propuesta — Esperando al vendedor"
+            },
+            {
+              "id": "304:3063",
+              "name": "V2 / Desktop / 10PS · Vendedor — Aceptar propuesta"
+            },
+            {
+              "id": "306:2601",
+              "name": "V2 / Desktop / 08L · Publicar — Listo para publicar"
+            },
+            {
+              "id": "306:2693",
+              "name": "V2 / Desktop / 09E · Activación — Error de validación"
+            },
+            {
+              "id": "306:2756",
+              "name": "V2 / Desktop / 09L · Activación — Principiante listo"
+            },
+            {
+              "id": "306:2816",
+              "name": "V2 / Desktop / 09XE · Activación — Falta evidencia"
+            },
+            {
+              "id": "306:2898",
+              "name": "V2 / Desktop / 09XL · Activación — Experiencia lista"
+            },
+            {
+              "id": "314:2978",
+              "name": "V2 / Desktop / 10SC · Reservas — Vendedor Confirmado"
+            },
+            {
+              "id": "314:3035",
+              "name": "V2 / Desktop / 10SW · Reservas — Vendedor espera a comprador"
+            },
+            {
+              "id": "321:7063",
+              "name": "V2 / Desktop / 10IP · Reserva iPad — Entrega próxima"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "I291:209;284:238",
+          "frames": [
+            {
+              "id": "278:3115",
+              "name": "V2 / Mobile / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3437",
+              "name": "V2 / Mobile / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3554",
+              "name": "V2 / Mobile / 06 · Detalle de artículo"
+            },
+            {
+              "id": "278:3669",
+              "name": "V2 / Mobile / 07 · Perfil público de vendedor"
+            },
+            {
+              "id": "278:3774",
+              "name": "V2 / Mobile / 08 · Publicar artículo"
+            },
+            {
+              "id": "278:3884",
+              "name": "V2 / Mobile / 09 · Activar perfil vendedor"
+            },
+            {
+              "id": "278:4006",
+              "name": "V2 / Mobile / 10 · Reservas"
+            },
+            {
+              "id": "278:4139",
+              "name": "V2 / Mobile / 11 · Mi cuenta"
+            },
+            {
+              "id": "291:487",
+              "name": "V2 / Mobile / 04A · Inicio — Vendedor activo"
+            },
+            {
+              "id": "291:619",
+              "name": "V2 / Mobile / 04N · Inicio — Usuario nuevo"
+            },
+            {
+              "id": "297:768",
+              "name": "V2 / Mobile / 05V · Explorar — Sin resultados"
+            },
+            {
+              "id": "297:826",
+              "name": "V2 / Mobile / 05E · Explorar — Error de carga"
+            },
+            {
+              "id": "297:883",
+              "name": "V2 / Mobile / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "297:1006",
+              "name": "V2 / Mobile / 06V · Detalle — Vendido"
+            },
+            {
+              "id": "297:1129",
+              "name": "V2 / Mobile / 07N · Perfil vendedor — Nuevo"
+            },
+            {
+              "id": "299:1135",
+              "name": "V2 / Mobile / 09X · Activación — Con experiencia"
+            },
+            {
+              "id": "299:1227",
+              "name": "V2 / Mobile / 09P · Activación — Solicitud pendiente"
+            },
+            {
+              "id": "299:1285",
+              "name": "V2 / Mobile / 09A · Activación — Perfil activo"
+            },
+            {
+              "id": "299:1342",
+              "name": "V2 / Mobile / 08E · Publicar — Validación de errores"
+            },
+            {
+              "id": "299:1448",
+              "name": "V2 / Mobile / 08B · Publicar — Borrador guardado"
+            },
+            {
+              "id": "299:1494",
+              "name": "V2 / Mobile / 08S · Publicar — Publicación exitosa"
+            },
+            {
+              "id": "303:1433",
+              "name": "V2 / Mobile / 10Q · Reservas — Consulta"
+            },
+            {
+              "id": "303:1504",
+              "name": "V2 / Mobile / 10R · Reservas — Reserva"
+            },
+            {
+              "id": "303:1583",
+              "name": "V2 / Mobile / 10C · Reservas — Confirmado"
+            },
+            {
+              "id": "303:1670",
+              "name": "V2 / Mobile / 10W · Reservas — Esperando confirmación"
+            },
+            {
+              "id": "303:1757",
+              "name": "V2 / Mobile / 10S · Reservas — Vista vendedor por confirmar"
+            },
+            {
+              "id": "303:1844",
+              "name": "V2 / Mobile / 10B · Reserva completada — Comprador pendiente"
+            },
+            {
+              "id": "303:1935",
+              "name": "V2 / Mobile / 10V · Reserva completada — Vendedor pendiente"
+            },
+            {
+              "id": "303:2026",
+              "name": "V2 / Mobile / 10BE · Reserva completada — Comprador calificó"
+            },
+            {
+              "id": "303:2117",
+              "name": "V2 / Mobile / 10VE · Reserva completada — Vendedor calificó"
+            },
+            {
+              "id": "303:2208",
+              "name": "V2 / Mobile / 10N · Reservas — Vacío"
+            },
+            {
+              "id": "303:2252",
+              "name": "V2 / Mobile / 10E · Reservas — Error de carga"
+            },
+            {
+              "id": "303:2296",
+              "name": "V2 / Mobile / 10DQ · Detalle de reserva — Consulta"
+            },
+            {
+              "id": "303:2365",
+              "name": "V2 / Mobile / 10DR · Detalle de reserva — Reserva"
+            },
+            {
+              "id": "303:2437",
+              "name": "V2 / Mobile / 10DC · Detalle de reserva — Confirmado"
+            },
+            {
+              "id": "303:2508",
+              "name": "V2 / Mobile / 10DW · Detalle de reserva — Esperando a Carlos"
+            },
+            {
+              "id": "303:2656",
+              "name": "V2 / Mobile / 10DB · Detalle de reserva — Comprador pendiente"
+            },
+            {
+              "id": "303:2808",
+              "name": "V2 / Mobile / 10DBE · Detalle de reserva — Comprador calificó"
+            },
+            {
+              "id": "305:2489",
+              "name": "V2 / Mobile / 11N · Mi cuenta — Usuario nuevo"
+            },
+            {
+              "id": "305:2572",
+              "name": "V2 / Mobile / 11P · Mi cuenta — Solicitud pendiente"
+            },
+            {
+              "id": "305:2768",
+              "name": "V2 / Mobile / 11A · Mi cuenta — Vendedor recién activado"
+            },
+            {
+              "id": "305:2868",
+              "name": "V2 / Mobile / 11E · Mi cuenta — Error de carga"
+            },
+            {
+              "id": "305:2941",
+              "name": "V2 / Mobile / 11C · Mi cuenta — Configuración"
+            },
+            {
+              "id": "305:3029",
+              "name": "V2 / Mobile / 11M · Mi cuenta — Mis compras"
+            },
+            {
+              "id": "305:3225",
+              "name": "V2 / Mobile / 14R · Historial de calificaciones recibidas"
+            },
+            {
+              "id": "305:3276",
+              "name": "V2 / Mobile / 14E · Historial de calificaciones realizadas"
+            },
+            {
+              "id": "305:3328",
+              "name": "V2 / Mobile / 14RS · Historial recibido — Vendedor"
+            },
+            {
+              "id": "305:3379",
+              "name": "V2 / Mobile / 14ES · Historial realizado — Vendedor"
+            },
+            {
+              "id": "305:3558",
+              "name": "V2 / Mobile / 10P · Proponer entrega"
+            },
+            {
+              "id": "305:3614",
+              "name": "V2 / Mobile / 10PA · Propuesta — Esperando al vendedor"
+            },
+            {
+              "id": "305:3660",
+              "name": "V2 / Mobile / 10PS · Vendedor — Aceptar propuesta"
+            },
+            {
+              "id": "307:3195",
+              "name": "V2 / Mobile / 08L · Publicar — Listo para publicar"
+            },
+            {
+              "id": "307:3300",
+              "name": "V2 / Mobile / 09E · Activación — Error de validación"
+            },
+            {
+              "id": "307:3376",
+              "name": "V2 / Mobile / 09L · Activación — Principiante listo"
+            },
+            {
+              "id": "307:3449",
+              "name": "V2 / Mobile / 09XE · Activación — Falta evidencia"
+            },
+            {
+              "id": "307:3544",
+              "name": "V2 / Mobile / 09XL · Activación — Experiencia lista"
+            },
+            {
+              "id": "314:6996",
+              "name": "V2 / Mobile / 10SC · Reservas — Vendedor Confirmado"
+            },
+            {
+              "id": "314:7027",
+              "name": "V2 / Mobile / 10SW · Reservas — Vendedor espera a comprador"
+            },
+            {
+              "id": "320:7121",
+              "name": "V2 / Mobile / 10IP · Reserva iPad — Entrega próxima"
+            },
+            {
+              "id": "320:7152",
+              "name": "V2 / Mobile / 10DIP · Detalle iPad — Entrega próxima"
+            }
+          ]
+        },
+        {
+          "page": "Componentes",
+          "node": "284:21",
+          "frames": [
+            {
+              "id": "284:227",
+              "name": "V2 / Header Desktop"
+            },
+            {
+              "id": "284:239",
+              "name": "V2 / Header Mobile"
+            },
+            {
+              "id": "284:366",
+              "name": "V2 / Avatar"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/productos/macbook-air-m1.jpg",
+      "figma_image_hash": "f24bcc93cd2f3d4990559130a6ae5bc0d61a9e04",
+      "sha256": "7e6f4d33d7d2e5ff9634a5820291e1b1f06bbf9ce2ccb9565e5ccc7e8e535f47",
+      "dimensions": [
+        1376,
+        768
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "290:289",
+          "frames": [
+            {
+              "id": "278:3030",
+              "name": "V2 / Desktop / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3154",
+              "name": "V2 / Desktop / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3486",
+              "name": "V2 / Desktop / 06 · Detalle de artículo"
+            },
+            {
+              "id": "278:3597",
+              "name": "V2 / Desktop / 07 · Perfil público de vendedor"
+            },
+            {
+              "id": "278:3929",
+              "name": "V2 / Desktop / 10 · Reservas"
+            },
+            {
+              "id": "290:536",
+              "name": "V2 / Desktop / 04A · Inicio — Vendedor activo"
+            },
+            {
+              "id": "290:654",
+              "name": "V2 / Desktop / 04N · Inicio — Usuario nuevo"
+            },
+            {
+              "id": "296:943",
+              "name": "V2 / Desktop / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "296:1052",
+              "name": "V2 / Desktop / 06V · Detalle — Vendido"
+            },
+            {
+              "id": "302:1285",
+              "name": "V2 / Desktop / 10R · Reservas — Reserva"
+            },
+            {
+              "id": "302:1422",
+              "name": "V2 / Desktop / 10C · Reservas — Confirmado"
+            },
+            {
+              "id": "302:1566",
+              "name": "V2 / Desktop / 10W · Reservas — Esperando confirmación"
+            },
+            {
+              "id": "302:1713",
+              "name": "V2 / Desktop / 10S · Reservas — Vista vendedor por confirmar"
+            },
+            {
+              "id": "302:1860",
+              "name": "V2 / Desktop / 10B · Reserva completada — Comprador pendiente"
+            },
+            {
+              "id": "302:2013",
+              "name": "V2 / Desktop / 10V · Reserva completada — Vendedor pendiente"
+            },
+            {
+              "id": "302:2166",
+              "name": "V2 / Desktop / 10BE · Reserva completada — Comprador calificó"
+            },
+            {
+              "id": "302:2317",
+              "name": "V2 / Desktop / 10VE · Reserva completada — Vendedor calificó"
+            },
+            {
+              "id": "304:2620",
+              "name": "V2 / Desktop / 11PR · Mi cuenta — Mis publicaciones"
+            },
+            {
+              "id": "304:2987",
+              "name": "V2 / Desktop / 10P · Proponer entrega"
+            },
+            {
+              "id": "304:3063",
+              "name": "V2 / Desktop / 10PS · Vendedor — Aceptar propuesta"
+            },
+            {
+              "id": "314:2978",
+              "name": "V2 / Desktop / 10SC · Reservas — Vendedor Confirmado"
+            },
+            {
+              "id": "314:3035",
+              "name": "V2 / Desktop / 10SW · Reservas — Vendedor espera a comprador"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "291:246",
+          "frames": [
+            {
+              "id": "278:3115",
+              "name": "V2 / Mobile / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3437",
+              "name": "V2 / Mobile / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3554",
+              "name": "V2 / Mobile / 06 · Detalle de artículo"
+            },
+            {
+              "id": "278:3669",
+              "name": "V2 / Mobile / 07 · Perfil público de vendedor"
+            },
+            {
+              "id": "291:487",
+              "name": "V2 / Mobile / 04A · Inicio — Vendedor activo"
+            },
+            {
+              "id": "291:619",
+              "name": "V2 / Mobile / 04N · Inicio — Usuario nuevo"
+            },
+            {
+              "id": "297:883",
+              "name": "V2 / Mobile / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "297:1006",
+              "name": "V2 / Mobile / 06V · Detalle — Vendido"
+            },
+            {
+              "id": "303:1433",
+              "name": "V2 / Mobile / 10Q · Reservas — Consulta"
+            },
+            {
+              "id": "303:1504",
+              "name": "V2 / Mobile / 10R · Reservas — Reserva"
+            },
+            {
+              "id": "303:1583",
+              "name": "V2 / Mobile / 10C · Reservas — Confirmado"
+            },
+            {
+              "id": "303:1670",
+              "name": "V2 / Mobile / 10W · Reservas — Esperando confirmación"
+            },
+            {
+              "id": "303:1757",
+              "name": "V2 / Mobile / 10S · Reservas — Vista vendedor por confirmar"
+            },
+            {
+              "id": "303:1844",
+              "name": "V2 / Mobile / 10B · Reserva completada — Comprador pendiente"
+            },
+            {
+              "id": "303:1935",
+              "name": "V2 / Mobile / 10V · Reserva completada — Vendedor pendiente"
+            },
+            {
+              "id": "303:2026",
+              "name": "V2 / Mobile / 10BE · Reserva completada — Comprador calificó"
+            },
+            {
+              "id": "303:2117",
+              "name": "V2 / Mobile / 10VE · Reserva completada — Vendedor calificó"
+            },
+            {
+              "id": "303:2296",
+              "name": "V2 / Mobile / 10DQ · Detalle de reserva — Consulta"
+            },
+            {
+              "id": "303:2365",
+              "name": "V2 / Mobile / 10DR · Detalle de reserva — Reserva"
+            },
+            {
+              "id": "303:2437",
+              "name": "V2 / Mobile / 10DC · Detalle de reserva — Confirmado"
+            },
+            {
+              "id": "303:2508",
+              "name": "V2 / Mobile / 10DW · Detalle de reserva — Esperando a Carlos"
+            },
+            {
+              "id": "303:2582",
+              "name": "V2 / Mobile / 10DS · Detalle de reserva — Vendedor por confirmar"
+            },
+            {
+              "id": "303:2656",
+              "name": "V2 / Mobile / 10DB · Detalle de reserva — Comprador pendiente"
+            },
+            {
+              "id": "303:2732",
+              "name": "V2 / Mobile / 10DV · Detalle de reserva — Vendedor pendiente"
+            },
+            {
+              "id": "303:2808",
+              "name": "V2 / Mobile / 10DBE · Detalle de reserva — Comprador calificó"
+            },
+            {
+              "id": "303:2882",
+              "name": "V2 / Mobile / 10DVE · Detalle de reserva — Vendedor calificó"
+            },
+            {
+              "id": "305:3126",
+              "name": "V2 / Mobile / 11PR · Mi cuenta — Mis publicaciones"
+            },
+            {
+              "id": "305:3558",
+              "name": "V2 / Mobile / 10P · Proponer entrega"
+            },
+            {
+              "id": "305:3660",
+              "name": "V2 / Mobile / 10PS · Vendedor — Aceptar propuesta"
+            },
+            {
+              "id": "314:6996",
+              "name": "V2 / Mobile / 10SC · Reservas — Vendedor Confirmado"
+            },
+            {
+              "id": "314:7027",
+              "name": "V2 / Mobile / 10SW · Reservas — Vendedor espera a comprador"
+            },
+            {
+              "id": "314:7058",
+              "name": "V2 / Mobile / 10DSC · Detalle — Vendedor Confirmado"
+            },
+            {
+              "id": "314:7132",
+              "name": "V2 / Mobile / 10DSW · Detalle — Vendedor espera a comprador"
+            }
+          ]
+        },
+        {
+          "page": "Componentes",
+          "node": "287:128",
+          "frames": [
+            {
+              "id": "284:364",
+              "name": "V2 / Product Card"
+            },
+            {
+              "id": "301:343",
+              "name": "V2 / Product Summary"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/productos/calculadora-casio-fx991ex.jpg",
+      "figma_image_hash": "dead5e0000a0b9c92ed982849e53b610ec4cdb00",
+      "sha256": "a4c29f21f547ce6520213035375a8aa47925b6e42df589e83bc4ea390e91fc59",
+      "dimensions": [
+        1376,
+        768
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "290:295",
+          "frames": [
+            {
+              "id": "278:3030",
+              "name": "V2 / Desktop / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3154",
+              "name": "V2 / Desktop / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3486",
+              "name": "V2 / Desktop / 06 · Detalle de artículo"
+            },
+            {
+              "id": "290:536",
+              "name": "V2 / Desktop / 04A · Inicio — Vendedor activo"
+            },
+            {
+              "id": "290:654",
+              "name": "V2 / Desktop / 04N · Inicio — Usuario nuevo"
+            },
+            {
+              "id": "296:943",
+              "name": "V2 / Desktop / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "296:1052",
+              "name": "V2 / Desktop / 06V · Detalle — Vendido"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "291:252",
+          "frames": [
+            {
+              "id": "278:3115",
+              "name": "V2 / Mobile / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3437",
+              "name": "V2 / Mobile / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3554",
+              "name": "V2 / Mobile / 06 · Detalle de artículo"
+            },
+            {
+              "id": "291:487",
+              "name": "V2 / Mobile / 04A · Inicio — Vendedor activo"
+            },
+            {
+              "id": "291:619",
+              "name": "V2 / Mobile / 04N · Inicio — Usuario nuevo"
+            },
+            {
+              "id": "297:883",
+              "name": "V2 / Mobile / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "297:1006",
+              "name": "V2 / Mobile / 06V · Detalle — Vendido"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/productos/libro-calculo-stewart.jpg",
+      "figma_image_hash": "6ab7ba1c7496cbc3d7603020b70c85c08f6187ff",
+      "sha256": "e7b5822e4669ffad5e51e013bf0eefeedfd151a31faaaa81b9afad2e79355cb6",
+      "dimensions": [
+        1376,
+        768
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "290:301",
+          "frames": [
+            {
+              "id": "278:3030",
+              "name": "V2 / Desktop / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3154",
+              "name": "V2 / Desktop / 05 · Explorar artículos"
+            },
+            {
+              "id": "290:536",
+              "name": "V2 / Desktop / 04A · Inicio — Vendedor activo"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "291:258",
+          "frames": [
+            {
+              "id": "278:3115",
+              "name": "V2 / Mobile / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3437",
+              "name": "V2 / Mobile / 05 · Explorar artículos"
+            },
+            {
+              "id": "291:487",
+              "name": "V2 / Mobile / 04A · Inicio — Vendedor activo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/productos/nintendo-switch.jpg",
+      "figma_image_hash": "3a24cb28c7d38487cb6d610cbaf40c7632855acb",
+      "sha256": "a448a928184019942189c26a4c79cd0d46903bd2492d18c62bf62fbaa139d697",
+      "dimensions": [
+        1376,
+        768
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "I290:343;287:128",
+          "frames": [
+            {
+              "id": "278:3030",
+              "name": "V2 / Desktop / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3154",
+              "name": "V2 / Desktop / 05 · Explorar artículos"
+            },
+            {
+              "id": "290:536",
+              "name": "V2 / Desktop / 04A · Inicio — Vendedor activo"
+            },
+            {
+              "id": "290:654",
+              "name": "V2 / Desktop / 04N · Inicio — Usuario nuevo"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "I291:301;287:129",
+          "frames": [
+            {
+              "id": "278:3115",
+              "name": "V2 / Mobile / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3437",
+              "name": "V2 / Mobile / 05 · Explorar artículos"
+            },
+            {
+              "id": "291:487",
+              "name": "V2 / Mobile / 04A · Inicio — Vendedor activo"
+            },
+            {
+              "id": "291:619",
+              "name": "V2 / Mobile / 04N · Inicio — Usuario nuevo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/productos/audifonos-sony-wh1000xm4.jpg",
+      "figma_image_hash": "aaf19f89bb62d89d923889a86d1c132858be3e10",
+      "sha256": "7b0cfccfe19aebe036793539b3a25e7eeaf38cd977ebf48e47797129c3ba88ee",
+      "dimensions": [
+        1376,
+        768
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "I290:354;287:128",
+          "frames": [
+            {
+              "id": "278:3030",
+              "name": "V2 / Desktop / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3154",
+              "name": "V2 / Desktop / 05 · Explorar artículos"
+            },
+            {
+              "id": "290:536",
+              "name": "V2 / Desktop / 04A · Inicio — Vendedor activo"
+            },
+            {
+              "id": "290:654",
+              "name": "V2 / Desktop / 04N · Inicio — Usuario nuevo"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "I291:312;287:129",
+          "frames": [
+            {
+              "id": "278:3115",
+              "name": "V2 / Mobile / 04 · Inicio autenticado"
+            },
+            {
+              "id": "278:3437",
+              "name": "V2 / Mobile / 05 · Explorar artículos"
+            },
+            {
+              "id": "291:487",
+              "name": "V2 / Mobile / 04A · Inicio — Vendedor activo"
+            },
+            {
+              "id": "291:619",
+              "name": "V2 / Mobile / 04N · Inicio — Usuario nuevo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/productos/ipad-air.jpg",
+      "figma_image_hash": "704e9f868e03e4b03e1178bf636f450c7968e2a2",
+      "sha256": "14575a7d9f5de04e31783f7f8491f1aa51f74b57b50a5cb01d5d6036844c03dc",
+      "dimensions": [
+        1376,
+        768
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "I296:524;287:128",
+          "frames": [
+            {
+              "id": "278:3154",
+              "name": "V2 / Desktop / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3486",
+              "name": "V2 / Desktop / 06 · Detalle de artículo"
+            },
+            {
+              "id": "278:3597",
+              "name": "V2 / Desktop / 07 · Perfil público de vendedor"
+            },
+            {
+              "id": "296:943",
+              "name": "V2 / Desktop / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "296:1052",
+              "name": "V2 / Desktop / 06V · Detalle — Vendido"
+            },
+            {
+              "id": "304:2620",
+              "name": "V2 / Desktop / 11PR · Mi cuenta — Mis publicaciones"
+            },
+            {
+              "id": "321:7063",
+              "name": "V2 / Desktop / 10IP · Reserva iPad — Entrega próxima"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "I297:474;287:129",
+          "frames": [
+            {
+              "id": "278:3437",
+              "name": "V2 / Mobile / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3554",
+              "name": "V2 / Mobile / 06 · Detalle de artículo"
+            },
+            {
+              "id": "278:3669",
+              "name": "V2 / Mobile / 07 · Perfil público de vendedor"
+            },
+            {
+              "id": "297:883",
+              "name": "V2 / Mobile / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "297:1006",
+              "name": "V2 / Mobile / 06V · Detalle — Vendido"
+            },
+            {
+              "id": "305:3126",
+              "name": "V2 / Mobile / 11PR · Mi cuenta — Mis publicaciones"
+            },
+            {
+              "id": "320:7121",
+              "name": "V2 / Mobile / 10IP · Reserva iPad — Entrega próxima"
+            },
+            {
+              "id": "320:7152",
+              "name": "V2 / Mobile / 10DIP · Detalle iPad — Entrega próxima"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/productos/libro-algebra-lineal.jpg",
+      "figma_image_hash": "0dac5f16e6418065ce9dd4b4a70672e6ef1eac5e",
+      "sha256": "e237b5d3b3b9cb927634a946df65f2bc67e97a4cb12d21a1ef8ec0b036453024",
+      "dimensions": [
+        1584,
+        672
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "I296:536;287:128",
+          "frames": [
+            {
+              "id": "278:3154",
+              "name": "V2 / Desktop / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3486",
+              "name": "V2 / Desktop / 06 · Detalle de artículo"
+            },
+            {
+              "id": "296:943",
+              "name": "V2 / Desktop / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "296:1052",
+              "name": "V2 / Desktop / 06V · Detalle — Vendido"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "I297:487;287:129",
+          "frames": [
+            {
+              "id": "278:3437",
+              "name": "V2 / Mobile / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3554",
+              "name": "V2 / Mobile / 06 · Detalle de artículo"
+            },
+            {
+              "id": "297:883",
+              "name": "V2 / Mobile / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "297:1006",
+              "name": "V2 / Mobile / 06V · Detalle — Vendido"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/productos/libro-fisica-universitaria.jpg",
+      "figma_image_hash": "282e4579c90ac95b040c2b69e73fa1307d10b591",
+      "sha256": "33fb903aa1d7343bc690302d4dc8dc33e9e5894b0771bc3d8d8b504760d7a957",
+      "dimensions": [
+        1584,
+        672
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "I296:547;287:128",
+          "frames": [
+            {
+              "id": "278:3154",
+              "name": "V2 / Desktop / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3486",
+              "name": "V2 / Desktop / 06 · Detalle de artículo"
+            },
+            {
+              "id": "278:3597",
+              "name": "V2 / Desktop / 07 · Perfil público de vendedor"
+            },
+            {
+              "id": "296:943",
+              "name": "V2 / Desktop / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "296:1052",
+              "name": "V2 / Desktop / 06V · Detalle — Vendido"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "I297:498;287:129",
+          "frames": [
+            {
+              "id": "278:3437",
+              "name": "V2 / Mobile / 05 · Explorar artículos"
+            },
+            {
+              "id": "278:3554",
+              "name": "V2 / Mobile / 06 · Detalle de artículo"
+            },
+            {
+              "id": "278:3669",
+              "name": "V2 / Mobile / 07 · Perfil público de vendedor"
+            },
+            {
+              "id": "297:883",
+              "name": "V2 / Mobile / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "297:1006",
+              "name": "V2 / Mobile / 06V · Detalle — Vendido"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/productos/macbook-vista-frontal.png",
+      "figma_image_hash": "22769fd72e1e1f73560e856aa756d2cb8e51927c",
+      "sha256": "713fdf111664ee38d393738e8305754dfc2b9ad73e88c3b8d6f45bccad916bda",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "296:588",
+          "frames": [
+            {
+              "id": "278:3486",
+              "name": "V2 / Desktop / 06 · Detalle de artículo"
+            },
+            {
+              "id": "296:943",
+              "name": "V2 / Desktop / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "296:1052",
+              "name": "V2 / Desktop / 06V · Detalle — Vendido"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "297:562",
+          "frames": [
+            {
+              "id": "278:3554",
+              "name": "V2 / Mobile / 06 · Detalle de artículo"
+            },
+            {
+              "id": "297:883",
+              "name": "V2 / Mobile / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "297:1006",
+              "name": "V2 / Mobile / 06V · Detalle — Vendido"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/productos/macbook-cerrada.png",
+      "figma_image_hash": "e8c46e24d216f919587514ce5bac9c140e686934",
+      "sha256": "1558364746eced2774aba131a48bee12d6d99114ae3819e32da1ccc2bd2265c3",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "296:589",
+          "frames": [
+            {
+              "id": "278:3486",
+              "name": "V2 / Desktop / 06 · Detalle de artículo"
+            },
+            {
+              "id": "296:943",
+              "name": "V2 / Desktop / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "296:1052",
+              "name": "V2 / Desktop / 06V · Detalle — Vendido"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "297:563",
+          "frames": [
+            {
+              "id": "278:3554",
+              "name": "V2 / Mobile / 06 · Detalle de artículo"
+            },
+            {
+              "id": "297:883",
+              "name": "V2 / Mobile / 06R · Detalle — Reservado"
+            },
+            {
+              "id": "297:1006",
+              "name": "V2 / Mobile / 06V · Detalle — Vendido"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/avatares/ana-torres.jpg",
+      "figma_image_hash": "f889ba45a155661bed28e881956544eed7bbb852",
+      "sha256": "a33bfb1e40fa3dbbc9ae97992c068f822ae904e5d26badb870063cf0d31cb17b",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "I302:1208;301:328",
+          "frames": [
+            {
+              "id": "278:3929",
+              "name": "V2 / Desktop / 10 · Reservas"
+            },
+            {
+              "id": "302:1285",
+              "name": "V2 / Desktop / 10R · Reservas — Reserva"
+            },
+            {
+              "id": "302:1422",
+              "name": "V2 / Desktop / 10C · Reservas — Confirmado"
+            },
+            {
+              "id": "302:1566",
+              "name": "V2 / Desktop / 10W · Reservas — Esperando confirmación"
+            },
+            {
+              "id": "302:1713",
+              "name": "V2 / Desktop / 10S · Reservas — Vista vendedor por confirmar"
+            },
+            {
+              "id": "302:1860",
+              "name": "V2 / Desktop / 10B · Reserva completada — Comprador pendiente"
+            },
+            {
+              "id": "302:2013",
+              "name": "V2 / Desktop / 10V · Reserva completada — Vendedor pendiente"
+            },
+            {
+              "id": "302:2166",
+              "name": "V2 / Desktop / 10BE · Reserva completada — Comprador calificó"
+            },
+            {
+              "id": "302:2317",
+              "name": "V2 / Desktop / 10VE · Reserva completada — Vendedor calificó"
+            },
+            {
+              "id": "314:2978",
+              "name": "V2 / Desktop / 10SC · Reservas — Vendedor Confirmado"
+            },
+            {
+              "id": "314:3035",
+              "name": "V2 / Desktop / 10SW · Reservas — Vendedor espera a comprador"
+            },
+            {
+              "id": "321:7063",
+              "name": "V2 / Desktop / 10IP · Reserva iPad — Entrega próxima"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "I303:1381;301:328",
+          "frames": [
+            {
+              "id": "278:4006",
+              "name": "V2 / Mobile / 10 · Reservas"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "images/productos/apuntes-calculo.jpg",
+      "figma_image_hash": "475c4940c01c091270b3c378e591a5388627d30f",
+      "sha256": "ad9c391f71bf86eac6f4239c292fccb2a005edd8b8afdbffd4c1adcc7619af97",
+      "dimensions": [
+        1584,
+        672
+      ],
+      "verified": "bytes SHA-1 identical to the current Figma fill; visual reviewed",
+      "uses": [
+        {
+          "page": "Desktop",
+          "node": "306:2691",
+          "frames": [
+            {
+              "id": "306:2601",
+              "name": "V2 / Desktop / 08L · Publicar — Listo para publicar"
+            }
+          ]
+        },
+        {
+          "page": "Mobile",
+          "node": "307:3298",
+          "frames": [
+            {
+              "id": "307:3195",
+              "name": "V2 / Mobile / 08L · Publicar — Listo para publicar"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "icons": [
+    {
+      "file": "icons/campus-32.svg",
+      "node": "I290:3;284:242",
+      "component": "281:19",
+      "size": [
+        32,
+        32
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:2735",
+            "278:2880",
+            "278:2946",
+            "278:3030",
+            "278:3154",
+            "278:3486",
+            "278:3597",
+            "278:3711",
+            "278:3813",
+            "278:3929",
+            "278:4040",
+            "290:365",
+            "290:409",
+            "290:441",
+            "290:507",
+            "290:536",
+            "290:654",
+            "296:756",
+            "296:850",
+            "296:943",
+            "296:1052",
+            "296:1161",
+            "298:2037",
+            "298:2116",
+            "298:2161",
+            "298:2205",
+            "298:2298",
+            "298:2331",
+            "302:1285",
+            "302:1422",
+            "302:1566",
+            "302:1713",
+            "302:1860",
+            "302:2013",
+            "302:2166",
+            "302:2317",
+            "302:2468",
+            "302:2499",
+            "304:2074",
+            "304:2144",
+            "304:2227",
+            "304:2314",
+            "304:2401",
+            "304:2461",
+            "304:2536",
+            "304:2620",
+            "304:2706",
+            "304:2744",
+            "304:2783",
+            "304:2821",
+            "304:2987",
+            "304:3030",
+            "304:3063",
+            "306:2601",
+            "306:2693",
+            "306:2756",
+            "306:2816",
+            "306:2898",
+            "306:2979",
+            "314:2978",
+            "314:3035",
+            "321:7063",
+            "327:3233"
+          ],
+          "node": "I290:3;284:242"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:2816",
+            "278:2921",
+            "278:3001",
+            "278:3115",
+            "278:3437",
+            "278:3554",
+            "278:3669",
+            "278:3774",
+            "278:3884",
+            "278:4006",
+            "278:4139",
+            "291:356",
+            "291:390",
+            "291:412",
+            "291:468",
+            "291:487",
+            "291:619",
+            "297:768",
+            "297:826",
+            "297:883",
+            "297:1006",
+            "297:1129",
+            "299:1135",
+            "299:1227",
+            "299:1285",
+            "299:1342",
+            "299:1448",
+            "299:1494",
+            "303:1433",
+            "303:1504",
+            "303:1583",
+            "303:1670",
+            "303:1757",
+            "303:1844",
+            "303:1935",
+            "303:2026",
+            "303:2117",
+            "303:2208",
+            "303:2252",
+            "303:2296",
+            "303:2365",
+            "303:2437",
+            "303:2508",
+            "303:2582",
+            "303:2656",
+            "303:2732",
+            "303:2808",
+            "303:2882",
+            "305:2489",
+            "305:2572",
+            "305:2668",
+            "305:2768",
+            "305:2868",
+            "305:2941",
+            "305:3029",
+            "305:3126",
+            "305:3225",
+            "305:3276",
+            "305:3328",
+            "305:3379",
+            "305:3558",
+            "305:3614",
+            "305:3660",
+            "307:3195",
+            "307:3300",
+            "307:3376",
+            "307:3449",
+            "307:3544",
+            "307:3638",
+            "314:6996",
+            "314:7027",
+            "314:7058",
+            "314:7132",
+            "320:7121",
+            "320:7152",
+            "327:7375"
+          ],
+          "node": "I291:3;284:260"
+        },
+        {
+          "page": "Componentes",
+          "frames": [
+            "284:227",
+            "284:239",
+            "284:257",
+            "284:266"
+          ],
+          "node": "284:4"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/verificado-20.svg",
+      "node": "290:36",
+      "component": "281:47",
+      "size": [
+        20,
+        20
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:2735"
+          ],
+          "node": "290:36"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:2816"
+          ],
+          "node": "291:25"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/libro-32.svg",
+      "node": "290:46",
+      "component": "286:131",
+      "size": [
+        32,
+        32
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:2735"
+          ],
+          "node": "290:46"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:2816"
+          ],
+          "node": "291:35"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/laptop-32.svg",
+      "node": "290:52",
+      "component": "286:135",
+      "size": [
+        32,
+        32
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:2735"
+          ],
+          "node": "290:52"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:2816"
+          ],
+          "node": "291:41"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/juegos-32.svg",
+      "node": "290:58",
+      "component": "286:139",
+      "size": [
+        32,
+        32
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:2735"
+          ],
+          "node": "290:58"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:2816"
+          ],
+          "node": "291:47"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/usuarios.svg",
+      "node": "290:69",
+      "component": "281:43",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:2735"
+          ],
+          "node": "290:69"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:2816"
+          ],
+          "node": "291:58"
+        },
+        {
+          "page": "Componentes",
+          "frames": [
+            "281:43"
+          ],
+          "node": "281:43"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/explorar.svg",
+      "node": "290:79",
+      "component": "281:26",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:2735"
+          ],
+          "node": "290:79"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:2816",
+            "278:3115",
+            "278:3437",
+            "278:3554",
+            "278:3669",
+            "278:3774",
+            "278:3884",
+            "278:4006",
+            "278:4139",
+            "291:487",
+            "291:619",
+            "297:768",
+            "297:826",
+            "297:883",
+            "297:1006",
+            "297:1129",
+            "299:1135",
+            "299:1227",
+            "299:1285",
+            "299:1342",
+            "299:1448",
+            "299:1494",
+            "303:1433",
+            "303:1504",
+            "303:1583",
+            "303:1670",
+            "303:1757",
+            "303:1844",
+            "303:1935",
+            "303:2026",
+            "303:2117",
+            "303:2208",
+            "303:2252",
+            "303:2296",
+            "303:2365",
+            "303:2437",
+            "303:2508",
+            "303:2582",
+            "303:2656",
+            "303:2732",
+            "303:2808",
+            "303:2882",
+            "305:2489",
+            "305:2572",
+            "305:2668",
+            "305:2768",
+            "305:2868",
+            "305:2941",
+            "305:3029",
+            "305:3126",
+            "305:3225",
+            "305:3276",
+            "305:3328",
+            "305:3379",
+            "305:3558",
+            "305:3614",
+            "305:3660",
+            "307:3195",
+            "307:3300",
+            "307:3376",
+            "307:3449",
+            "307:3544",
+            "314:6996",
+            "314:7027",
+            "314:7058",
+            "314:7132",
+            "320:7121",
+            "320:7152"
+          ],
+          "node": "291:68"
+        },
+        {
+          "page": "Componentes",
+          "frames": [
+            "281:26",
+            "284:228"
+          ],
+          "node": "281:26"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/reservas.svg",
+      "node": "290:87",
+      "component": "281:52",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:2735"
+          ],
+          "node": "290:87"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:2816",
+            "278:3115",
+            "278:3437",
+            "278:3554",
+            "278:3669",
+            "278:3774",
+            "278:3884",
+            "278:4006",
+            "278:4139",
+            "291:487",
+            "291:619",
+            "297:768",
+            "297:826",
+            "297:883",
+            "297:1006",
+            "297:1129",
+            "299:1135",
+            "299:1227",
+            "299:1285",
+            "299:1342",
+            "299:1448",
+            "299:1494",
+            "303:1433",
+            "303:1504",
+            "303:1583",
+            "303:1670",
+            "303:1757",
+            "303:1844",
+            "303:1935",
+            "303:2026",
+            "303:2117",
+            "303:2208",
+            "303:2252",
+            "303:2296",
+            "303:2365",
+            "303:2437",
+            "303:2508",
+            "303:2582",
+            "303:2656",
+            "303:2732",
+            "303:2808",
+            "303:2882",
+            "305:2489",
+            "305:2572",
+            "305:2668",
+            "305:2768",
+            "305:2868",
+            "305:2941",
+            "305:3029",
+            "305:3126",
+            "305:3225",
+            "305:3276",
+            "305:3328",
+            "305:3379",
+            "305:3558",
+            "305:3614",
+            "305:3660",
+            "307:3195",
+            "307:3300",
+            "307:3376",
+            "307:3449",
+            "307:3544",
+            "314:6996",
+            "314:7027",
+            "314:7058",
+            "314:7132",
+            "320:7121",
+            "320:7152"
+          ],
+          "node": "291:76"
+        },
+        {
+          "page": "Componentes",
+          "frames": [
+            "281:52",
+            "284:228"
+          ],
+          "node": "281:52"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/estrella.svg",
+      "node": "290:96",
+      "component": "281:22",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:2735",
+            "304:2744",
+            "304:2783",
+            "304:2860",
+            "304:2909",
+            "306:3042"
+          ],
+          "node": "290:96"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:2816",
+            "305:3276",
+            "305:3328",
+            "305:3431",
+            "305:3480",
+            "307:3692"
+          ],
+          "node": "291:85"
+        },
+        {
+          "page": "Componentes",
+          "frames": [
+            "281:22",
+            "284:339",
+            "300:485"
+          ],
+          "node": "281:22"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/verificado.svg",
+      "node": "290:106",
+      "component": "281:47",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:2735"
+          ],
+          "node": "290:106"
+        },
+        {
+          "page": "Componentes",
+          "frames": [
+            "281:47"
+          ],
+          "node": "281:47"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/estrella-dorada-24.svg",
+      "node": "I331:3272;284:328",
+      "component": "281:22",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#F59E0B"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:2735",
+            "278:3486",
+            "278:3597",
+            "278:4040",
+            "296:943",
+            "296:1052",
+            "304:2144",
+            "304:2227",
+            "304:2314",
+            "304:2536",
+            "304:2706",
+            "304:2744",
+            "304:2783",
+            "304:2821",
+            "306:3042",
+            "306:3091"
+          ],
+          "node": "I331:3272;284:328"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:2816",
+            "278:3554",
+            "278:3669",
+            "278:4139",
+            "297:883",
+            "297:1006",
+            "305:2572",
+            "305:2668",
+            "305:2768",
+            "305:3029",
+            "305:3225",
+            "305:3276",
+            "305:3328",
+            "305:3379",
+            "307:3692",
+            "307:3741"
+          ],
+          "node": "I331:7511;284:328"
+        },
+        {
+          "page": "Componentes",
+          "frames": [
+            "284:339",
+            "300:485"
+          ],
+          "node": "284:280"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/explorar-20.svg",
+      "node": "I290:240;284:15",
+      "component": "281:26",
+      "size": [
+        20,
+        20
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:3030",
+            "278:3154",
+            "278:3486",
+            "278:3597",
+            "278:3711",
+            "278:3813",
+            "278:3929",
+            "278:4040",
+            "290:536",
+            "290:654",
+            "296:756",
+            "296:850",
+            "296:943",
+            "296:1052",
+            "296:1161",
+            "298:2037",
+            "298:2116",
+            "298:2161",
+            "298:2205",
+            "298:2298",
+            "298:2331",
+            "302:1285",
+            "302:1422",
+            "302:1566",
+            "302:1713",
+            "302:1860",
+            "302:2013",
+            "302:2166",
+            "302:2317",
+            "302:2468",
+            "302:2499",
+            "304:2074",
+            "304:2144",
+            "304:2227",
+            "304:2314",
+            "304:2401",
+            "304:2461",
+            "304:2536",
+            "304:2620",
+            "304:2706",
+            "304:2744",
+            "304:2783",
+            "304:2821",
+            "304:2987",
+            "304:3030",
+            "304:3063",
+            "306:2601",
+            "306:2693",
+            "306:2756",
+            "306:2816",
+            "306:2898",
+            "314:2978",
+            "314:3035",
+            "321:7063"
+          ],
+          "node": "I290:240;284:15"
+        },
+        {
+          "page": "Componentes",
+          "frames": [
+            "284:227"
+          ],
+          "node": "284:15"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/campana.svg",
+      "node": "I290:240;284:19",
+      "component": "286:143",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:3030",
+            "278:3154",
+            "278:3486",
+            "278:3597",
+            "278:3711",
+            "278:3813",
+            "278:3929",
+            "278:4040",
+            "290:536",
+            "290:654",
+            "296:756",
+            "296:850",
+            "296:943",
+            "296:1052",
+            "296:1161",
+            "298:2037",
+            "298:2116",
+            "298:2161",
+            "298:2205",
+            "298:2298",
+            "298:2331",
+            "302:1285",
+            "302:1422",
+            "302:1566",
+            "302:1713",
+            "302:1860",
+            "302:2013",
+            "302:2166",
+            "302:2317",
+            "302:2468",
+            "302:2499",
+            "304:2074",
+            "304:2144",
+            "304:2227",
+            "304:2314",
+            "304:2401",
+            "304:2461",
+            "304:2536",
+            "304:2620",
+            "304:2706",
+            "304:2744",
+            "304:2783",
+            "304:2821",
+            "304:2987",
+            "304:3030",
+            "304:3063",
+            "306:2601",
+            "306:2693",
+            "306:2756",
+            "306:2816",
+            "306:2898",
+            "314:2978",
+            "314:3035",
+            "321:7063"
+          ],
+          "node": "I290:240;284:19"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:3115",
+            "278:3437",
+            "278:3554",
+            "278:3669",
+            "278:3774",
+            "278:3884",
+            "278:4006",
+            "278:4139",
+            "291:487",
+            "291:619",
+            "297:768",
+            "297:826",
+            "297:883",
+            "297:1006",
+            "297:1129",
+            "299:1135",
+            "299:1227",
+            "299:1285",
+            "299:1342",
+            "299:1448",
+            "299:1494",
+            "303:1433",
+            "303:1504",
+            "303:1583",
+            "303:1670",
+            "303:1757",
+            "303:1844",
+            "303:1935",
+            "303:2026",
+            "303:2117",
+            "303:2208",
+            "303:2252",
+            "303:2296",
+            "303:2365",
+            "303:2437",
+            "303:2508",
+            "303:2582",
+            "303:2656",
+            "303:2732",
+            "303:2808",
+            "303:2882",
+            "305:2489",
+            "305:2572",
+            "305:2668",
+            "305:2768",
+            "305:2868",
+            "305:2941",
+            "305:3029",
+            "305:3126",
+            "305:3225",
+            "305:3276",
+            "305:3328",
+            "305:3379",
+            "305:3558",
+            "305:3614",
+            "305:3660",
+            "307:3195",
+            "307:3300",
+            "307:3376",
+            "307:3449",
+            "307:3544",
+            "314:6996",
+            "314:7027",
+            "314:7058",
+            "314:7132",
+            "320:7121",
+            "320:7152"
+          ],
+          "node": "I291:209;284:236"
+        },
+        {
+          "page": "Componentes",
+          "frames": [
+            "284:227",
+            "284:239",
+            "286:143"
+          ],
+          "node": "284:19"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/foto-32.svg",
+      "node": "298:1977",
+      "component": "286:157",
+      "size": [
+        32,
+        32
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "278:3711",
+            "298:2037",
+            "298:2205",
+            "306:2816"
+          ],
+          "node": "298:1977"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:3774",
+            "299:1135",
+            "299:1342",
+            "307:3449"
+          ],
+          "node": "299:1052"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/reservas-40.svg",
+      "node": "387:7608",
+      "component": "281:52",
+      "size": [
+        40,
+        40
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Desktop",
+          "frames": [
+            "302:2468"
+          ],
+          "node": "387:7608"
+        },
+        {
+          "page": "Mobile",
+          "frames": [
+            "303:2208"
+          ],
+          "node": "387:7797"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/campus.svg",
+      "node": "I291:323;284:25",
+      "component": "281:19",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:3115",
+            "278:3437",
+            "278:3554",
+            "278:3669",
+            "278:3774",
+            "278:3884",
+            "278:4006",
+            "278:4139",
+            "291:487",
+            "291:619",
+            "297:768",
+            "297:826",
+            "297:883",
+            "297:1006",
+            "297:1129",
+            "299:1135",
+            "299:1227",
+            "299:1285",
+            "299:1342",
+            "299:1448",
+            "299:1494",
+            "303:1433",
+            "303:1504",
+            "303:1583",
+            "303:1670",
+            "303:1757",
+            "303:1844",
+            "303:1935",
+            "303:2026",
+            "303:2117",
+            "303:2208",
+            "303:2252",
+            "303:2296",
+            "303:2365",
+            "303:2437",
+            "303:2508",
+            "303:2582",
+            "303:2656",
+            "303:2732",
+            "303:2808",
+            "303:2882",
+            "305:2489",
+            "305:2572",
+            "305:2668",
+            "305:2768",
+            "305:2868",
+            "305:2941",
+            "305:3029",
+            "305:3126",
+            "305:3225",
+            "305:3276",
+            "305:3328",
+            "305:3379",
+            "305:3558",
+            "305:3614",
+            "305:3660",
+            "307:3195",
+            "307:3300",
+            "307:3376",
+            "307:3449",
+            "307:3544",
+            "314:6996",
+            "314:7027",
+            "314:7058",
+            "314:7132",
+            "320:7121",
+            "320:7152"
+          ],
+          "node": "I291:323;284:25"
+        },
+        {
+          "page": "Componentes",
+          "frames": [
+            "281:19",
+            "284:228"
+          ],
+          "node": "281:19"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/publicar.svg",
+      "node": "I291:323;284:36",
+      "component": "281:37",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Mobile",
+          "frames": [
+            "278:3115",
+            "278:3437",
+            "278:3554",
+            "278:3669",
+            "278:3774",
+            "278:3884",
+            "278:4006",
+            "278:4139",
+            "291:487",
+            "291:619",
+            "297:768",
+            "297:826",
+            "297:883",
+            "297:1006",
+            "297:1129",
+            "299:1135",
+            "299:1227",
+            "299:1285",
+            "299:1342",
+            "299:1448",
+            "299:1494",
+            "303:1433",
+            "303:1504",
+            "303:1583",
+            "303:1670",
+            "303:1757",
+            "303:1844",
+            "303:1935",
+            "303:2026",
+            "303:2117",
+            "303:2208",
+            "303:2252",
+            "303:2296",
+            "303:2365",
+            "303:2437",
+            "303:2508",
+            "303:2582",
+            "303:2656",
+            "303:2732",
+            "303:2808",
+            "303:2882",
+            "305:2489",
+            "305:2572",
+            "305:2668",
+            "305:2768",
+            "305:2868",
+            "305:2941",
+            "305:3029",
+            "305:3126",
+            "305:3225",
+            "305:3276",
+            "305:3328",
+            "305:3379",
+            "305:3558",
+            "305:3614",
+            "305:3660",
+            "307:3195",
+            "307:3300",
+            "307:3376",
+            "307:3449",
+            "307:3544",
+            "314:6996",
+            "314:7027",
+            "314:7058",
+            "314:7132",
+            "320:7121",
+            "320:7152"
+          ],
+          "node": "I291:323;284:36"
+        },
+        {
+          "page": "Componentes",
+          "frames": [
+            "281:37",
+            "284:228"
+          ],
+          "node": "281:37"
+        }
+      ],
+      "scope": "screens"
+    },
+    {
+      "file": "icons/hoja.svg",
+      "node": "281:30",
+      "component": "281:30",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Componentes",
+          "frames": [
+            "281:30"
+          ],
+          "node": "281:30"
+        }
+      ],
+      "scope": "shared-library"
+    },
+    {
+      "file": "icons/mensaje.svg",
+      "node": "281:33",
+      "component": "281:33",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Componentes",
+          "frames": [
+            "281:33"
+          ],
+          "node": "281:33"
+        }
+      ],
+      "scope": "shared-library"
+    },
+    {
+      "file": "icons/libro.svg",
+      "node": "286:131",
+      "component": "286:131",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Componentes",
+          "frames": [
+            "286:131"
+          ],
+          "node": "286:131"
+        }
+      ],
+      "scope": "shared-library"
+    },
+    {
+      "file": "icons/laptop.svg",
+      "node": "286:135",
+      "component": "286:135",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Componentes",
+          "frames": [
+            "286:135"
+          ],
+          "node": "286:135"
+        }
+      ],
+      "scope": "shared-library"
+    },
+    {
+      "file": "icons/juegos.svg",
+      "node": "286:139",
+      "component": "286:139",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Componentes",
+          "frames": [
+            "286:139"
+          ],
+          "node": "286:139"
+        }
+      ],
+      "scope": "shared-library"
+    },
+    {
+      "file": "icons/filtro.svg",
+      "node": "286:146",
+      "component": "286:146",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Componentes",
+          "frames": [
+            "286:146"
+          ],
+          "node": "286:146"
+        }
+      ],
+      "scope": "shared-library"
+    },
+    {
+      "file": "icons/flecha.svg",
+      "node": "286:149",
+      "component": "286:149",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Componentes",
+          "frames": [
+            "286:149"
+          ],
+          "node": "286:149"
+        }
+      ],
+      "scope": "shared-library"
+    },
+    {
+      "file": "icons/cerrar.svg",
+      "node": "286:152",
+      "component": "286:152",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Componentes",
+          "frames": [
+            "286:152"
+          ],
+          "node": "286:152"
+        }
+      ],
+      "scope": "shared-library"
+    },
+    {
+      "file": "icons/foto.svg",
+      "node": "286:157",
+      "component": "286:157",
+      "size": [
+        24,
+        24
+      ],
+      "colors": [
+        "#2640A9"
+      ],
+      "source": "native SVG; equivalent instances share component, size, colors and opacity",
+      "uses": [
+        {
+          "page": "Componentes",
+          "frames": [
+            "286:157"
+          ],
+          "node": "286:157"
+        }
+      ],
+      "scope": "shared-library"
+    }
+  ],
+  "css_tokens": [
+    {
+      "id": "VariableID:14:3",
+      "name": "color/brand/primary",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.14901961386203766,
+          "g": 0.250980406999588,
+          "b": 0.6627451181411743,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:4",
+      "name": "color/brand/hover",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.12156862765550613,
+          "g": 0.20392157137393951,
+          "b": 0.5647059082984924,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:5",
+      "name": "color/brand/pressed",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.0941176488995552,
+          "g": 0.16470588743686676,
+          "b": 0.47058823704719543,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:6",
+      "name": "color/brand/light",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.9333333373069763,
+          "g": 0.9490196108818054,
+          "b": 1,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:7",
+      "name": "color/brand/accent",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.35686275362968445,
+          "g": 0.43529412150382996,
+          "b": 0.8470588326454163,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:8",
+      "name": "color/text/primary",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.06666667014360428,
+          "g": 0.0941176488995552,
+          "b": 0.15294118225574493,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:9",
+      "name": "color/text/secondary",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.41960784792900085,
+          "g": 0.4470588266849518,
+          "b": 0.501960813999176,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:10",
+      "name": "color/border/default",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.8509804010391235,
+          "g": 0.8784313797950745,
+          "b": 0.9490196108818054,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:11",
+      "name": "color/bg/page",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.9686274528503418,
+          "g": 0.9764705896377563,
+          "b": 1,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:12",
+      "name": "color/bg/surface",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:13",
+      "name": "color/state/success",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.08627451211214066,
+          "g": 0.6392157077789307,
+          "b": 0.29019609093666077,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:14",
+      "name": "color/state/warning",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.9607843160629272,
+          "g": 0.6196078658103943,
+          "b": 0.04313725605607033,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:15",
+      "name": "color/state/error",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.8627451062202454,
+          "g": 0.14901961386203766,
+          "b": 0.14901961386203766,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:16",
+      "name": "color/state/info",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.23137255012989044,
+          "g": 0.5098039507865906,
+          "b": 0.9647058844566345,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:17",
+      "name": "color/state/disabled",
+      "type": "COLOR",
+      "values": {
+        "14:0": {
+          "r": 0.7960784435272217,
+          "g": 0.8274509906768799,
+          "b": 0.9450980424880981,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:14:18",
+      "name": "spacing/8",
+      "type": "FLOAT",
+      "values": {
+        "14:0": 8
+      }
+    },
+    {
+      "id": "VariableID:14:19",
+      "name": "spacing/16",
+      "type": "FLOAT",
+      "values": {
+        "14:0": 16
+      }
+    },
+    {
+      "id": "VariableID:14:20",
+      "name": "spacing/24",
+      "type": "FLOAT",
+      "values": {
+        "14:0": 24
+      }
+    },
+    {
+      "id": "VariableID:14:21",
+      "name": "spacing/32",
+      "type": "FLOAT",
+      "values": {
+        "14:0": 32
+      }
+    },
+    {
+      "id": "VariableID:14:22",
+      "name": "spacing/48",
+      "type": "FLOAT",
+      "values": {
+        "14:0": 48
+      }
+    },
+    {
+      "id": "VariableID:14:23",
+      "name": "spacing/64",
+      "type": "FLOAT",
+      "values": {
+        "14:0": 64
+      }
+    },
+    {
+      "id": "VariableID:14:24",
+      "name": "radius/sm",
+      "type": "FLOAT",
+      "values": {
+        "14:0": 8
+      }
+    },
+    {
+      "id": "VariableID:14:25",
+      "name": "radius/md",
+      "type": "FLOAT",
+      "values": {
+        "14:0": 12
+      }
+    },
+    {
+      "id": "VariableID:14:26",
+      "name": "radius/lg",
+      "type": "FLOAT",
+      "values": {
+        "14:0": 16
+      }
+    },
+    {
+      "id": "VariableID:295:129",
+      "name": "surface/success",
+      "type": "COLOR",
+      "values": {
+        "295:0": {
+          "r": 0.9254902005195618,
+          "g": 0.9921568632125854,
+          "b": 0.9529411792755127,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:295:130",
+      "name": "surface/warning",
+      "type": "COLOR",
+      "values": {
+        "295:0": {
+          "r": 1,
+          "g": 0.9686274528503418,
+          "b": 0.9019607901573181,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:295:131",
+      "name": "surface/error",
+      "type": "COLOR",
+      "values": {
+        "295:0": {
+          "r": 0.9960784316062927,
+          "g": 0.9490196108818054,
+          "b": 0.9490196108818054,
+          "a": 1
+        }
+      }
+    },
+    {
+      "id": "VariableID:295:132",
+      "name": "surface/neutral",
+      "type": "COLOR",
+      "values": {
+        "295:0": {
+          "r": 0.9529411792755127,
+          "g": 0.95686274766922,
+          "b": 0.9647058844566345,
+          "a": 1
+        }
+      }
+    }
+  ]
+}
