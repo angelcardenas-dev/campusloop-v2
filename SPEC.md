@@ -313,4 +313,4 @@ Copiar y adaptar los campos entre corchetes:
 
 ---
 
-**Mantenimiento del SPEC:** si el profesor redefine alcance, pantallas de éxito, convenciones o reparto, realizar el cambio mediante PR revisado **antes** de ejecutar los nuevos prompts. El contenido del `SPEC.md` en el repositorio nuevo prevalece sobre las instrucciones de los prompts históricos del proyecto anterior.
+**Mantenimiento del SPEC:** si el profesor redefine alcance, pantallas de éxito, convenciones o reparto, realizar el cambio mediante PR revisado **antes** de ejecutar los nuevos prompts. El contenido del `SPEC.md` en el repositorio nuevo prevalece sobre las instrucciones de los prompts históricos del proyecto anterior. :D
