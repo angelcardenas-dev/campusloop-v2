@@ -48,6 +48,8 @@ Orden de prioridad:
 
 Las dos ramas deben comenzar con **el mismo commit base**, no con la copia de todas las páginas del repositorio antiguo.
 
+**Estado confirmado por coordinación (28 de octubre de 2026):** el repositorio remoto `angelcardenas-dev/campusloop-v2` ya tiene publicadas `main` y `develop`, ambas creadas desde el commit inicial `5a102c1` (`chore: establecer base inicial CampusLoop V2`). La base contiene `SPEC.md`, Landing, Login, Registro, el CSS global con tokens, `js/login.js` reservado y recursos locales. **No volver a inicializar el repositorio ni copiar las páginas del proyecto anterior.** Cada integrante debe clonar este repositorio y partir de `develop` actualizado.
+
 ```text
 CampusLoop/
 ├── SPEC.md                 # Este contrato, leído por cada agente
@@ -65,7 +67,7 @@ CampusLoop/
     └── images/             # Fotos, avatares, fondos y productos locales
 ```
 
-`css/styles.css` está en **`css/`**, no en la raíz, para mantener las rutas ya escritas en los HTML copiados (`href="css/styles.css"`) y la ruta de Inter (`../assets/fonts/...`). Conservar, dentro de lo posible, los nombres de archivo y las rutas de `assets/` de la versión existente. No copiar al nuevo repositorio las páginas de módulos antiguos que no figuren en esta estructura inicial, auditorías, capturas, respaldos ni archivos temporales. El archivo `.gitignore` puede añadirse como soporte mínimo de Git.
+`css/styles.css` está en **`css/`**, no en la raíz, para mantener las rutas ya escritas en los HTML copiados (`href="css/styles.css"`) y la ruta de Inter (`../assets/fonts/...`). Conservar, dentro de lo posible, los nombres de archivo y las rutas de `assets/` de la versión existente. No copiar al nuevo repositorio las páginas de módulos antiguos que no figuren en esta estructura inicial, auditorías, capturas, respaldos ni archivos temporales. El archivo `.gitignore` puede añadirse como soporte mínimo de Git; se recomienda excluir `.vscode/` si contiene únicamente ajustes locales del editor. La carpeta `.vscode/` que aparece sin seguimiento no forma parte del commit base.
 
 **Preparación inicial (responsabilidad de Angel/coordinación):** copiar las tres páginas HTML y `assets/`; crear este `SPEC.md` y el placeholder `js/login.js`; encargar al agente la construcción/reorganización de `css/styles.css` **antes de repartir las páginas nuevas**. La base de `main` y `develop` debe quedar visualmente correcta y estable.
 
@@ -251,7 +253,35 @@ Mientras faltan páginas por integrar, no crear `href` hacia rutas inexistentes.
 - **Regresión** de las tres páginas base y de las pantallas ya fusionadas a `develop` (si existen).
 - `git diff --check` sin errores, además de `git status --short` y `git diff --stat`.
 
-Las capturas, diferencias, comparaciones y auditorías se guardan **fuera del repositorio Git**, en una carpeta local del integrante (por ejemplo `Evidencias_Figma_V2/Documentacion/<modulo>/` situada fuera de la raíz clonada). Cada uno debe enlazarlas o describirlas en su PR, sin subir decenas de PNG a la rama principal. No afirmar haber usado navegadores o dispositivos que no se probaron.
+### 10.1. Carpeta oficial de evidencias (coordinación)
+
+Guardar las capturas, diferencias, comparaciones y auditorías **fuera del repositorio Git**, en la siguiente raíz de evidencias de coordinación:
+
+```text
+D:\Ciclo 5\IHC y Programacion WEB\CampusLoop-v2\
+└── Evidencias_Figma_V2\
+    └── Documentacion\
+        ├── Base_Inicial\                 # Landing, Login, Registro y tokens
+        ├── angel\
+        │   ├── inicio\
+        │   └── explorar\
+        ├── bernabe\
+        │   ├── detalle\
+        │   └── perfil-vendedor\
+        ├── matias\
+        │   ├── activar-vendedor\
+        │   └── publicar\
+        └── maricielo\
+            ├── reservas\
+            └── mi-cuenta\
+```
+
+**Ruta de ejemplo para un agente:** `D:\Ciclo 5\IHC y Programacion WEB\CampusLoop-v2\Evidencias_Figma_V2\Documentacion\angel\inicio`. Crear la subcarpeta del módulo antes de guardar. Cada carpeta puede contener `REVISION.md` o `AUDITORIA.md`, capturas Figma y Chrome en Desktop/Mobile, comparaciones, resultados de validación y una lista de diferencias pendientes. Nombrar los archivos de forma reconocible, por ejemplo `inicio-desktop-1440.png`, `inicio-mobile-390.png` y `comparacion-inicio-390.png`.
+
+**Esta ruta D: corresponde al equipo local de coordinación.** Si un integrante trabaja desde otra computadora sin esa unidad, deberá guardar la evidencia en su propia carpeta **fuera del clon del repositorio** y facilitarla al coordinador, quien la organizará aquí. Una ruta privada en un PR no es un enlace accesible para el profesor: registrar en GitHub el trabajo mediante commits y Pull Requests auténticos y, cuando se necesite consultar las capturas, adjuntarlas al PR o compartirlas por un medio accesible. No subir carpetas completas de capturas al código fuente ni atribuir pruebas no realizadas.
+
+**Migración de evidencias anteriores:** la auditoría inicial ya existe en `C:\Users\camin\AppData\Local\Temp\Evidencias_Figma_V2\CampusLoop-V2-base-20261028`; copiar su contenido a `...\Documentacion\Base_Inicial\` y conservarla fuera de `C:\Proyectos\campusloop-v2`. Evitar depender de `Temp` porque su contenido puede borrarse.
+
 
 ## 11. Formato de respuesta obligatorio del agente al finalizar un módulo
 
@@ -264,7 +294,7 @@ Informa, de forma clara y verificable:
 5. Enlaces del recorrido habilitados y rutas pendientes.
 6. Resultado **real** de pruebas responsive, comparación con Figma, accesibilidad, `git diff --check` y regresiones.
 7. Diferencias visuales, limitaciones estáticas y pendientes.
-8. Ruta de evidencias fuera del repositorio.
+8. Ruta de evidencias fuera del repositorio, respetando la sección 10.1 o documentando la ubicación alternativa del integrante.
 9. Salida final de `git branch --show-current` y `git status --short`.
 
 **Punto de control:** detente cuando el módulo esté listo para revisión visual del integrante en Live Server. **No** ejecutar `git commit`, `git push`, `git merge`, `git reset`, `git clean`, cambios de rama o creación de PR sin aprobación explícita.
@@ -277,7 +307,7 @@ Copiar y adaptar los campos entre corchetes:
 >
 > Lee **todo `SPEC.md`**, comprueba la rama y el estado de Git y revisa los archivos existentes. Consulta por Figma MCP únicamente los frames finales V2 Desktop/Mobile y componentes de **mi módulo**, según la sección 7. Antes de programar, resume los Node IDs, páginas y archivos que implementarás.
 >
-> Implementa solo mi módulo con HTML5 semántico, CSS puro, **Flexbox/Grid y Mobile-First**, reutilizando `css/styles.css`, tokens, Inter y `assets/`, y conservando el recorrido estático navegable de la sección 8. **Solo camino feliz y pantallas positivas autorizadas**, sin errores ni variantes extra. No inventes backend, autenticación o envío de datos. Valida siete anchos, Figma, navegación, accesibilidad y regresiones; guarda evidencias fuera del repo.
+> Implementa solo mi módulo con HTML5 semántico, CSS puro, **Flexbox/Grid y Mobile-First**, reutilizando `css/styles.css`, tokens, Inter y `assets/`, y conservando el recorrido estático navegable de la sección 8. **Solo camino feliz y pantallas positivas autorizadas**, sin errores ni variantes extra. No inventes backend, autenticación o envío de datos. Valida siete anchos, Figma, navegación, accesibilidad y regresiones; guarda evidencias según la sección 10.1, fuera del repo.
 >
 > No modifiques Figma ni cambies de rama. **No hagas commits, pushes, merges o PR** antes de mi revisión y autorización. Devuélveme archivos, pruebas reales, diferencias y estado de Git.
 
