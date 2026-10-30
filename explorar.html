@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Explora el catálogo demostrativo de CampusLoop: artículos académicos, tecnológicos y de entretenimiento de estudiantes de Lima.">
+  <title>Explorar artículos — CampusLoop</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="home-page">
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <p id="explore-demo" class="visually-hidden">Prototipo estático. Los ocho artículos, precios, estados y vendedores son datos de ejemplo de Figma; no representan una sesión ni operaciones reales.</p>
+  <p id="explore-static" class="visually-hidden">Control demostrativo sin funcionamiento. Las búsquedas, filtros y ordenamiento no modifican el catálogo ni envían o guardan información.</p>
+  <p id="explore-pending" class="visually-hidden">Acceso pendiente de integración. Esta opción no abre otra pantalla ni realiza operaciones. Detalle de MacBook se habilitará cuando exista detalle.html; los demás productos no comparten ese detalle.</p>
+
+  <div class="home-header-band">
+    <header class="home-header home-screen-header page-width">
+      <a class="brand" href="index.html" aria-label="CampusLoop, volver a la portada pública"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+      <nav class="home-nav home-screen-nav" aria-label="Navegación principal">
+        <a href="inicio.html">Inicio</a>
+        <a href="explorar.html" aria-current="page">Explorar</a>
+        <a  role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" title="Publicar: módulo pendiente">Publicar</a>
+        <a  role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" title="Reservas: módulo pendiente">Reservas</a>
+      </nav>
+      <!-- Sin form ni envíos. Los controles son únicamente visuales. -->
+      <div class="home-search home-screen-search">
+        <img src="assets/icons/explorar-20.svg" width="20" height="20" alt="">
+        <label class="visually-hidden" for="explore-header-search">Buscar artículos (demostración)</label>
+        <input id="explore-header-search" type="search" placeholder="Buscar artículos..." readonly aria-disabled="true" aria-describedby="explore-static">
+      </div>
+      <button class="home-notifications home-icon-control" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="explore-pending" title="Notificaciones: opción pendiente"><img src="assets/icons/campana.svg" width="24" height="24" alt=""></button>
+      <a class="home-account-link" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Mi cuenta de María López (pendiente)" title="Mi cuenta: módulo pendiente"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
+    </header>
+  </div>
+
+  <div class="home-viewport home-scroll" role="region" aria-label="Contenido desplazable de Explorar" tabindex="0">
+    <main id="contenido" class="explore-main page-width" tabindex="-1" aria-describedby="explore-demo">
+      <div class="explore-heading">
+        <div class="explore-heading-copy">
+          <h1>Explorar artículos</h1>
+          <p class="explore-intro">Encuentra artículos publicados por estudiantes verificados de Lima.</p>
+        </div>
+        <div class="field explore-sort">
+          <span class="explore-filter-title" id="explore-sort-label">Ordenar por</span>
+          <button class="form-control explore-select" type="button" aria-disabled="true" aria-labelledby="explore-sort-label explore-sort-value" aria-describedby="explore-static"><span id="explore-sort-value">Más recientes</span></button>
+        </div>
+      </div>
+
+      <div class="field explore-mobile-search">
+        <label for="explore-search">Buscar artículos</label>
+        <input class="form-control" id="explore-search" type="search" placeholder="Artículos, categorías o palabras clave" readonly aria-disabled="true" aria-describedby="explore-static">
+      </div>
+      <div class="explore-mobile-controls" aria-label="Controles demostrativos del catálogo">
+        <button class="button button-outline" type="button" aria-disabled="true" aria-describedby="explore-static">Filtros</button>
+        <button class="button button-outline" type="button" aria-disabled="true" aria-describedby="explore-static">Más recientes</button>
+      </div>
+
+      <div class="explore-content">
+        <aside class="panel explore-filters" aria-labelledby="explore-filters-title" aria-describedby="explore-static">
+          <h2 id="explore-filters-title">Filtros</h2>
+          <div class="explore-filter-group" role="group" aria-labelledby="explore-category">
+            <h3 class="explore-filter-title" id="explore-category">Categoría</h3>
+            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-category-0" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-category-0">Académico</span></div>
+            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-category-1" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-category-1">Tecnológico</span></div>
+            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-category-2" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-category-2">Entretenimiento</span></div>
+          </div>
+          <div class="field">
+            <span class="explore-filter-title" id="explore-university-label">Universidad / campus</span>
+            <button class="form-control explore-select" type="button" aria-disabled="true" aria-labelledby="explore-university-label explore-university-value" aria-describedby="explore-static"><span id="explore-university-value">Todas las universidades</span></button>
+          </div>
+          <div class="explore-filter-group" role="group" aria-labelledby="explore-state">
+            <h3 class="explore-filter-title" id="explore-state">Estado del producto</h3>
+            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-state-0" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-state-0">Disponible</span></div>
+            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-state-1" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-state-1">Reservado</span></div>
+            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-state-2" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-state-2">Vendido</span></div>
+          </div>
+          <div class="field">
+            <label for="explore-min-price">Precio mínimo (S/)</label>
+            <input class="form-control" id="explore-min-price" type="text" inputmode="numeric" value="0" readonly aria-disabled="true" aria-describedby="explore-static">
+          </div>
+          <div class="field">
+            <label for="explore-max-price">Precio máximo (S/)</label>
+            <input class="form-control" id="explore-max-price" type="text" inputmode="numeric" value="3000" readonly aria-disabled="true" aria-describedby="explore-static">
+          </div>
+          <div class="explore-filter-group" role="group" aria-labelledby="explore-condition">
+            <h3 class="explore-filter-title" id="explore-condition">Condición</h3>
+            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-condition-0" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-condition-0">Nuevo</span></div>
+            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-condition-1" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-condition-1">Como nuevo</span></div>
+            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-condition-2" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-condition-2">Buen estado</span></div>
+            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-condition-3" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-condition-3">Usado</span></div>
+          </div>
+          <button class="button button-outline" type="button" aria-disabled="true" aria-describedby="explore-static">Limpiar filtros</button>
+          <button class="button button-primary" type="button" aria-disabled="true" aria-describedby="explore-static">Aplicar filtros</button>
+        </aside>
+
+        <section class="explore-results" aria-labelledby="explore-count">
+          <h2 class="visually-hidden">Catálogo de artículos</h2>
+          <p class="explore-count" id="explore-count">Mostrando 8 de 8 artículos</p>
+          <div class="explore-products">
+            <article class="product-card explore-product" aria-labelledby="explore-product-macbook">
+              <div class="product-card-media">
+                <img src="assets/images/productos/macbook-air-m1.jpg" width="1376" height="768" alt="MacBook Air abierta, con teclado y pantalla visibles.">
+                <span class="status status-available">Disponible</span>
+              </div>
+              <h3 class="product-card-title" id="explore-product-macbook">MacBook Air M1 256 GB</h3>
+              <p class="product-card-meta explore-category">Tecnológico · Laptops</p>
+              <p class="product-card-meta explore-campus">PUCP · San Miguel</p>
+              <p class="product-card-price">S/ 2,400</p>
+              <p class="explore-seller">Carlos Pérez · 4.8 · 32 calificaciones</p>
+              <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Ver detalle de MacBook Air M1 256 GB (pendiente)" title="Detalle de MacBook: pendiente de integrar detalle.html">Ver detalle</a>
+            </article>
+            <article class="product-card explore-product" aria-labelledby="explore-product-calculadora">
+              <div class="product-card-media">
+                <img src="assets/images/productos/calculadora-casio-fx991ex.jpg" width="1376" height="768" alt="Calculadora científica Casio FX-991EX.">
+                <span class="status status-available">Disponible</span>
+              </div>
+              <h3 class="product-card-title" id="explore-product-calculadora">Calculadora Casio <span class="explore-model">FX-991EX</span></h3>
+              <p class="product-card-meta explore-category">Académico · Calculadoras</p>
+              <p class="product-card-meta explore-campus">UPC · Monterrico</p>
+              <p class="product-card-price">S/ 80</p>
+              <p class="explore-seller">Ana Torres · 4.8 · 18 calificaciones</p>
+              <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Ver detalle de Calculadora Casio FX-991EX (pendiente)" title="Detalle de este artículo: fuera del recorrido asignado">Ver detalle</a>
+            </article>
+            <article class="product-card explore-product" aria-labelledby="explore-product-calculo">
+              <div class="product-card-media">
+                <img src="assets/images/productos/libro-calculo-stewart.jpg" width="1376" height="768" alt="Libro de Cálculo Stewart con cubierta azul.">
+                <span class="status status-sold">Vendido</span>
+              </div>
+              <h3 class="product-card-title" id="explore-product-calculo">Libro de Cálculo Stewart</h3>
+              <p class="product-card-meta explore-category">Académico · Libros</p>
+              <p class="product-card-meta explore-campus">UNMSM · Campus Central</p>
+              <p class="product-card-price">S/ 120</p>
+              <p class="explore-seller">Sofía Ramírez · 4.9 · 12 calificaciones</p>
+              <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Ver detalle de Libro de Cálculo Stewart (pendiente)" title="Detalle de este artículo: fuera del recorrido asignado">Ver detalle</a>
+            </article>
+            <article class="product-card explore-product" aria-labelledby="explore-product-sony">
+              <div class="product-card-media">
+                <img src="assets/images/productos/audifonos-sony-wh1000xm4.jpg" width="1376" height="768" alt="Audífonos Sony negros de diadema.">
+                <span class="status status-available">Disponible</span>
+              </div>
+              <h3 class="product-card-title" id="explore-product-sony">Audífonos Sony <span class="explore-model">WH-1000XM4</span></h3>
+              <p class="product-card-meta explore-category">Tecnológico · Audio</p>
+              <p class="product-card-meta explore-campus">U. de Lima · Surco</p>
+              <p class="product-card-price">S/ 450</p>
+              <p class="explore-seller">Diego Hernández · 4.7 · 28 calificaciones</p>
+              <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Ver detalle de Audífonos Sony WH-1000XM4 (pendiente)" title="Detalle de este artículo: fuera del recorrido asignado">Ver detalle</a>
+            </article>
+            <article class="product-card explore-product" aria-labelledby="explore-product-nintendo">
+              <div class="product-card-media">
+                <img src="assets/images/productos/nintendo-switch.jpg" width="1376" height="768" alt="Consola Nintendo Switch con mandos azul y rojo.">
+                <span class="status status-available">Disponible</span>
+              </div>
+              <h3 class="product-card-title" id="explore-product-nintendo">Nintendo Switch</h3>
+              <p class="product-card-meta explore-category">Entretenimiento · Consolas</p>
+              <p class="product-card-meta explore-campus">PUCP · San Miguel</p>
+              <p class="product-card-price">S/ 1,400</p>
+              <p class="explore-seller">Jorge Pérez · 4.9 · 18 calificaciones</p>
+              <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Ver detalle de Nintendo Switch (pendiente)" title="Detalle de este artículo: fuera del recorrido asignado">Ver detalle</a>
+            </article>
+            <article class="product-card explore-product" aria-labelledby="explore-product-ipad">
+              <div class="product-card-media">
+                <img src="assets/images/productos/ipad-air.jpg" width="1376" height="768" alt="iPad Air con la pantalla encendida.">
+                <span class="status status-reserved">Reservado</span>
+              </div>
+              <h3 class="product-card-title" id="explore-product-ipad">iPad Air 5ta generación</h3>
+              <p class="product-card-meta explore-category">Tecnológico · Tablets</p>
+              <p class="product-card-meta explore-campus">PUCP · San Miguel</p>
+              <p class="product-card-price">S/ 1,650</p>
+              <p class="explore-seller">Carlos Pérez · 4.8 · 32 calificaciones</p>
+              <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Ver detalle de iPad Air 5ta generación (pendiente)" title="Detalle de este artículo: fuera del recorrido asignado">Ver detalle</a>
+            </article>
+            <article class="product-card explore-product" aria-labelledby="explore-product-algebra">
+              <div class="product-card-media">
+                <img src="assets/images/productos/libro-algebra-lineal.jpg" width="1584" height="672" alt="Libro de Álgebra Lineal sobre una mesa.">
+                <span class="status status-available">Disponible</span>
+              </div>
+              <h3 class="product-card-title" id="explore-product-algebra">Álgebra Lineal</h3>
+              <p class="product-card-meta explore-category">Académico · Libros</p>
+              <p class="product-card-meta explore-campus">UPC · Monterrico</p>
+              <p class="product-card-price">S/ 45</p>
+              <p class="explore-seller">Ana Torres · 4.8 · 18 calificaciones</p>
+              <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Ver detalle de Álgebra Lineal (pendiente)" title="Detalle de este artículo: fuera del recorrido asignado">Ver detalle</a>
+            </article>
+            <article class="product-card explore-product" aria-labelledby="explore-product-fisica">
+              <div class="product-card-media">
+                <img src="assets/images/productos/libro-fisica-universitaria.jpg" width="1584" height="672" alt="Libro de Física Universitaria sobre una mesa.">
+                <span class="status status-available">Disponible</span>
+              </div>
+              <h3 class="product-card-title" id="explore-product-fisica">Física Universitaria</h3>
+              <p class="product-card-meta explore-category">Académico · Libros</p>
+              <p class="product-card-meta explore-campus">PUCP · San Miguel</p>
+              <p class="product-card-price">S/ 50</p>
+              <p class="explore-seller">Carlos Pérez · 4.8 · 32 calificaciones</p>
+              <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Ver detalle de Física Universitaria (pendiente)" title="Detalle de este artículo: fuera del recorrido asignado">Ver detalle</a>
+            </article>
+          </div>
+          <p class="explore-pagination">Página 1 de 1</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <nav class="home-bottom home-screen-bottom" aria-label="Navegación móvil">
+    <a href="inicio.html"><img src="assets/icons/campus.svg" width="24" height="24" alt=""><span>Inicio</span></a>
+    <a href="explorar.html" aria-current="page"><img src="assets/icons/explorar.svg" width="24" height="24" alt=""><span>Explorar</span></a>
+    <a role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" title="Publicar: módulo pendiente"><img src="assets/icons/publicar.svg" width="24" height="24" alt=""><span>Publicar</span></a>
+    <a role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" title="Reservas: módulo pendiente"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
+  </nav>
+</body>
+</html>
