@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Perfil público de Carlos Pérez en CampusLoop: artículos publicados y reputación de ejemplo.">
+  <title>Perfil de vendedor — CampusLoop</title>
+  <link rel="icon" href="assets/icons/campus-32.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="seller-page">
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <p id="seller-demo" class="visually-hidden">Prototipo estático. El vendedor, su verificación, sus artículos y las calificaciones son datos de ejemplo de Figma. Contactar no envía mensajes.</p>
+  <p id="seller-pending" class="visually-hidden">Destino pendiente de integración. Este control no envía ni guarda información.</p>
+
+  <div class="seller-header-band">
+    <header class="home-header seller-header page-width">
+      <a class="brand" href="index.html" aria-label="CampusLoop, volver a la portada"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+      <nav class="home-nav seller-nav" aria-label="Navegación principal">
+        <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Inicio: pendiente de integración">Inicio</a>
+        <a role="link" aria-disabled="true" aria-current="location" tabindex="0" aria-describedby="seller-pending" title="Explorar: pendiente de integración">Explorar</a>
+        <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Publicar: pendiente de integración">Publicar</a>
+        <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Reservas: pendiente de integración">Reservas</a>
+      </nav>
+      <div class="home-search seller-search">
+        <img src="assets/icons/explorar-20.svg" width="20" height="20" alt="">
+        <label class="visually-hidden" for="seller-search">Buscar artículos (demostración estática)</label>
+        <input id="seller-search" type="search" placeholder="Buscar artículos..." readonly aria-disabled="true" aria-describedby="seller-pending">
+      </div>
+      <button class="seller-notifications" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="seller-pending"><img src="assets/icons/campana.svg" width="24" height="24" alt=""></button>
+      <a class="seller-account" role="link" aria-disabled="true" tabindex="0" aria-label="Mi cuenta de María López (pendiente)" aria-describedby="seller-pending"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
+    </header>
+  </div>
+
+  <div class="seller-viewport" role="region" aria-label="Contenido desplazable del perfil público" tabindex="0">
+    <main id="contenido" class="seller-main page-width" tabindex="-1" aria-describedby="seller-demo">
+      <div class="seller-heading">
+        <h1>Perfil de vendedor</h1>
+        <p>Conoce al estudiante y sus artículos publicados.</p>
+      </div>
+
+      <section class="panel seller-profile" aria-labelledby="seller-name">
+        <div class="seller-profile-identity">
+          <img class="seller-photo" src="assets/images/avatares/carlos-perez.jpg" width="1024" height="1024" alt="Carlos Pérez, vendedor de ejemplo.">
+          <div class="seller-info">
+            <h2 id="seller-name">Carlos Pérez</h2>
+            <p>PUCP · Campus San Miguel · Lima</p>
+            <span class="status status-active">Activo</span>
+            <p class="seller-verified">Correo universitario verificado</p>
+            <div class="seller-profile-rating">
+              <div class="stars" aria-hidden="true"><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""></div>
+              <p>4.8 · 32 calificaciones</p>
+            </div>
+            <p>32 operaciones completadas · Miembro desde marzo de 2023</p>
+          </div>
+        </div>
+        <button class="button button-primary seller-contact" type="button" aria-disabled="true" aria-describedby="seller-demo" title="Demostración estática: no se envían mensajes">Contactar vendedor</button>
+      </section>
+
+      <aside class="alert seller-notice" aria-labelledby="seller-notice-title">
+        <h2 class="alert-title" id="seller-notice-title">Comunidad verificada</h2>
+        <p>La experiencia previa se revisa de forma privada. Las evidencias y documentos no se muestran en el perfil público.</p>
+      </aside>
+
+      <div class="seller-content">
+        <section class="seller-listings" aria-labelledby="seller-listings-title">
+          <h2 class="seller-section-title" id="seller-listings-title">Artículos publicados (3)</h2>
+          <div class="seller-products">
+            <article class="product-card seller-product-card" aria-labelledby="seller-macbook">
+              <div class="product-card-media"><img src="assets/images/productos/macbook-air-m1.jpg" width="1376" height="768" alt="MacBook Air M1 abierta sobre una mesa."><span class="status status-available">Disponible</span></div>
+              <h3 class="product-card-title" id="seller-macbook">MacBook Air M1 256 GB</h3>
+              <p class="product-card-meta">Tecnológico · Laptops</p>
+              <p class="product-card-meta seller-campus">PUCP · San Miguel</p>
+              <p class="product-card-price">S/ 2,400</p>
+              <p class="seller-card-reputation">Carlos Pérez · 4.8 · 32 calificaciones</p>
+              <!-- Habilitar detalle.html cuando se integre la rama de Detalle. -->
+              <a class="button button-primary" role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" aria-label="Ver detalle de MacBook Air M1 256 GB (pendiente)" title="Detalle de MacBook: pendiente de integración">Ver detalle</a>
+            </article>
+            <article class="product-card seller-product-card" aria-labelledby="seller-ipad">
+              <div class="product-card-media"><img src="assets/images/productos/ipad-air.jpg" width="1376" height="768" alt="iPad Air sobre una mesa."><span class="status status-reserved">Reservado</span></div>
+              <h3 class="product-card-title" id="seller-ipad">iPad Air 5ta generación</h3>
+              <p class="product-card-meta">Tecnológico · Tablets</p>
+              <p class="product-card-meta seller-campus">PUCP · San Miguel</p>
+              <p class="product-card-price">S/ 1,650</p>
+              <p class="seller-card-reputation">Carlos Pérez · 4.8 · 32 calificaciones</p>
+              <a class="button button-primary" role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" aria-label="Ver detalle del iPad Air (pendiente)" title="Detalle del iPad: fuera del recorrido implementado">Ver detalle</a>
+            </article>
+            <article class="product-card seller-product-card" aria-labelledby="seller-physics">
+              <div class="product-card-media"><img src="assets/images/productos/libro-fisica-universitaria.jpg" width="1584" height="672" alt="Libro de Física Universitaria."><span class="status status-available">Disponible</span></div>
+              <h3 class="product-card-title" id="seller-physics">Física Universitaria</h3>
+              <p class="product-card-meta">Académico · Libros</p>
+              <p class="product-card-meta seller-campus">PUCP · San Miguel</p>
+              <p class="product-card-price">S/ 50</p>
+              <p class="seller-card-reputation">Carlos Pérez · 4.8 · 32 calificaciones</p>
+              <a class="button button-primary" role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" aria-label="Ver detalle de Física Universitaria (pendiente)" title="Detalle del libro: fuera del recorrido implementado">Ver detalle</a>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel seller-reviews" aria-labelledby="seller-reviews-title">
+          <h2 class="seller-section-title" id="seller-reviews-title">Calificaciones recibidas</h2>
+          <img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt="María López, autora de la calificación de ejemplo.">
+          <div class="seller-review-rating">
+            <div class="stars" role="img" aria-label="5 de 5 estrellas"><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""><img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt=""></div>
+            <h3>María López</h3>
+          </div>
+          <p class="seller-review-copy">Buena comunicación y entrega puntual. El artículo coincidía con la descripción.</p>
+          <p class="seller-review-date">Operación completada · <time datetime="2026-10-18">18 oct. 2026</time></p>
+          <button class="button button-outline seller-reviews-action" type="button" aria-disabled="true" aria-describedby="seller-pending" title="Más calificaciones: fuera del recorrido implementado">Ver calificaciones</button>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <nav class="home-bottom seller-bottom" aria-label="Navegación móvil">
+    <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Inicio: pendiente"><img src="assets/icons/campus.svg" width="24" height="24" alt="">Inicio</a>
+    <a role="link" aria-disabled="true" aria-current="location" tabindex="0" aria-describedby="seller-pending" title="Explorar: pendiente"><img src="assets/icons/explorar.svg" width="24" height="24" alt="">Explorar</a>
+    <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Publicar: pendiente"><img src="assets/icons/publicar.svg" width="24" height="24" alt="">Publicar</a>
+    <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Reservas: pendiente"><img src="assets/icons/reservas.svg" width="24" height="24" alt="">Reservas</a>
+  </nav>
+</body>
+</html>

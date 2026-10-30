@@ -441,7 +441,72 @@ main.page-width > section + section { margin-top: var(--space-24); }
 /* Reservado: detalle.html; prefijo detail-. */
 
 /* PERFIL / BERNABE */
-/* Reservado: perfil-vendedor.html; prefijo seller-. */
+/* Perfil público: Figma final 278:3597 Desktop / 278:3669 Mobile.
+   768/1024/1280: adaptación responsive entre los frames de 390 y 1440 px.
+   Los modificadores seller- no sobrescriben componentes compartidos. */
+.seller-page { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; background: var(--page); }
+.seller-header-band { flex-shrink: 0; background: var(--surface); }
+.seller-header { gap: var(--space-12); }
+.seller-header > .brand { flex: 0 1 224px; min-width: 0; }
+.seller-notifications { display: flex; align-items: center; justify-content: center; flex: 0 0 var(--icon-md); width: var(--icon-md); height: var(--icon-md); padding: 0; border: 0; background: transparent; }
+.seller-account { display: flex; flex-shrink: 0; border-radius: var(--radius-round); }
+.seller-viewport { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: none; }
+.seller-main.page-width { display: flex; flex-direction: column; gap: var(--space-24); }
+.seller-main.page-width > section + section { margin-top: 0; }
+.seller-heading { display: flex; flex-direction: column; gap: var(--space-8); }
+.seller-heading p { color: var(--muted); font-size: var(--text-small); line-height: var(--line-small); }
+.seller-profile { display: flex; flex-direction: column; align-items: start; gap: var(--space-24); padding: var(--space-24); padding-right: calc(var(--space-24) - 2px); background: var(--brand-light); }
+/* Figma alinea los hijos con el borde interior izquierdo y extiende 2 px
+   sobre el borde derecho; se conserva esa geometría sin desbordar el panel. */
+.seller-profile-identity { display: flex; flex-direction: column; gap: var(--space-24); width: 100%; min-width: 0; }
+.seller-photo { width: 88px; height: 88px; flex-shrink: 0; border-radius: var(--radius-round); object-fit: cover; }
+.seller-info { display: flex; flex-direction: column; align-items: start; gap: var(--space-8); width: 100%; min-width: 0; font-size: var(--text-small); line-height: var(--line-small); }
+.seller-info h2 { color: var(--brand); font-size: var(--text-h2); line-height: var(--line-h2); }
+.seller-verified { color: var(--brand); font-weight: var(--weight-semibold); }
+.seller-profile-rating, .seller-review-rating { display: flex; align-items: center; gap: var(--space-8); width: 100%; }
+.seller-profile-rating p { flex: 1; min-width: 0; color: var(--brand); font-size: var(--text-body); font-weight: var(--weight-semibold); line-height: var(--line-label); overflow-wrap: anywhere; }
+.seller-contact { width: 100%; }
+.seller-notice p { font-size: var(--text-caption); line-height: var(--line-caption); }
+.seller-content { display: grid; align-items: start; gap: var(--space-24); }
+.seller-content > * { min-width: 0; }
+.seller-listings { display: flex; flex-direction: column; gap: var(--space-16); }
+.seller-section-title { font-size: var(--text-h3); font-weight: var(--weight-semibold); line-height: var(--line-h3); }
+.seller-products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-16); }
+.seller-product-card { padding-right: calc(var(--space-12) - 2px); overflow-wrap: anywhere; }
+.seller-card-reputation { min-height: var(--line-h2); color: var(--muted); font-size: var(--text-xs); line-height: var(--line-caption); }
+.seller-reviews { display: flex; flex-direction: column; align-items: start; gap: var(--space-16); padding: 20px; padding-right: 18px; }
+.seller-review-rating h3 { flex: 1; min-width: 0; font-size: var(--text-small); line-height: var(--line-small); overflow-wrap: anywhere; }
+.seller-review-copy { color: var(--muted); font-size: var(--text-small); line-height: var(--line-small); }
+.seller-review-date { color: var(--muted); font-size: var(--text-xs); line-height: var(--line-xs); }
+.seller-reviews-action { width: 100%; }
+.seller-bottom { position: static; flex-shrink: 0; align-items: start; }
+.seller-bottom > [aria-current="location"] { background: var(--brand-light); color: var(--brand); font-weight: var(--weight-semibold); }
+@media (min-width: 768px) {
+  .seller-profile-identity { flex-direction: row; align-items: start; }
+  .seller-info { max-width: 720px; }
+  .seller-contact { width: 240px; }
+  .seller-products { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .seller-product-card .product-card-price { font-size: var(--text-h3); }
+  .seller-product-card .seller-campus { font-size: var(--text-xs); }
+}
+@media (min-width: 1024px) {
+  .seller-main.page-width { gap: var(--space-32); }
+  .seller-heading h1 { font-size: var(--text-h1); line-height: var(--line-h1); }
+  .seller-heading p { font-size: var(--text-body); line-height: var(--line-body); }
+  .seller-profile { padding: var(--space-32); padding-right: calc(var(--space-32) - 2px); }
+  .seller-photo { width: 112px; height: 112px; }
+  .seller-content { grid-template-columns: minmax(0, 856fr) minmax(320px, 400fr); }
+}
+@media (min-width: 1280px) {
+  .seller-page { display: block; height: auto; min-height: 100vh; overflow: visible; }
+  .seller-header { gap: var(--space-32); }
+  .seller-header > .brand { flex: 0 0 var(--brand-auth-width); }
+  .seller-nav > a { flex: 0 0 80px; }
+  .seller-nav > a:last-child { flex-basis: 88px; }
+  .seller-nav > [aria-current="location"] { color: var(--brand); font-weight: var(--weight-semibold); text-decoration: underline; }
+  .seller-search input, .seller-search input::placeholder { color: var(--muted); opacity: 1; }
+  .seller-viewport { overflow: visible; }
+}
 
 /* ACTIVACION / MATIAS */
 /* Reservado: activar-vendedor*.html; prefijo activate-. */
