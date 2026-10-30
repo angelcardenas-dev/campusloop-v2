@@ -1,0 +1,8 @@
+
+# CampusLoop V2 - Propietarios del codigo
+# SPEC.md es la guia oficial de los agentes del equipo.
+
+/SPEC.md @angelcardenas-dev
+
+# Proteger tambien las futuras modificaciones de CODEOWNERS.
+/.github/CODEOWNERS @angelcardenas-dev
