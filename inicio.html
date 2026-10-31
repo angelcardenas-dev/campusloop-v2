@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Inicio demostrativo de CampusLoop: actividad universitaria, coordinaciones y artículos recomendados.">
+  <title>Inicio — CampusLoop</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="home-page">
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <p id="home-demo" class="visually-hidden">Prototipo estático. María, las métricas, las coordinaciones y los artículos son datos de ejemplo de Figma; no representan una sesión ni operaciones reales.</p>
+  <p id="home-pending" class="visually-hidden">Opción pendiente de integración. Esta pantalla no realiza búsquedas ni envía, reserva o guarda datos.</p>
+
+  <div class="home-header-band">
+    <header class="home-header home-screen-header page-width">
+      <a class="brand" href="index.html" aria-label="CampusLoop, volver a la portada pública"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+      <nav class="home-nav home-screen-nav" aria-label="Navegación principal">
+        <a href="inicio.html" aria-current="page">Inicio</a>
+        <a href="explorar.html">Explorar</a>
+        <a role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" title="Publicar: módulo pendiente">Publicar</a>
+        <a role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" title="Reservas: módulo pendiente">Reservas</a>
+      </nav>
+      <!-- Sin form: Enter no envía búsquedas. El catálogo aún no está integrado. -->
+      <div class="home-search home-screen-search">
+        <img src="assets/icons/explorar-20.svg" width="20" height="20" alt="">
+        <label class="visually-hidden" for="home-search">Buscar artículos (pendiente)</label>
+        <input id="home-search" type="search" placeholder="Buscar artículos..." readonly aria-disabled="true" aria-describedby="home-pending">
+      </div>
+      <button class="home-notifications home-icon-control" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="home-pending" title="Notificaciones: opción pendiente"><img src="assets/icons/campana.svg" width="24" height="24" alt=""></button>
+      <a class="home-account-link" role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" aria-label="Mi cuenta de María López (pendiente)" title="Mi cuenta: módulo pendiente"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
+    </header>
+  </div>
+
+  <!-- Mobile: esta región ocupa el espacio entre cabecera y barra inferior.
+       Desktop: el contenido vuelve al desplazamiento normal del documento. -->
+  <div class="home-viewport home-scroll" role="region" aria-label="Contenido desplazable de Inicio" tabindex="0">
+    <main id="contenido" class="home-main page-width" tabindex="-1" aria-describedby="home-demo">
+      <section class="home-welcome panel" aria-labelledby="home-title">
+        <h1 id="home-title">¡Hola, María!</h1>
+        <p>Explora artículos y continúa con tus coordinaciones pendientes.</p>
+        <div class="home-welcome-actions">
+          <a class="button button-primary" href="explorar.html">Explorar artículos</a>
+          <a class="button button-outline" role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" title="Activar perfil vendedor: módulo pendiente">Activar perfil vendedor</a>
+        </div>
+      </section>
+
+      <section class="home-summary" aria-label="Resumen de actividad de ejemplo">
+        <dl class="home-metrics">
+          <div class="home-metric panel"><dt>Reserva activa</dt><dd>1</dd></div>
+          <div class="home-metric panel"><dt>Mensajes nuevos</dt><dd>3</dd></div>
+          <div class="home-metric panel"><dt>Compras completadas</dt><dd>5</dd></div>
+        </dl>
+      </section>
+
+      <section class="home-coordination" aria-label="Actividad y coordinación">
+        <section class="home-activity panel" aria-labelledby="home-activity-title">
+          <h2 class="home-section-title" id="home-activity-title">Actividad reciente</h2>
+          <ul class="home-activity-list">
+            <li class="home-activity-item">
+              <img class="home-activity-photo" src="assets/images/productos/macbook-air-m1.jpg" width="56" height="56" alt="">
+              <div class="home-activity-copy">
+                <h3>MacBook Air M1 256 GB</h3>
+                <p>Carlos respondió a tu consulta</p>
+                <time datetime="2026-10-21T10:24">21 oct. · 10:24</time>
+              </div>
+            </li>
+            <li class="home-activity-item">
+              <img class="home-activity-photo" src="assets/images/productos/calculadora-casio-fx991ex.jpg" width="56" height="56" alt="">
+              <div class="home-activity-copy">
+                <h3>Calculadora Casio FX-991EX</h3>
+                <p>Ana respondió a tu consulta</p>
+                <time datetime="2026-10-21T09:40">21 oct. · 09:40</time>
+              </div>
+            </li>
+            <li class="home-activity-item">
+              <img class="home-activity-photo" src="assets/images/productos/libro-calculo-stewart.jpg" width="56" height="56" alt="">
+              <div class="home-activity-copy">
+                <h3>Libro de Cálculo Stewart</h3>
+                <p>Operación completada · calificación enviada</p>
+                <time datetime="2026-10-18">18 oct. 2026</time>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <aside class="home-delivery panel" aria-labelledby="home-delivery-title">
+          <h2 class="home-section-title" id="home-delivery-title">Tu próxima entrega</h2>
+          <span class="status status-confirmed">Confirmado</span>
+          <h3 class="home-delivery-product">iPad Air 5ta generación</h3>
+          <p class="home-delivery-place"><time datetime="2026-10-23T15:00">23 oct. 2026 · 15:00</time><br>Biblioteca Central · PUCP, San Miguel</p>
+          <p class="home-delivery-seller">Con Carlos Pérez · S/ 1,650</p>
+          <a class="button button-outline" role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" title="Ver reserva: módulo pendiente">Ver reserva</a>
+        </aside>
+      </section>
+
+      <section class="home-recommendations" aria-labelledby="home-recommendations-title">
+        <h2 class="home-section-title" id="home-recommendations-title">Recomendados para ti</h2>
+        <div class="home-products">
+          <article class="product-card home-product" aria-labelledby="home-product-macbook">
+            <div class="product-card-media">
+              <img src="assets/images/productos/macbook-air-m1.jpg" width="1376" height="768" alt="MacBook Air abierta, con teclado y pantalla visibles.">
+              <span class="status status-available">Disponible</span>
+            </div>
+            <h3 class="product-card-title" id="home-product-macbook">MacBook Air M1 256 GB</h3>
+            <p class="product-card-meta home-product-category">Tecnológico · Laptops</p>
+            <p class="product-card-meta home-product-campus">PUCP · San Miguel</p>
+            <p class="product-card-price">S/ 2,400</p>
+            <p class="home-product-seller">Carlos Pérez · 4.8 · 32 calificaciones</p>
+            <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" aria-label="Ver detalle de MacBook Air M1 256 GB (pendiente)" title="Detalle de MacBook Air M1 256 GB: pantalla pendiente">Ver detalle</a>
+          </article>
+          <article class="product-card home-product" aria-labelledby="home-product-calculadora">
+            <div class="product-card-media">
+              <img src="assets/images/productos/calculadora-casio-fx991ex.jpg" width="1376" height="768" alt="Calculadora científica Casio FX-991EX.">
+              <span class="status status-available">Disponible</span>
+            </div>
+            <h3 class="product-card-title" id="home-product-calculadora">Calculadora Casio FX-991EX</h3>
+            <p class="product-card-meta home-product-category">Académico · Calculadoras</p>
+            <p class="product-card-meta home-product-campus">UPC · Monterrico</p>
+            <p class="product-card-price">S/ 80</p>
+            <p class="home-product-seller">Ana Torres · 4.8 · 18 calificaciones</p>
+            <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" aria-label="Ver detalle de Calculadora Casio FX-991EX (pendiente)" title="Detalle de Calculadora Casio FX-991EX: pantalla pendiente">Ver detalle</a>
+          </article>
+          <article class="product-card home-product" aria-labelledby="home-product-nintendo">
+            <div class="product-card-media">
+              <img src="assets/images/productos/nintendo-switch.jpg" width="1376" height="768" alt="Consola Nintendo Switch con mandos azul y rojo.">
+              <span class="status status-available">Disponible</span>
+            </div>
+            <h3 class="product-card-title" id="home-product-nintendo">Nintendo Switch</h3>
+            <p class="product-card-meta home-product-category">Entretenimiento · Consolas</p>
+            <p class="product-card-meta home-product-campus">PUCP · San Miguel</p>
+            <p class="product-card-price">S/ 1,400</p>
+            <p class="home-product-seller">Jorge Pérez · 4.9 · 18 calificaciones</p>
+            <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" aria-label="Ver detalle de Nintendo Switch (pendiente)" title="Detalle de Nintendo Switch: pantalla pendiente">Ver detalle</a>
+          </article>
+          <article class="product-card home-product" aria-labelledby="home-product-audifonos">
+            <div class="product-card-media">
+              <img src="assets/images/productos/audifonos-sony-wh1000xm4.jpg" width="1376" height="768" alt="Audífonos Sony negros de diadema.">
+              <span class="status status-available">Disponible</span>
+            </div>
+            <h3 class="product-card-title" id="home-product-audifonos">Audífonos Sony WH-1000XM4</h3>
+            <p class="product-card-meta home-product-category">Tecnológico · Audio</p>
+            <p class="product-card-meta home-product-campus">U. de Lima · Surco</p>
+            <p class="product-card-price">S/ 450</p>
+            <p class="home-product-seller">Diego Hernández · 4.7 · 28 calificaciones</p>
+            <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" aria-label="Ver detalle de Audífonos Sony WH-1000XM4 (pendiente)" title="Detalle de Audífonos Sony WH-1000XM4: pantalla pendiente">Ver detalle</a>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="home-bottom home-screen-bottom" aria-label="Navegación móvil">
+    <a href="inicio.html" aria-current="page"><img src="assets/icons/campus.svg" width="24" height="24" alt=""><span>Inicio</span></a>
+    <a href="explorar.html"><img src="assets/icons/explorar.svg" width="24" height="24" alt=""><span>Explorar</span></a>
+    <a role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" title="Publicar: módulo pendiente"><img src="assets/icons/publicar.svg" width="24" height="24" alt=""><span>Publicar</span></a>
+    <a role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" title="Reservas: módulo pendiente"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
+  </nav>
+</body>
+</html>
