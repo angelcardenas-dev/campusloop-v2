@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Reservas demostrativas de CampusLoop: interacciones, conversación y estados de coordinación entre estudiantes.">
+  <title>Reservas — CampusLoop</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="home-page reservation-page">
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <p id="reservation-demo" class="visually-hidden">Prototipo estático. Las interacciones, mensajes, estados y la operación CL-1024 son datos de ejemplo de Figma; no se reservaron productos, no se enviaron mensajes ni se completaron transacciones.</p>
+  <p id="reservation-static" class="visually-hidden">Acción demostrativa sin funcionamiento. No envía mensajes, no reserva artículos ni guarda información.</p>
+  <p id="reservation-pending" class="visually-hidden">Opción pendiente de integración. Esta pantalla no realiza búsquedas ni abre otra página.</p>
+
+  <div class="home-header-band">
+    <header class="home-header home-screen-header page-width">
+      <a class="brand" href="index.html" aria-label="CampusLoop, volver a la portada pública"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+      <nav class="home-nav home-screen-nav" aria-label="Navegación principal">
+        <a href="inicio.html">Inicio</a>
+        <a href="explorar.html">Explorar</a>
+        <a role="link" aria-disabled="true" aria-describedby="reservation-pending" tabindex="0" title="Publicar: módulo pendiente">Publicar</a>
+        <a href="reservas.html" aria-current="page">Reservas</a>
+      </nav>
+      <!-- Sin form: Enter no envía búsquedas. -->
+      <div class="home-search home-screen-search">
+        <img src="assets/icons/explorar-20.svg" width="20" height="20" alt="">
+        <label class="visually-hidden" for="reservation-header-search">Buscar artículos (pendiente)</label>
+        <input id="reservation-header-search" type="search" placeholder="Buscar artículos..." readonly aria-disabled="true" aria-describedby="reservation-pending">
+      </div>
+      <button class="home-notifications home-icon-control" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="reservation-pending" title="Notificaciones: opción pendiente"><img src="assets/icons/campana.svg" width="24" height="24" alt=""></button>
+      <a class="home-account-link" href="cuenta.html" aria-label="Mi cuenta de María López"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
+    </header>
+  </div>
+
+  <div class="home-viewport home-scroll" role="region" aria-label="Contenido desplazable de Reservas" tabindex="0">
+    <main id="contenido" class="reservation-main page-width" tabindex="-1" aria-describedby="reservation-demo">
+      <div class="reservation-heading">
+        <h1>Reservas</h1>
+        <p class="reservation-intro">Conversaciones y coordinaciones con estudiantes de tu comunidad.</p>
+      </div>
+
+      <div class="reservation-layout">
+        <section class="reservation-list panel" aria-labelledby="reservation-list-title">
+          <h2 class="reservation-panel-title" id="reservation-list-title">Interacciones</h2>
+          <ul class="reservation-interactions">
+            <li>
+              <article class="reservation-interaction">
+                <div class="reservation-interaction-identity">
+                  <img class="reservation-interaction-avatar" src="assets/images/avatares/carlos-perez.jpg" width="36" height="36" alt="">
+                  <div class="reservation-interaction-details">
+                    <!-- Mobile: el enlace cubre la tarjeta y abre la conversación.
+                         Desktop: la conversación ya está visible; solo se muestra el texto. -->
+                    <h3 class="reservation-interaction-name">
+                      <a class="reservation-interaction-link" href="reservas-consulta.html">Carlos Pérez<span class="visually-hidden">, consulta sobre MacBook Air M1 256 GB</span></a>
+                      <span class="reservation-interaction-static">Carlos Pérez</span>
+                    </h3>
+                    <p class="reservation-interaction-product">MacBook Air M1 256 GB</p>
+                  </div>
+                </div>
+                <span class="status">Consulta</span>
+                <p class="reservation-interaction-preview">Consulta inicial por la MacBook.</p>
+              </article>
+            </li>
+            <li>
+              <article class="reservation-interaction">
+                <div class="reservation-interaction-identity">
+                  <img class="reservation-interaction-avatar" src="assets/images/avatares/carlos-perez.jpg" width="36" height="36" alt="">
+                  <div class="reservation-interaction-details">
+                    <h3 class="reservation-interaction-name">Carlos Pérez</h3>
+                    <p class="reservation-interaction-product">iPad Air 5ta generación</p>
+                  </div>
+                </div>
+                <span class="status status-confirmed">Confirmado</span>
+                <p class="reservation-interaction-preview">Entrega acordada para el 23 de octubre.</p>
+              </article>
+            </li>
+            <li>
+              <article class="reservation-interaction">
+                <div class="reservation-interaction-identity">
+                  <img class="reservation-interaction-avatar" src="assets/images/avatares/ana-torres.jpg" width="36" height="36" alt="">
+                  <div class="reservation-interaction-details">
+                    <h3 class="reservation-interaction-name">Ana Torres</h3>
+                    <p class="reservation-interaction-product">Calculadora Casio FX-991EX</p>
+                  </div>
+                </div>
+                <span class="status">Consulta</span>
+                <p class="reservation-interaction-preview">La calculadora sigue disponible.</p>
+              </article>
+            </li>
+            <li>
+              <article class="reservation-interaction">
+                <div class="reservation-interaction-identity">
+                  <!-- Figma no asigna fotografía: círculo de color de marca. -->
+                  <span class="reservation-interaction-avatar reservation-avatar-empty" aria-hidden="true"></span>
+                  <div class="reservation-interaction-details">
+                    <h3 class="reservation-interaction-name">Sofía Ramírez</h3>
+                    <p class="reservation-interaction-product">Libro de Cálculo Stewart</p>
+                  </div>
+                </div>
+                <span class="status status-completed">Completada</span>
+                <p class="reservation-interaction-preview">Operación finalizada.</p>
+              </article>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Desktop: conversación y detalle junto al listado (278:3929).
+             Mobile: la conversación vive en reservas-consulta.html (303:1433). -->
+        <section class="reservation-conversation reservation-desktop-only panel" aria-labelledby="reservation-person-name">
+          <div class="reservation-person">
+            <img class="avatar" src="assets/images/avatares/carlos-perez.jpg" width="40" height="40" alt="">
+            <div class="reservation-person-copy">
+              <h2 class="reservation-person-name" id="reservation-person-name">Carlos Pérez</h2>
+              <p class="reservation-person-meta">Estudiante verificado · PUCP</p>
+            </div>
+          </div>
+          <div class="reservation-product">
+            <div class="reservation-product-identity">
+              <img class="reservation-product-photo" src="assets/images/productos/macbook-air-m1.jpg" width="64" height="64" alt="MacBook Air abierta, con teclado y pantalla visibles.">
+              <div class="reservation-product-copy">
+                <h3 class="reservation-product-title">MacBook Air M1 256 GB</h3>
+                <p class="reservation-product-price">S/ 2,400</p>
+              </div>
+            </div>
+            <p class="reservation-product-campus">PUCP · San Miguel</p>
+          </div>
+          <p class="reservation-date"><time datetime="2026-10-21">21 de octubre de 2026</time></p>
+          <ol class="reservation-messages">
+            <li class="reservation-message reservation-message-incoming">
+              <p><span class="visually-hidden">Mensaje entrante: </span>Hola, ¿sigue disponible la MacBook Air M1 de 256 GB?</p>
+              <time datetime="2026-10-21T10:15">10:15</time>
+            </li>
+            <li class="reservation-message reservation-message-outgoing">
+              <p><span class="visually-hidden">Mensaje saliente: </span>Sí, está disponible. El precio es S/ 2,400.</p>
+              <time datetime="2026-10-21T10:18">10:18</time>
+            </li>
+          </ol>
+          <!-- Sin form: el campo no transmite datos. -->
+          <div class="field">
+            <label for="reservation-message-desktop">Mensaje</label>
+            <input class="form-control" id="reservation-message-desktop" type="text" placeholder="Escribe un mensaje..." readonly aria-describedby="reservation-static">
+          </div>
+          <button class="button button-outline reservation-action" type="button" aria-disabled="true" aria-describedby="reservation-static">Enviar</button>
+        </section>
+
+        <aside class="reservation-detail reservation-desktop-only panel" aria-labelledby="reservation-detail-title">
+          <h2 class="reservation-panel-title" id="reservation-detail-title">Detalle de la reserva</h2>
+          <div class="reservation-product">
+            <div class="reservation-product-identity">
+              <img class="reservation-product-photo" src="assets/images/productos/macbook-air-m1.jpg" width="64" height="64" alt="MacBook Air abierta, con teclado y pantalla visibles.">
+              <div class="reservation-product-copy">
+                <h3 class="reservation-product-title">MacBook Air M1 256 GB</h3>
+                <p class="reservation-product-price">S/ 2,400</p>
+              </div>
+            </div>
+            <p class="reservation-product-campus">PUCP · San Miguel</p>
+          </div>
+          <span class="status">Consulta</span>
+          <p class="reservation-operation">Operación CL-1024</p>
+          <!-- Consulta ≠ Reserva ≠ Confirmado ≠ Completada. Solo Consulta es el estado actual. -->
+          <ol class="reservation-timeline" aria-label="Etapas de la operación">
+            <li class="reservation-stage" aria-current="step">
+              <p class="reservation-stage-name"><span aria-hidden="true">● </span>Consulta<span class="visually-hidden"> (etapa actual)</span></p>
+              <p class="reservation-stage-description">Contacto inicial, sin reserva definida.</p>
+            </li>
+            <li class="reservation-stage">
+              <p class="reservation-stage-name"><span aria-hidden="true">○ </span>Reserva</p>
+              <p class="reservation-stage-description">Interés registrado, sin compra realizada.</p>
+            </li>
+            <li class="reservation-stage">
+              <p class="reservation-stage-name"><span aria-hidden="true">○ </span>Confirmado</p>
+              <p class="reservation-stage-description">Fecha, hora y lugar acordados por ambos.</p>
+            </li>
+            <li class="reservation-stage">
+              <p class="reservation-stage-name"><span aria-hidden="true">○ </span>Completada</p>
+              <p class="reservation-stage-description">Entrega y transacción finalizadas por ambos.</p>
+            </li>
+          </ol>
+          <button class="button button-primary reservation-action" type="button" aria-disabled="true" aria-describedby="reservation-static">Reservar artículo</button>
+          <div class="alert reservation-safety">
+            <p class="alert-title">Seguridad</p>
+            <p class="reservation-safety-body">Reúnanse en una zona común del campus.<br>El pago se acuerda fuera de CampusLoop.</p>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <nav class="home-bottom home-screen-bottom" aria-label="Navegación móvil">
+    <a href="inicio.html"><img src="assets/icons/campus.svg" width="24" height="24" alt=""><span>Inicio</span></a>
+    <a href="explorar.html"><img src="assets/icons/explorar.svg" width="24" height="24" alt=""><span>Explorar</span></a>
+    <a role="link" aria-disabled="true" aria-describedby="reservation-pending" tabindex="0" title="Publicar: módulo pendiente"><img src="assets/icons/publicar.svg" width="24" height="24" alt=""><span>Publicar</span></a>
+    <a href="reservas.html" aria-current="page"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
+  </nav>
+</body>
+</html>

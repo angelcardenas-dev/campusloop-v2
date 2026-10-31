@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Consulta demostrativa de CampusLoop sobre la MacBook Air M1 entre estudiantes.">
+  <title>Consulta sobre MacBook — CampusLoop</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="home-page reservation-page">
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <p id="reservation-demo" class="visually-hidden">Prototipo estático. La conversación y la operación son datos de ejemplo de Figma; no se enviaron mensajes ni se reservó el artículo.</p>
+  <p id="reservation-static" class="visually-hidden">Acción demostrativa sin funcionamiento. No envía mensajes, no abre otra pantalla ni guarda información.</p>
+  <p id="reservation-pending" class="visually-hidden">Opción pendiente de integración. Esta pantalla no realiza búsquedas ni abre otra página.</p>
+
+  <div class="home-header-band">
+    <header class="home-header home-screen-header page-width">
+      <a class="brand" href="index.html" aria-label="CampusLoop, volver a la portada pública"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+      <nav class="home-nav home-screen-nav" aria-label="Navegación principal">
+        <a href="inicio.html">Inicio</a>
+        <a href="explorar.html">Explorar</a>
+        <a role="link" aria-disabled="true" aria-describedby="reservation-pending" tabindex="0" title="Publicar: módulo pendiente">Publicar</a>
+        <!-- Sección activa: la consulta pertenece a Reservas, pero no es reservas.html. -->
+        <a href="reservas.html" aria-current="true">Reservas</a>
+      </nav>
+      <!-- Sin form: Enter no envía búsquedas. -->
+      <div class="home-search home-screen-search">
+        <img src="assets/icons/explorar-20.svg" width="20" height="20" alt="">
+        <label class="visually-hidden" for="reservation-header-search">Buscar artículos (pendiente)</label>
+        <input id="reservation-header-search" type="search" placeholder="Buscar artículos..." readonly aria-disabled="true" aria-describedby="reservation-pending">
+      </div>
+      <button class="home-notifications home-icon-control" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="reservation-pending" title="Notificaciones: opción pendiente"><img src="assets/icons/campana.svg" width="24" height="24" alt=""></button>
+      <a class="home-account-link" href="cuenta.html" aria-label="Mi cuenta de María López"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
+    </header>
+  </div>
+
+  <div class="home-viewport home-scroll" role="region" aria-label="Contenido desplazable de la consulta" tabindex="0">
+    <main id="contenido" class="reservation-main page-width" tabindex="-1" aria-describedby="reservation-demo">
+      <div class="reservation-heading">
+        <h1>Reservas</h1>
+        <p class="reservation-intro">Conversaciones y coordinaciones con estudiantes de tu comunidad.</p>
+      </div>
+
+      <div class="reservation-consult">
+        <a class="reservation-back" href="reservas.html"><span aria-hidden="true">← </span>Volver a Reservas</a>
+
+        <section class="reservation-conversation panel" aria-labelledby="reservation-person-name">
+          <div class="reservation-person">
+            <img class="avatar" src="assets/images/avatares/carlos-perez.jpg" width="40" height="40" alt="">
+            <div class="reservation-person-copy">
+              <h2 class="reservation-person-name" id="reservation-person-name">Carlos Pérez</h2>
+              <p class="reservation-person-meta">Estudiante verificado · PUCP</p>
+            </div>
+          </div>
+          <div class="reservation-product">
+            <div class="reservation-product-identity">
+              <img class="reservation-product-photo" src="assets/images/productos/macbook-air-m1.jpg" width="64" height="64" alt="MacBook Air abierta, con teclado y pantalla visibles.">
+              <div class="reservation-product-copy">
+                <h3 class="reservation-product-title">MacBook Air M1 256 GB</h3>
+                <p class="reservation-product-price">S/ 2,400</p>
+              </div>
+            </div>
+            <p class="reservation-product-campus">PUCP · San Miguel</p>
+          </div>
+          <p class="reservation-date"><time datetime="2026-10-21">21 de octubre de 2026</time></p>
+          <ol class="reservation-messages">
+            <li class="reservation-message reservation-message-incoming">
+              <p><span class="visually-hidden">Mensaje entrante: </span>Hola, ¿sigue disponible la MacBook Air M1 de 256 GB?</p>
+              <time datetime="2026-10-21T10:15">10:15</time>
+            </li>
+            <li class="reservation-message reservation-message-outgoing">
+              <p><span class="visually-hidden">Mensaje saliente: </span>Sí, está disponible. El precio es S/ 2,400.</p>
+              <time datetime="2026-10-21T10:18">10:18</time>
+            </li>
+          </ol>
+          <!-- Sin form: el campo no transmite datos. -->
+          <div class="field">
+            <label for="reservation-message-mobile">Mensaje</label>
+            <input class="form-control" id="reservation-message-mobile" type="text" placeholder="Escribe un mensaje..." readonly aria-describedby="reservation-static">
+          </div>
+          <button class="button button-outline reservation-action" type="button" aria-disabled="true" aria-describedby="reservation-static">Enviar</button>
+        </section>
+
+        <button class="button button-outline reservation-action" type="button" aria-disabled="true" aria-describedby="reservation-static">Ver detalle de la reserva</button>
+      </div>
+    </main>
+  </div>
+
+  <nav class="home-bottom home-screen-bottom" aria-label="Navegación móvil">
+    <a href="inicio.html"><img src="assets/icons/campus.svg" width="24" height="24" alt=""><span>Inicio</span></a>
+    <a href="explorar.html"><img src="assets/icons/explorar.svg" width="24" height="24" alt=""><span>Explorar</span></a>
+    <a role="link" aria-disabled="true" aria-describedby="reservation-pending" tabindex="0" title="Publicar: módulo pendiente"><img src="assets/icons/publicar.svg" width="24" height="24" alt=""><span>Publicar</span></a>
+    <a href="reservas.html" aria-current="true"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
+  </nav>
+</body>
+</html>
