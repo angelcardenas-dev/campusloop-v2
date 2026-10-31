@@ -718,7 +718,196 @@ main.page-width > section + section { margin-top: var(--space-24); }
 /* Reservado: publicar*.html; prefijo publish-. */
 
 /* RESERVAS / MARICIELO */
-/* Reservado: reservas*.html; prefijo reservation-. */
+/* Reservas — Maricielo. Figma 278:3929 (1440 × 968), 278:4006 (390 × 844)
+   y consulta Mobile 303:1433 (390 × 844). Componentes: Interaction 301:335,
+   Product Summary 301:343, Message 300:142, Status 281:98, Alert 281:99.
+   Reutiliza la navegación de Inicio/Explorar sin modificarla.
+   320–767: composición Mobile (listado y consulta en páginas separadas).
+   768–1279: decisión responsive no definida en Figma: dos columnas de tarjetas,
+   tarjeta MacBook estática y conversación + detalle apilados bajo el listado.
+   Desde 1280 px: tres columnas 280 / 568 / 384 del frame Desktop. */
+.reservation-main.page-width {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+}
+.reservation-heading { display: flex; flex-direction: column; gap: var(--space-8); }
+.reservation-intro { color: var(--muted); font-size: var(--text-small); line-height: var(--line-small); }
+.reservation-layout { display: grid; align-items: start; gap: var(--space-24); }
+.reservation-panel-title { font-size: var(--text-h3); font-weight: var(--weight-semibold); line-height: var(--line-h3); }
+/* Compensación de 2 px en el lado derecho, igual que los paneles V2 aprobados:
+   Figma extiende los hijos sobre el área interior del borde. */
+.reservation-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  min-width: 0;
+  padding: var(--space-12);
+  padding-right: calc(var(--space-12) - 2px);
+}
+.reservation-interactions {
+  display: grid;
+  gap: var(--space-12);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.reservation-interaction {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-width: 0;
+  height: 100%;
+  padding: var(--space-16);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.reservation-interaction-identity { display: flex; align-items: flex-start; gap: var(--space-8); }
+.reservation-interaction-avatar {
+  flex-shrink: 0;
+  width: var(--avatar-mobile);
+  height: var(--avatar-mobile);
+  border-radius: var(--radius-round);
+  object-fit: cover;
+}
+.reservation-avatar-empty { display: block; background: var(--brand-light); }
+.reservation-interaction-details { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.reservation-interaction-name { font-size: var(--text-small); font-weight: var(--weight-semibold); line-height: var(--line-small); }
+.reservation-interaction-product,
+.reservation-interaction-preview { color: var(--muted); font-size: var(--text-caption); line-height: var(--line-caption); }
+.reservation-interaction :is(h3, p) { overflow-wrap: anywhere; }
+/* 320–767: el enlace del nombre cubre toda la tarjeta (303:1361). */
+.reservation-interaction-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.reservation-interaction-link:focus-visible { outline: none; }
+.reservation-interaction-link:focus-visible::after {
+  outline: var(--focus-width) solid var(--accent);
+  outline-offset: var(--space-4);
+}
+.reservation-interaction-static { display: none; }
+.reservation-layout > .reservation-desktop-only { display: none; }
+.reservation-consult { display: flex; flex-direction: column; gap: var(--space-24); min-width: 0; }
+.reservation-back {
+  align-self: flex-start;
+  color: var(--brand);
+  font-size: var(--text-small);
+  font-weight: var(--weight-semibold);
+  line-height: var(--line-small);
+}
+.reservation-back:hover { text-decoration: underline; }
+.reservation-conversation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  min-width: 0;
+  padding: var(--space-16);
+  padding-right: calc(var(--space-16) - 2px);
+}
+.reservation-person { display: flex; align-items: flex-start; gap: var(--space-12); }
+.reservation-person-copy { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.reservation-person-name { font-size: var(--text-body); font-weight: var(--weight-semibold); line-height: var(--line-label); }
+.reservation-person-meta,
+.reservation-date,
+.reservation-operation,
+.reservation-stage-description { color: var(--muted); font-size: var(--text-xs); line-height: var(--line-xs); }
+.reservation-product {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-16);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.reservation-product-identity { display: flex; align-items: flex-start; gap: var(--space-12); }
+/* Imagen de 64 × 64 de Product Summary 301:338; sin token específico. */
+.reservation-product-photo {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+.reservation-product-copy { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.reservation-product-title { font-size: var(--text-body); font-weight: var(--weight-semibold); line-height: var(--line-label); overflow-wrap: anywhere; }
+.reservation-product-price { color: var(--brand); font-size: var(--text-h3); font-weight: var(--weight-bold); line-height: var(--line-h3); }
+.reservation-product-campus { color: var(--muted); font-size: var(--text-caption); line-height: var(--line-caption); }
+.reservation-messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+/* Message 300:142: 360 px en Desktop y 302 px en Mobile (ancho disponible − 24). */
+.reservation-message {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(360px, calc(100% - var(--space-24)));
+  padding: var(--space-12);
+  border-radius: var(--radius-md);
+  font-size: var(--text-small);
+  line-height: var(--line-small);
+  overflow-wrap: anywhere;
+}
+/* Hora 11 / 16 de Message 300:136; sin token específico. */
+.reservation-message time { font-size: 0.6875rem; line-height: 16px; }
+.reservation-message-incoming { align-self: flex-start; background: var(--page); }
+.reservation-message-incoming time { color: var(--muted); }
+.reservation-message-outgoing { align-self: flex-end; background: var(--brand-light); }
+.reservation-action { width: 100%; }
+.reservation-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  min-width: 0;
+  padding: var(--space-16);
+}
+.reservation-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.reservation-stage { display: flex; flex-direction: column; gap: var(--space-4); }
+.reservation-stage-name { color: var(--muted); font-size: var(--text-small); line-height: var(--line-small); }
+.reservation-stage[aria-current="step"] .reservation-stage-name { color: var(--brand); font-weight: var(--weight-semibold); }
+/* En 302:1282 el cuerpo del aviso usa el color de texto principal. */
+.reservation-safety-body { font-size: var(--text-caption); line-height: var(--line-caption); }
+/* La consulta pertenece a Reservas sin ser reservas.html: aria-current="true"
+   recibe la misma apariencia activa que los componentes de navegación. */
+.reservation-page .home-bottom > [aria-current="true"] { background: var(--brand-light); color: var(--brand); font-weight: var(--weight-semibold); }
+
+@media (min-width: 768px) {
+  .reservation-interactions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Desde 768 la tarjeta MacBook es estática (decisión de la integrante:
+     Figma solo define el enlace en Mobile 303:1361 y la tarjeta estática en Desktop 302:1188). */
+  .reservation-interaction-link { display: none; }
+  .reservation-interaction-static { display: inline; }
+  /* 768–1279: conversación (302:1227) y detalle (302:1256) de Desktop, apilados
+     bajo el listado en una sola columna. Adaptación responsive; Figma no define este rango. */
+  .reservation-layout > .reservation-desktop-only { display: flex; }
+}
+@media (min-width: 1024px) {
+  .reservation-main.page-width { gap: var(--space-32); }
+  .reservation-intro { font-size: var(--text-body); line-height: var(--line-body); }
+}
+@media (min-width: 1280px) {
+  .reservation-page .home-nav [aria-current="true"] { color: var(--brand); font-weight: var(--weight-semibold); text-decoration: underline; }
+  .reservation-layout { grid-template-columns: 280px minmax(0, 1fr) 384px; }
+  .reservation-interactions { grid-template-columns: minmax(0, 1fr); }
+  .reservation-consult { max-width: 568px; }
+}
 
 /* CUENTA / MARICIELO */
 /* Reservado: cuenta.html; prefijo account-. */
