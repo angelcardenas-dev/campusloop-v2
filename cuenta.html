@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Mi cuenta demostrativa de CampusLoop: perfil de estudiante, métricas, reputación y actividad reciente.">
+  <title>Mi cuenta — CampusLoop</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="home-page account-page">
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <p id="account-demo" class="visually-hidden">Prototipo estático. El perfil de María López, las métricas, la reputación y la actividad son datos de ejemplo de Figma; no representan una sesión ni operaciones reales.</p>
+  <p id="account-static" class="visually-hidden">Acción demostrativa sin funcionamiento. No edita el perfil, no abre operaciones ni calificaciones y no guarda información.</p>
+  <p id="account-pending" class="visually-hidden">Opción pendiente de integración. Esta pantalla no realiza búsquedas ni abre otra página.</p>
+
+  <div class="home-header-band">
+    <header class="home-header home-screen-header page-width">
+      <a class="brand" href="index.html" aria-label="CampusLoop, volver a la portada pública"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
+      <!-- Figma: cabecera sin apartado activo; Mi cuenta se abre desde el avatar (SPEC §8). -->
+      <nav class="home-nav home-screen-nav" aria-label="Navegación principal">
+        <a href="inicio.html">Inicio</a>
+        <a href="explorar.html">Explorar</a>
+        <a role="link" aria-disabled="true" aria-describedby="account-pending" tabindex="0" title="Publicar: módulo pendiente">Publicar</a>
+        <a href="reservas.html">Reservas</a>
+      </nav>
+      <!-- Sin form: Enter no envía búsquedas. -->
+      <div class="home-search home-screen-search">
+        <img src="assets/icons/explorar-20.svg" width="20" height="20" alt="">
+        <label class="visually-hidden" for="account-header-search">Buscar artículos (pendiente)</label>
+        <input id="account-header-search" type="search" placeholder="Buscar artículos..." readonly aria-disabled="true" aria-describedby="account-pending">
+      </div>
+      <button class="home-notifications home-icon-control" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="account-pending" title="Notificaciones: opción pendiente"><img src="assets/icons/campana.svg" width="24" height="24" alt=""></button>
+      <a class="home-account-link" href="cuenta.html" aria-current="page" aria-label="Mi cuenta de María López"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
+    </header>
+  </div>
+
+  <div class="home-viewport home-scroll" role="region" aria-label="Contenido desplazable de Mi cuenta" tabindex="0">
+    <main id="contenido" class="account-main page-width" tabindex="-1" aria-describedby="account-demo">
+      <div class="account-heading">
+        <h1>Mi cuenta</h1>
+        <p class="account-intro">Gestiona tu perfil, tus operaciones y tu participación en la comunidad.</p>
+      </div>
+
+      <div class="account-layout">
+        <section class="account-identity panel" aria-labelledby="account-name">
+          <img class="account-avatar" src="assets/images/avatares/maria-lopez.jpg" width="88" height="88" alt="">
+          <h2 class="account-name" id="account-name">María López</h2>
+          <p class="account-university">PUCP · Campus San Miguel</p>
+          <p class="account-email">maria.lopez@pucp.edu.pe</p>
+          <p class="account-verified">Correo universitario verificado</p>
+          <button class="button button-outline account-action" type="button" aria-disabled="true" aria-describedby="account-static">Editar perfil</button>
+
+          <section class="account-seller" aria-labelledby="account-seller-title">
+            <h3 class="account-seller-title" id="account-seller-title">Perfil vendedor</h3>
+            <span class="status">Inactivo</span>
+            <a class="button button-primary account-action" role="link" aria-disabled="true" aria-describedby="account-pending" tabindex="0" title="Activar perfil vendedor: módulo pendiente">Activar perfil vendedor</a>
+          </section>
+
+          <!-- Solo Reservas tiene destino en el alcance; el resto de apartados queda pendiente (SPEC §7). -->
+          <nav class="account-tabs" aria-label="Secciones de Mi cuenta">
+            <ul class="account-tab-list">
+              <li><span class="account-tab" aria-current="page">Resumen</span></li>
+              <li><a class="account-tab" role="link" aria-disabled="true" aria-describedby="account-pending" tabindex="0" title="Mis compras: pantalla pendiente">Mis compras</a></li>
+              <li><a class="account-tab" href="reservas.html">Reservas</a></li>
+              <li><a class="account-tab" role="link" aria-disabled="true" aria-describedby="account-pending" tabindex="0" aria-label="Calificaciones recibidas (pendiente)" title="Calificaciones recibidas: pantalla pendiente"><span class="account-label-mobile">Calif. recibidas</span><span class="account-label-desktop">Calificaciones recibidas</span></a></li>
+              <li><a class="account-tab" role="link" aria-disabled="true" aria-describedby="account-pending" tabindex="0" aria-label="Calificaciones realizadas (pendiente)" title="Calificaciones realizadas: pantalla pendiente"><span class="account-label-mobile">Calif. realizadas</span><span class="account-label-desktop">Calificaciones realizadas</span></a></li>
+              <li><a class="account-tab" role="link" aria-disabled="true" aria-describedby="account-pending" tabindex="0" title="Configuración: pantalla pendiente">Configuración</a></li>
+            </ul>
+          </nav>
+        </section>
+
+        <div class="account-content">
+          <section aria-label="Resumen de actividad de ejemplo">
+            <dl class="account-metrics">
+              <div class="account-metric panel"><dt>Compras completadas</dt><dd>5</dd></div>
+              <div class="account-metric panel"><dt>Reserva activa</dt><dd>1</dd></div>
+              <div class="account-metric panel"><dt><span class="account-label-mobile">Opiniones recibidas</span><span class="account-label-desktop">Calificaciones recibidas</span></dt><dd>5</dd></div>
+            </dl>
+          </section>
+
+          <div class="alert alert-warning">
+            <p class="alert-title">Tienes una calificación pendiente</p>
+            <p class="alert-body">La compra del Libro de Cálculo Stewart está completada. Puedes calificar a la otra parte sin esperar su opinión.</p>
+          </div>
+
+          <button class="button button-primary account-operation" type="button" aria-disabled="true" aria-describedby="account-static">Ver operación completada</button>
+
+          <section class="account-reputation panel" aria-labelledby="account-reputation-title">
+            <h2 class="account-panel-title" id="account-reputation-title">Tu reputación en la comunidad</h2>
+            <div class="account-rating">
+              <div class="stars" aria-hidden="true">
+                <img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt="">
+                <img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt="">
+                <img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt="">
+                <img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt="">
+                <img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt="">
+              </div>
+              <p class="account-score">4.9 · 5 opiniones</p>
+            </div>
+            <p class="account-reputation-text">Las calificaciones recibidas como comprador también forman parte de tu reputación como participante confiable.</p>
+            <button class="button button-outline account-reputation-action" type="button" aria-disabled="true" aria-describedby="account-static">Ver calificaciones recibidas</button>
+            <button class="button button-outline account-reputation-action" type="button" aria-disabled="true" aria-describedby="account-static">Ver calificaciones realizadas</button>
+          </section>
+
+          <section class="account-activity panel" aria-labelledby="account-activity-title">
+            <h2 class="account-panel-title" id="account-activity-title">Actividad reciente</h2>
+            <ul class="account-activity-list">
+              <li>
+                <h3 class="account-activity-product">MacBook Air M1 256 GB</h3>
+                <p class="account-activity-meta">S/ 2,400 · Consulta · CL-1024</p>
+              </li>
+              <li>
+                <h3 class="account-activity-product">Libro de Cálculo Stewart</h3>
+                <p class="account-activity-meta">S/ 120 · Completada · <time datetime="2026-10-18">18 oct. 2026</time></p>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <nav class="home-bottom home-screen-bottom" aria-label="Navegación móvil">
+    <a href="inicio.html"><img src="assets/icons/campus.svg" width="24" height="24" alt=""><span>Inicio</span></a>
+    <a href="explorar.html"><img src="assets/icons/explorar.svg" width="24" height="24" alt=""><span>Explorar</span></a>
+    <a role="link" aria-disabled="true" aria-describedby="account-pending" tabindex="0" title="Publicar: módulo pendiente"><img src="assets/icons/publicar.svg" width="24" height="24" alt=""><span>Publicar</span></a>
+    <a href="reservas.html"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
+  </nav>
+</body>
+</html>
