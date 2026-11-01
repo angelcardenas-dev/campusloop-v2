@@ -996,6 +996,88 @@ main.page-width > section + section { margin-top: var(--space-24); }
 /* PUBLICAR / MATIAS */
 /* Reservado: publicar*.html; prefijo publish-. */
 
+.publish-container {
+    max-width: 1100px;
+    margin-left: 12%;
+    padding: 2rem 1rem;
+}
+
+.publish-header { margin-bottom: 2rem; }
+.publish-header h1 { font-size: 2rem; color: #111827; margin-bottom: 0.5rem; }
+.publish-header p { color: #6B7280; font-size: 0.95rem; }
+
+.publish-layout { display: flex; flex-direction: column; gap: 2rem; align-items: flex-start; }
+.publish-form-area { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* CONTENEDOR BLANCO */
+.publish-card-single { background: #fff; padding: 2.5rem; border-radius: 12px; border: 1px solid #EAEAEA; }
+.publish-card-single h2 { font-size: 1.2rem; color: #111827; margin-bottom: 1.5rem; }
+.mt-2 { margin-top: 3rem; }
+
+/* --- 1. Fotos (Galería) --- */
+.upload-gallery { border: 1px solid #D9E0F2; border-radius: 12px; background-color: #F7F9FF; padding: 1rem; }
+.main-photo { width: 100%; height: 200px; object-fit: cover; display: block; border-radius: 8px; }
+.photo-counter { padding-top: 1rem; font-size: 0.9rem; color: #111827; }
+.text-blue { color: #2640A9; font-weight: 700; }
+
+/* --- Inputs y Textareas --- */
+.form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+.form-group label { font-weight: 600; font-size: 0.9rem; color: #111827; }
+
+.form-group input, 
+.form-group textarea { 
+    width: 100%; 
+    padding: 0.8rem; 
+    border: 1px solid #D9E0F2; 
+    border-radius: 8px; 
+    color: #111827; 
+    background: #FFFFFF; 
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+}
+
+.form-group textarea { resize: vertical; outline: none; }
+.form-group input:focus, .form-group textarea:focus { border-color: #2640A9; }
+
+.text-gray { color: #6B7280; }
+.helper-text { font-size: 0.8rem; color: #6B7280; margin-top: 0.2rem; display: block; }
+
+/* --- Botones de acción del formulario --- */
+.publish-actions { display: flex; gap: 1rem; margin-top: 2rem; }
+.publish-actions .btn-secondary, .publish-actions .btn-primary { flex: 1; }
+
+/* --- Panel del Asistente IA --- */
+.publish-sidebar { width: 100%; }
+.ai-card { background: #EEF2FF; border: 1px solid #D9E0F2; padding: 1.5rem; border-radius: 12px; }
+.ai-card h3 { color: #2640A9; font-size: 1.1rem; margin-bottom: 0.5rem; }
+.ai-card p { font-size: 0.85rem; color: #111827; margin-bottom: 1rem; line-height: 1.4; }
+.ai-card .btn-secondary { background: #fff; width: 100%; }
+
+/* --- Caja de Éxito (Pantalla publicar-exito) --- */
+.publish-success-area {
+    background: #fff;
+    padding: 2.5rem;
+    border-radius: 12px;
+    border: 1px solid #EAEAEA;
+    text-align: left;
+    width: 100%; 
+    max-width: 800px; 
+}
+
+.publish-container.success-page {
+    max-width: 1100px;
+    margin: 0 auto; 
+    padding: 2rem 1rem; 
+    overflow-x: hidden; 
+}
+
+/* --- Responsive para PC --- */
+@media (min-width: 768px) {
+    .publish-layout { flex-direction: row; align-items: flex-start; justify-content: space-between; }
+    .publish-form-area { width: 65%; }
+    .publish-sidebar { width: 32%; }
+}
+
 /* RESERVAS / MARICIELO */
 /* Reservado: reservas*.html; prefijo reservation-. */
 
