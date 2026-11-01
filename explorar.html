@@ -11,7 +11,11 @@
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
   <p id="explore-demo" class="visually-hidden">Prototipo estático. Los ocho artículos, precios, estados y vendedores son datos de ejemplo de Figma; no representan una sesión ni operaciones reales.</p>
   <p id="explore-static" class="visually-hidden">Control demostrativo sin funcionamiento. Las búsquedas, filtros y ordenamiento no modifican el catálogo ni envían o guardan información.</p>
-  <p id="explore-pending" class="visually-hidden">Acceso pendiente de integración. Esta opción no abre otra pantalla ni realiza operaciones. Detalle de MacBook se habilitará cuando exista detalle.html; los demás productos no comparten ese detalle.</p>
+  <p id="explore-pending" class="visually-hidden">
+    Acceso pendiente de integración. Las opciones sin destino disponible
+    permanecen demostrativas y no realizan operaciones.
+    Los demás productos no tienen páginas de detalle implementadas.
+  </p>
 
   <div class="home-header-band">
     <header class="home-header home-screen-header page-width">
@@ -19,8 +23,8 @@
       <nav class="home-nav home-screen-nav" aria-label="Navegación principal">
         <a href="inicio.html">Inicio</a>
         <a href="explorar.html" aria-current="page">Explorar</a>
-        <a  role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" title="Publicar: módulo pendiente">Publicar</a>
-        <a  role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" title="Reservas: módulo pendiente">Reservas</a>
+        <a role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" title="Publicar: módulo pendiente">Publicar</a>
+        <a href="reservas.html">Reservas</a>
       </nav>
       <!-- Sin form ni envíos. Los controles son únicamente visuales. -->
       <div class="home-search home-screen-search">
@@ -29,7 +33,7 @@
         <input id="explore-header-search" type="search" placeholder="Buscar artículos..." readonly aria-disabled="true" aria-describedby="explore-static">
       </div>
       <button class="home-notifications home-icon-control" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="explore-pending" title="Notificaciones: opción pendiente"><img src="assets/icons/campana.svg" width="24" height="24" alt=""></button>
-      <a class="home-account-link" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Mi cuenta de María López (pendiente)" title="Mi cuenta: módulo pendiente"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
+      <a class="home-account-link" href="cuenta.html" aria-label="Mi cuenta de María López"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
     </header>
   </div>
 
@@ -107,7 +111,7 @@
               <p class="product-card-meta explore-campus">PUCP · San Miguel</p>
               <p class="product-card-price">S/ 2,400</p>
               <p class="explore-seller">Carlos Pérez · 4.8 · 32 calificaciones</p>
-              <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Ver detalle de MacBook Air M1 256 GB (pendiente)" title="Detalle de MacBook: pendiente de integrar detalle.html">Ver detalle</a>
+              <a class="button button-primary" href="detalle.html" aria-label="Ver detalle de MacBook Air M1 256 GB">Ver detalle</a>
             </article>
             <article class="product-card explore-product" aria-labelledby="explore-product-calculadora">
               <div class="product-card-media">
@@ -204,7 +208,7 @@
     <a href="inicio.html"><img src="assets/icons/campus.svg" width="24" height="24" alt=""><span>Inicio</span></a>
     <a href="explorar.html" aria-current="page"><img src="assets/icons/explorar.svg" width="24" height="24" alt=""><span>Explorar</span></a>
     <a role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" title="Publicar: módulo pendiente"><img src="assets/icons/publicar.svg" width="24" height="24" alt=""><span>Publicar</span></a>
-    <a role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" title="Reservas: módulo pendiente"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
+    <a href="reservas.html"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
   </nav>
 </body>
 </html>
