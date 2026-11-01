@@ -17,10 +17,10 @@
     <header class="home-header seller-header page-width">
       <a class="brand" href="index.html" aria-label="CampusLoop, volver a la portada"><img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop</a>
       <nav class="home-nav seller-nav" aria-label="Navegación principal">
-        <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Inicio: pendiente de integración">Inicio</a>
-        <a role="link" aria-disabled="true" aria-current="location" tabindex="0" aria-describedby="seller-pending" title="Explorar: pendiente de integración">Explorar</a>
-        <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Publicar: pendiente de integración">Publicar</a>
-        <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Reservas: pendiente de integración">Reservas</a>
+        <a href="inicio.html">Inicio</a>
+        <a href="explorar.html" aria-current="location">Explorar</a>
+        <a role="link" aria-disabled="true" tabindex="0"  aria-describedby="seller-pending"  title="Publicar: pendiente de integración">Publicar</a>
+        <a href="reservas.html">Reservas</a>
       </nav>
       <div class="home-search seller-search">
         <img src="assets/icons/explorar-20.svg" width="20" height="20" alt="">
@@ -28,7 +28,7 @@
         <input id="seller-search" type="search" placeholder="Buscar artículos..." readonly aria-disabled="true" aria-describedby="seller-pending">
       </div>
       <button class="seller-notifications" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="seller-pending"><img src="assets/icons/campana.svg" width="24" height="24" alt=""></button>
-      <a class="seller-account" role="link" aria-disabled="true" tabindex="0" aria-label="Mi cuenta de María López (pendiente)" aria-describedby="seller-pending"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
+      <a class="seller-account" href="cuenta.html" aria-label="Mi cuenta de María López"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
     </header>
   </div>
 
@@ -73,8 +73,7 @@
               <p class="product-card-meta seller-campus">PUCP · San Miguel</p>
               <p class="product-card-price">S/ 2,400</p>
               <p class="seller-card-reputation">Carlos Pérez · 4.8 · 32 calificaciones</p>
-              <!-- Habilitar detalle.html cuando se integre la rama de Detalle. -->
-              <a class="button button-primary" role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" aria-label="Ver detalle de MacBook Air M1 256 GB (pendiente)" title="Detalle de MacBook: pendiente de integración">Ver detalle</a>
+              <a class="button button-primary" href="detalle.html" aria-label="Ver detalle de MacBook Air M1 256 GB">Ver detalle</a>
             </article>
             <article class="product-card seller-product-card" aria-labelledby="seller-ipad">
               <div class="product-card-media"><img src="assets/images/productos/ipad-air.jpg" width="1376" height="768" alt="iPad Air sobre una mesa."><span class="status status-reserved">Reservado</span></div>
@@ -113,10 +112,10 @@
   </div>
 
   <nav class="home-bottom seller-bottom" aria-label="Navegación móvil">
-    <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Inicio: pendiente"><img src="assets/icons/campus.svg" width="24" height="24" alt="">Inicio</a>
-    <a role="link" aria-disabled="true" aria-current="location" tabindex="0" aria-describedby="seller-pending" title="Explorar: pendiente"><img src="assets/icons/explorar.svg" width="24" height="24" alt="">Explorar</a>
+    <a href="inicio.html"><img src="assets/icons/campus.svg" width="24" height="24" alt="">Inicio</a>
+    <a href="explorar.html" aria-current="location"><img src="assets/icons/explorar.svg" width="24" height="24" alt="">Explorar</a>
     <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Publicar: pendiente"><img src="assets/icons/publicar.svg" width="24" height="24" alt="">Publicar</a>
-    <a role="link" aria-disabled="true" tabindex="0" aria-describedby="seller-pending" title="Reservas: pendiente"><img src="assets/icons/reservas.svg" width="24" height="24" alt="">Reservas</a>
+    <a href="reservas.html"><img src="assets/icons/reservas.svg" width="24" height="24" alt="">Reservas</a>
   </nav>
 </body>
 </html>
