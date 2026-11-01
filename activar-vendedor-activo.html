@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusLoop - Perfil Activado</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="activate-page-bg">
+
+    <!-- HEADER GLOBAL -->
+    <div class="home-header-band">
+        <header class="home-header home-screen-header page-width">
+            <a class="brand" href="index.html">
+                <img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop
+            </a>
+            <nav class="home-nav home-screen-nav">
+                <a href="inicio.html">Inicio</a>
+                <a href="explorar.html">Explorar</a>
+                <a href="#" class="active">Publicar</a>
+                <a href="#">Reservas</a>
+            </nav>
+            <div class="home-search">
+                <img src="assets/icons/explorar-20.svg" width="20" alt="">
+                <input type="search" placeholder="Buscar artículos..." readonly>
+            </div>
+            <button class="home-notifications home-icon-control" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="explore-pending" title="Notificaciones: opción pendiente">
+                <img src="assets/icons/campana.svg" width="24" height="24" alt="">
+            </button>
+            <a class="home-account-link">
+                <img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt="Perfil">
+            </a>
+        </header>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="activate-container page-width">
+        
+        <div class="activate-header-text">
+            <h1>Tu perfil vendedor está activo</h1>
+            <p class="subtitle">Tu cuenta ya permite comprar y reservar. Activa el perfil solo cuando quieras publicar.</p>
+        </div>
+
+        <div class="activate-layout">
+            <!-- COLUMNA IZQUIERDA: Beneficios -->
+            <div class="activate-sidebar-card">
+                <span class="status-badge bg-verde">Activo</span>
+                <h2>Vende lo que ya no usas</h2>
+                <p class="subtitle-small">Publica tus artículos y conecta con estudiantes de Lima. Activar el perfil no te asigna ventas ni reputación.</p>
+                
+                <div class="activate-process">
+                    <div class="process-step">
+                        <span class="step-title">1 · Completa tus datos</span>
+                        <span class="small-text">Indica si es tu primera vez vendiendo.</span>
+                    </div>
+                    <div class="process-step">
+                        <span class="step-title">2 · Validación</span>
+                        <span class="small-text">Revisamos los datos y las evidencias solo cuando corresponda.</span>
+                    </div>
+                    <div class="process-step">
+                        <span class="step-title">3 · Empieza a publicar</span>
+                        <span class="small-text">Recibirás una confirmación cuando tu perfil esté activo.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: Confirmación -->
+            <div class="activate-form-section">
+                
+                <div class="success-alert">
+                    <strong>Perfil vendedor activo</strong>
+                    <span>Ya puedes crear tu primera publicación. Todavía no tienes ventas ni calificaciones como vendedor.</span>
+                </div>
+                
+                <a href="publicar.html" class="btn-primary">Publicar artículo</a>
+                
+            </div>
+        </div>
+    </main>
+</body>
+</html>

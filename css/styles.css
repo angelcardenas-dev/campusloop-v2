@@ -713,6 +713,285 @@ main.page-width > section + section { margin-top: var(--space-24); }
 
 /* ACTIVACION / MATIAS */
 /* Reservado: activar-vendedor*.html; prefijo activate-. */
+/* --- Fondo General de la Página --- */
+.activate-page-bg { 
+    background-color: #F7F9FF; 
+    min-height: 100vh; 
+}
+
+.activate-container { 
+    max-width: 1100px; 
+    margin: 0 auto; 
+    padding: 2rem 1rem; 
+}
+
+/* --- Cabecera de la página --- */
+.activate-header-text { 
+    margin-bottom: 2rem; 
+}
+
+.activate-header-text h1 { 
+    font-size: 2rem; 
+    color: #111827; 
+    margin-bottom: 0.5rem; 
+}
+
+.activate-header-text .subtitle { 
+    color: #6B7280; 
+    font-size: 0.95rem; 
+}
+
+/* --- Layout Principal --- */
+.activate-layout { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 2rem; 
+}
+
+/* --- Columna Izquierda (Tarjeta Azul) --- */
+.activate-sidebar-card { 
+    background: #EEF2FF; 
+    padding: 2rem; 
+    border-radius: 12px; 
+    border: 1px solid #D9E0F2; 
+}
+
+.status-badge { 
+    display: inline-block; 
+    padding: 0.2rem 0.6rem; 
+    border-radius: 4px; 
+    font-size: 0.75rem; 
+    font-weight: 600; 
+    margin-bottom: 1rem; 
+}
+
+.bg-gris { background: #F3F4F6; color: #374151; }
+.bg-verde { background: #DCFCE7; color: #166534; }
+
+.activate-sidebar-card h2 { 
+    font-size: 1.5rem; 
+    color: #2640A9; 
+    margin-bottom: 0.8rem; 
+}
+
+.subtitle-small { 
+    font-size: 0.9rem; 
+    color: #111827; 
+    line-height: 1.5; 
+    margin-bottom: 1.5rem; 
+}
+
+/* Pasos del Proceso */
+.process-step {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.step-title {
+    color: #2640A9;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.2rem;
+}
+
+.activate-process .small-text { 
+    font-size: 0.85rem; 
+    color: #111827; 
+    font-weight: 400; 
+    line-height: 1.4;
+}
+
+/* --- Columna Derecha (Formulario Blanco) --- */
+.activate-form-section { 
+    background: #fff; 
+    padding: 2rem; 
+    border-radius: 12px; 
+    border: 1px solid #EAEAEA; 
+}
+
+.activate-form-section h3 { 
+    font-size: 1.2rem; 
+    margin-bottom: 1rem; 
+    color: #111827;
+}
+
+.form-label { 
+    font-size: 0.9rem; 
+    font-weight: 600; 
+    display: block; 
+    margin-bottom: 0.8rem; 
+}
+
+/* --- RADIO BUTTONS TIPO TARJETA (Como en Figma) --- */
+.radio-group-vertical {
+    display: flex;
+    flex-direction: column; /* Uno abajo del otro */
+    gap: 0.8rem; /* Separación entre los botones */
+    margin-bottom: 1.5rem;
+}
+
+.radio-card {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centra el texto y el punto */
+    gap: 0.5rem;
+    padding: 0.8rem;
+    border: 1px solid #D9E0F2; /* Borde gris/celeste por defecto */
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #6B7280; /* Texto gris cuando no está seleccionado */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+
+/* EL PUNTO (Radio input) */
+.radio-card input[type="radio"] {
+    accent-color: #2640A9; 
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0;
+}
+
+/* CUANDO ESTÁ SELECCIONADO*/
+.radio-card:has(input:checked) {
+    border-color: #2640A9; /* Borde azul */
+    color: #2640A9; /* Texto azul */
+    background-color: #F8FAFC; /* Fondo azul claro*/
+}
+
+/* Alerta azul de "sin experiencia" */
+.info-alert { 
+    background: #EEF2FF; 
+    padding: 1rem; 
+    border-radius: 8px; 
+    margin-bottom: 1rem; 
+    border: 1px solid #D9E0F2;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.info-alert strong { color: #111827; }
+.info-alert span { color: #111827; font-size: 0.85rem; }
+
+/* --- Inputs y Checkbox --- */
+.form-group { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 0.5rem; 
+    margin-top: 1.5rem; 
+    margin-bottom: 1rem;
+}
+
+.form-group label { 
+    font-weight: 600; 
+    font-size: 0.9rem; 
+    color: #111827; 
+}
+
+.form-group input { 
+    width: 100%; 
+    padding: 0.8rem; 
+    border: 1px solid #D9E0F2; 
+    border-radius: 8px; 
+    color: #111827; 
+    background: #F9FAFB; 
+    font-family: 'Inter', sans-serif;
+}
+
+.checkbox-group { 
+    display: flex; 
+    align-items: center; 
+    gap: 0.5rem; 
+    font-size: 0.85rem; 
+    color: #6B7280; 
+    margin: 1rem 0; 
+}
+
+.checkbox-group input[type="checkbox"] {
+    accent-color: #2640A9;
+    width: 16px;
+    height: 16px;
+}
+
+/* --- Botones --- */
+.btn-primary { 
+    background: #2640A9; 
+    color: white; 
+    padding: 0.8rem; 
+    border-radius: 8px; 
+    font-weight: 600; 
+    border: none; 
+    width: 100%; 
+    cursor: pointer; 
+    text-align: center; 
+    display: block;
+    margin-top: 1rem;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.btn-primary:hover { background: #1a2e80; }
+
+.btn-secondary { 
+    background: white; 
+    color: #2640A9; 
+    padding: 0.8rem; 
+    border-radius: 8px; 
+    font-weight: 600; 
+    border: 1px solid #2640A9; 
+    width: 100%; 
+    cursor: pointer; 
+    text-align: center; 
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.btn-secondary:hover { background: #F7F9FF; }
+
+/* --- Caja Verde de Éxito --- */
+.success-alert { 
+    background: #F0FDF4; 
+    border: 1px solid #DCFCE7; 
+    padding: 1.2rem; 
+    border-radius: 8px; 
+    margin-bottom: 1rem; 
+}
+
+.success-alert strong {
+    color: #111827; 
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.95rem;
+}
+
+.success-alert span {
+    color: #6B7280; 
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+/* --- Responsive (Desktop) --- */
+@media (min-width: 768px) {
+    .activate-layout { 
+        flex-direction: row; 
+        align-items: flex-start; 
+    }
+    
+    .activate-sidebar-card { 
+        width: 40%; 
+        position: sticky; 
+        top: 2rem; 
+    }
+    
+    .activate-form-section { 
+        width: 60%; 
+    }
+}
 
 /* PUBLICAR / MATIAS */
 /* Reservado: publicar*.html; prefijo publish-. */
