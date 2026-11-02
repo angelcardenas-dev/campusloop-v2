@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusLoop - Activar perfil vendedor</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="activate-page-bg matias-page">
+
+    <!-- HEADER GLOBAL -->
+    <div class="home-header-band">
+        <header class="home-header home-screen-header page-width">
+            <a class="brand" href="index.html">
+                <img src="assets/icons/campus-32.svg" width="32" height="32" alt="">CampusLoop
+            </a>
+            <nav class="home-nav home-screen-nav">
+                <a href="inicio.html">Inicio</a>
+                <a href="explorar.html">Explorar</a>
+                <a href="#" class="active">Publicar</a>
+                <a href="#">Reservas</a>
+            </nav>
+            <div class="home-search">
+                <img src="assets/icons/explorar-20.svg" width="20" alt="">
+                <input type="search" placeholder="Buscar artículos..." readonly>
+            </div>
+            <button class="home-notifications home-icon-control" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="explore-pending" title="Notificaciones: opción pendiente">
+                <img src="assets/icons/campana.svg" width="24" height="24" alt="">
+            </button>
+            <a class="home-account-link">
+                <img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt="Perfil">
+            </a>
+        </header>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="activate-container page-width">
+        
+        <div class="activate-header-text">
+            <h1>Activa tu perfil vendedor</h1>
+            <p class="subtitle">Tu cuenta ya permite comprar y reservar. Activa el perfil solo cuando quieras publicar.</p>
+        </div>
+
+        <div class="activate-layout">
+            <!-- COLUMNA IZQUIERDA: Beneficios -->
+            <div class="activate-sidebar-card">
+                <span class="status-badge bg-gris">Inactivo</span>
+                <h2>Vende lo que ya no usas</h2>
+                <p class="subtitle-small">Publica tus artículos y conecta con estudiantes de Lima. Activar el perfil no te asigna ventas ni reputación.</p>
+                
+                <div class="activate-process">
+                    <div class="process-step">
+                        <span class="step-title">1 · Completa tus datos</span>
+                        <span class="small-text">Indica si es tu primera vez vendiendo.</span>
+                    </div>
+                    <div class="process-step">
+                        <span class="step-title">2 · Validación</span>
+                        <span class="small-text">Revisamos los datos y las evidencias solo cuando corresponda.</span>
+                    </div>
+                    <div class="process-step">
+                        <span class="step-title">3 · Empieza a publicar</span>
+                        <span class="small-text">Recibirás una confirmación cuando tu perfil esté activo.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: Formulario -->
+            <div class="activate-form-section">
+                <h3>Información de tu experiencia</h3>
+                <label class="form-label">¿Tienes experiencia vendiendo?</label>
+                
+                
+                <div class="radio-group-vertical">
+                    <label class="radio-card">
+                        <input type="radio" name="experiencia" value="sin_experiencia" checked> 
+                        <span>Es mi primera vez</span>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="experiencia" value="con_experiencia"> 
+                        <span>Sí, tengo experiencia</span>
+                    </label>
+                </div>
+
+                
+                <div class="info-alert">
+                    <strong>Puedes comenzar sin experiencia</strong>
+                    <span>No necesitas ventas previas ni evidencias para solicitar tu activación.</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Universidad / campus</label>
+                    <input type="text" value="PUCP · San Miguel" readonly>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="terminos">
+                    <label for="terminos">Acepto las normas de publicación y convivencia.</label>
+                </div>
+
+                
+                <a href="activar-vendedor-activo.html" class="btn-primary">Enviar solicitud</a>
+                <button type="button" class="btn-secondary">Guardar borrador</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- BARRA DE NAVEGACIÓN MÓVIL -->
+    <nav class="home-bottom home-screen-bottom" aria-label="Navegación móvil">
+        <a href="inicio.html"><img src="assets/icons/campus.svg" width="24" height="24" alt=""><span>Inicio</span></a>
+        <a href="explorar.html"><img src="assets/icons/explorar.svg" width="24" height="24" alt=""><span>Explorar</span></a>
+        <a href="#" aria-current="page"><img src="assets/icons/publicar.svg" width="24" height="24" alt=""><span>Publicar</span></a>
+        <a href="#"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
+    </nav>
+</body>
+</html>
