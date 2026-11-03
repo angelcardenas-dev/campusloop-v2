@@ -9,7 +9,7 @@
 </head>
 <body class="auth-page">
   <a class="skip-link" href="#contenido">Saltar al formulario</a>
-  <p id="auth-pending" class="visually-hidden">Vista estática. El ingreso y la recuperación de contraseña están pendientes de implementación. No se envían ni se guardan tus datos.</p>
+  <p id="auth-pending" class="visually-hidden">Vista estática. La autenticación real y la recuperación de contraseña están pendientes de implementación. No se envían ni se guardan tus datos.</p>
 
   <main id="contenido" class="auth-main page-width" tabindex="-1">
     <div class="auth-layout">
@@ -32,7 +32,7 @@
         </div>
 
         <!-- Sin campos con name ni botón submit: esta etapa no envía credenciales. -->
-        <form class="auth-form" method="post" novalidate aria-describedby="auth-pending">
+        <form class="auth-form" novalidate aria-describedby="auth-pending">
           <div class="auth-field">
             <label for="correo">Correo universitario</label>
             <input class="auth-control" id="correo" type="email" autocomplete="username" inputmode="email" spellcheck="false" placeholder="maria.lopez@pucp.edu.pe">
@@ -48,7 +48,8 @@
             <a class="auth-recovery" role="link" aria-disabled="true" aria-describedby="auth-pending" tabindex="0" title="Recuperación de contraseña pendiente">¿Olvidaste tu contraseña?</a>
           </div>
 
-          <button class="button button-primary auth-submit" type="button" aria-disabled="true" aria-describedby="auth-pending" title="Inicio de sesión pendiente de implementación">Ingresar</button>
+          <a class="button button-primary auth-submit" href="inicio.html" aria-describedby="auth-demo-info">Ingresar</a>
+          <p id="auth-demo-info" class="auth-hint">Acceso demostrativo: no se validan credenciales.</p>
           <a class="auth-register" href="registro.html">¿Aún no tienes una cuenta? Crear cuenta</a>
         </form>
       </section>
