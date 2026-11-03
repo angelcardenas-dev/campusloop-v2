@@ -1368,6 +1368,33 @@ main.page-width > section + section { margin-top: var(--space-24); }
   .reservation-interactions { grid-template-columns: minmax(0, 1fr); }
   .reservation-consult { max-width: 568px; }
 }
+/* Reservas: adaptación para tablet y laptop pequeña */
+@media (min-width: 768px) and (max-width: 1280px) {
+  .reservation-page .reservation-layout {
+    grid-template-columns: 240px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .reservation-page .reservation-interactions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reservation-page .reservation-list,
+  .reservation-page .reservation-conversation,
+  .reservation-page .reservation-detail {
+    min-width: 0;
+  }
+
+  .reservation-page .reservation-detail {
+    grid-column: 2;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1280px) {
+  .reservation-page .reservation-layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+}
 
 /* CUENTA / MARICIELO */
 /* Mi cuenta — Maricielo. Figma 278:4040 (1440 × 1155) y 278:4139 (390 × 844),
