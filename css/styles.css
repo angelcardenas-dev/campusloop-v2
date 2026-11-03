@@ -813,9 +813,9 @@ main.page-width > section + section { margin-top: var(--space-24); }
 .info-alert span { color: #111827; font-size: 0.9rem; }
 
 /* Inputs y Checkbox */
-.form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.5rem; margin-bottom: 1rem; }
-.form-group label { font-weight: 600; font-size: 0.9rem; color: #111827; }
-.form-group input { 
+.matias-page .activate-form-section .form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.5rem; margin-bottom: 1rem; }
+.matias-page .activate-form-section .form-group label { font-weight: 600; font-size: 0.9rem; }
+.matias-page .activate-form-section .form-group input {
     width: 100%; 
     padding: 0.8rem; 
     border: 1px solid #D9E0F2; 
@@ -828,7 +828,7 @@ main.page-width > section + section { margin-top: var(--space-24); }
 .checkbox-group input[type="checkbox"] { accent-color: #2640A9; width: 16px; height: 16px; }
 
 /* Botones */
-.btn-primary { 
+.matias-page .btn-primary {
     background: #2640A9; 
     color: white; 
     padding: 0.8rem; 
@@ -844,9 +844,9 @@ main.page-width > section + section { margin-top: var(--space-24); }
     font-size: 0.95rem;
 }
 
-.btn-primary:hover { background: #1a2e80; }
+.matias-page .btn-primary:hover { background: #1a2e80; }
 
-.btn-secondary { 
+.matias-page .btn-secondary {
     background: white; 
     color: #2640A9; 
     padding: 0.8rem; 
@@ -861,25 +861,42 @@ main.page-width > section + section { margin-top: var(--space-24); }
     font-size: 0.95rem;
 }
 
-.btn-secondary:hover { background: #F7F9FF; }
+.matias-page .btn-secondary:hover { background: #F7F9FF; }
 
 /* Caja Verde de Éxito */
-.success-alert { background: #F0FDF4; border: 1px solid #DCFCE7; padding: 1.2rem; border-radius: 8px; margin-bottom: 1rem; }
-.success-alert strong { color: #111827; display: block; margin-bottom: 0.3rem; font-size: 0.95rem; }
-.success-alert span { color: #6B7280; font-size: 0.9rem; line-height: 1.4; }
+.matias-page .success-alert {
+    background: #F0FDF4;
+    border: 1px solid #DCFCE7;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.matias-page .success-alert strong {
+    color: #111827;
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.95rem;
+}
+
+.matias-page .success-alert span {
+    color: #6B7280;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
 
 
 
 /* PUBLICAR / MATIAS */
 /* Reservado: publicar*.html; prefijo publish-. */
 
-.publish-container { max-width: 1100px; margin-left: 12%; padding: 2rem 1rem; }
+.publish-container { max-width: 1100px; margin-inline: auto; padding: 2rem 1rem; }
 .publish-header { margin-bottom: 2rem; }
 .publish-header h1 { font-size: 2rem; color: #111827; margin-bottom: 0.5rem; }
 .publish-header p { color: #6B7280; font-size: 0.95rem; }
 
 .publish-layout { display: flex; flex-direction: column; gap: 2rem; align-items: flex-start; }
-.publish-form-area { display: flex; flex-direction: column; gap: 1.5rem; }
+.publish-form-area { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; min-width: 0; }
 
 /* Contenedor Blanco */
 .publish-card-single { background: #fff; padding: 2.5rem; border-radius: 12px; border: 1px solid #EAEAEA; }
@@ -893,11 +910,11 @@ main.page-width > section + section { margin-top: var(--space-24); }
 .text-blue { color: #2640A9; font-weight: 700; }
 
 /* Inputs y Textareas */
-.form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
-.form-group label { font-weight: 600; font-size: 0.9rem; color: #111827; }
+.matias-page .publish-card-single .form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+.matias-page .publish-card-single .form-group label { font-weight: 600; font-size: 0.9rem; }
 
-.form-group input, 
-.form-group textarea { 
+.matias-page .publish-card-single .form-group input,
+.matias-page .publish-card-single .form-group textarea {
     width: 100%; 
     padding: 0.8rem; 
     border: 1px solid #D9E0F2; 
@@ -908,23 +925,23 @@ main.page-width > section + section { margin-top: var(--space-24); }
     font-size: 0.95rem;
 }
 
-.form-group textarea { resize: vertical; outline: none; }
-.form-group input:focus, .form-group textarea:focus { border-color: #2640A9; }
+.matias-page .publish-card-single .form-group textarea { resize: vertical; outline: none; }
+.matias-page .publish-card-single .form-group input:focus, .matias-page .publish-card-single .form-group textarea:focus { border-color: #2640A9; }
 
 .text-gray { color: #6B7280; }
 .helper-text { font-size: 0.9rem; color: #6B7280; margin-top: 0.2rem; display: block; }
 
 /* Botones de acción del formulario */
 .publish-actions { display: flex; gap: 1rem; margin-top: 2rem; align-items: stretch; }
-.publish-actions .btn-secondary, 
-.publish-actions .btn-primary { flex: 1; display: flex; align-items: center; justify-content: center; height: 100%; margin-top: 0 !important; margin-bottom: 0 !important; }
+.matias-page .publish-actions .btn-secondary,
+.matias-page .publish-actions .btn-primary { flex: 1; display: flex; align-items: center; justify-content: center; height: 100%; margin-top: 0 !important; margin-bottom: 0 !important; }
 
 /* Panel Asistente IA */
 .publish-sidebar { width: 100%; }
 .ai-card { background: #EEF2FF; border: 1px solid #D9E0F2; padding: 1.5rem; border-radius: 12px; }
 .ai-card h3 { color: #2640A9; font-size: 1.1rem; margin-bottom: 0.5rem; }
 .ai-card p { font-size: 0.95rem; color: #111827; margin-bottom: 1rem; line-height: 1.4; }
-.ai-card .btn-secondary { background: #fff; width: 100%; }
+.matias-page .ai-card .btn-secondary { background: #fff; width: 100%; }
 
 /* Caja de Éxito */
 .publish-success-area {
@@ -939,18 +956,35 @@ main.page-width > section + section { margin-top: var(--space-24); }
 .publish-container.success-page { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; overflow-x: hidden; }
 
 
-/*RESPONSIVE (Desktop)*/
-@media (min-width: 768px) {
-    
-    /* Activación en PC */
-    .activate-layout { display: flex; flex-direction: row; align-items: flex-start; gap: 2rem; }
-    .activate-sidebar-card { width: 35%; }
-    .activate-form-section { width: 65%; }
+/* RESPONSIVE — Desktop */
+@media (min-width: 1024px) {
 
-    /* Publicar en PC */
-    .publish-layout { flex-direction: row; align-items: flex-start; justify-content: space-between; }
-    .publish-form-area { width: 65%; }
-    .publish-sidebar { width: 32%; }
+    /* Activación */
+    .activate-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 35fr) minmax(0, 65fr);
+        align-items: start;
+        gap: 2rem;
+    }
+
+    .activate-sidebar-card,
+    .activate-form-section {
+        min-width: 0;
+    }
+
+    /* Publicar */
+    .publish-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+        align-items: start;
+        gap: 2rem;
+    }
+
+    .publish-form-area,
+    .publish-sidebar {
+        min-width: 0;
+        width: auto;
+    }
 }
 
 
@@ -963,8 +997,7 @@ main.page-width > section + section { margin-top: var(--space-24); }
     /* Ajustes generales */
     .activate-container, 
     .publish-container {
-        margin-left: 0; 
-        padding-bottom: 2rem; 
+        padding-bottom: 2rem;
     }
 
     .activate-sidebar-card, 
