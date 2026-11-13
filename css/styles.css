@@ -705,6 +705,34 @@ main.page-width > section + section { margin-top: var(--space-24); }
   .explore-products { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
+/* TB4: controles nativos y estados de catálogo, exclusivos de Explorar.
+   El aviso visible y el selector de campus agregan altura; no alteran tokens. */
+.explore-main [hidden] { display: none !important; }
+.explore-integration { overflow-wrap: anywhere; font-size: var(--text-small); }
+.explore-integration[data-estado="error"] { background: var(--surface-error); }
+.explore-integration > .button { align-self: flex-start; }
+.explore-filter-fields, .explore-option-list { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.explore-filter-group { min-width: 0; padding: 0; margin: 0; border: 0; }
+.explore-filter-group > legend { padding: 0; margin-bottom: 20px; }
+.explore-filter-title { font-size: var(--text-small); font-weight: var(--weight-semibold); line-height: var(--line-small); }
+.explore-option { display: flex; align-items: start; gap: var(--space-8); color: var(--muted); font-size: var(--text-small); line-height: var(--line-small); }
+.explore-option > input { flex: 0 0 var(--space-16); width: var(--space-16); height: var(--space-16); margin: 2px 0 0; accent-color: var(--brand); }
+.explore-filter-fields > .button { width: 100%; }
+.explore-select { text-align: left; text-overflow: ellipsis; }
+.explore-mobile-controls > select { width: 100%; min-width: 0; padding-right: var(--space-24); }
+.explore-filters[data-abierto="true"] { display: flex; flex-direction: column; gap: 20px; padding: var(--space-16); margin-bottom: var(--space-24); }
+.explore-filters h2 { font-size: var(--text-h3); line-height: var(--line-h3); }
+.explore-close-filters { align-self: flex-start; }
+.explore-filter-fields [aria-invalid="true"] { border-color: var(--error); }
+.explore-photo-empty { display: flex; align-items: center; justify-content: center; height: var(--product-photo-mobile-height); border-radius: var(--radius-sm); background: var(--surface-neutral); color: var(--muted); font-size: var(--text-caption); }
+@media (min-width: 768px) {
+  .explore-photo-empty { height: var(--product-photo-height); }
+}
+@media (min-width: 1024px) {
+  .explore-close-filters { display: none; }
+  .explore-filters[data-abierto="true"] { margin-bottom: 0; padding-right: calc(var(--space-16) - 2px); }
+}
+
 /* DETALLE / BERNABE */
 /* Figma final: Desktop 278:3486 (1440 px), Mobile 278:3554 (390 px).
    768/1024/1280: adaptación entre frames; sin cambios en tokens compartidos. */
