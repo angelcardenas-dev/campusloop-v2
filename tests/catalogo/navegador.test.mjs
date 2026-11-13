@@ -241,7 +241,8 @@ test('Chrome local sin servicios externos: responsive, filtros, teclado, estados
       assert.equal(await evaluar('window.__visibilidad.llamadas'), consultasAntesDeValidacion);
     });
   }
-  for (const pagina of ['index.html', 'login.html', 'registro.html', 'inicio.html']) {
+  // Inicio tiene su suite en tests/landing; su nuevo diseño ya no corresponde a este baseline histórico.
+  for (const pagina of ['index.html', 'login.html', 'registro.html']) {
     for (const ancho of [390, 1440]) await t.test(`regresión ${pagina} a ${ancho}px`, async () => {
       await enviar('Emulation.setDeviceMetricsOverride', { width: ancho, height: 900, deviceScaleFactor: 1, mobile: false });
       const geometria = () => evaluar(`JSON.stringify([...document.querySelectorAll('h1,h2,.button,.product-card,.brand,.home-bottom')].map(e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return [r.x,r.y,r.width,r.height,s.color,s.backgroundColor,s.fontSize]}))`);
