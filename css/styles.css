@@ -646,6 +646,17 @@ main.page-width > section + section { margin-top: var(--space-24); }
   .home-screen-search input::placeholder { color: var(--muted); opacity: 1; }
 }
 
+/* TB4 Inicio: avisos honestos y estados, sin modificar componentes compartidos. */
+#home-demo-products[hidden], #home-live-products[hidden],
+#home-retry[hidden], #home-refresh[hidden] { display: none !important; }
+.home-demo-notice, .home-catalog-notice { font-size: var(--text-small); overflow-wrap: anywhere; }
+.home-catalog-notice > .button { align-self: flex-start; }
+.home-catalog-notice[data-estado="error"] { background: var(--surface-error); }
+.home-photo-empty { display: flex; align-items: center; justify-content: center; height: var(--product-photo-mobile-height); border-radius: var(--radius-sm); background: var(--surface-neutral); color: var(--muted); font-size: var(--text-caption); }
+@media (min-width: 768px) {
+  .home-photo-empty { height: var(--product-photo-height); }
+}
+
 /* EXPLORAR / ANGEL */
 /* Explorar principal — Angel. Figma 278:3154 (1440 × 1286) y
    278:3437 (390 × 844), contenido Mobile 297:396 (2094 px).
