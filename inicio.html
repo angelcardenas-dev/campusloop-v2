@@ -6,8 +6,9 @@
   <meta name="description" content="Inicio demostrativo de CampusLoop: actividad universitaria, coordinaciones y artículos recomendados.">
   <title>Inicio — CampusLoop</title>
   <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/landing.js"></script>
 </head>
-<body class="home-page">
+<body class="home-page" data-inicio>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
   <p id="home-demo" class="visually-hidden">Prototipo estático. María, las métricas, las coordinaciones y los artículos son datos de ejemplo de Figma; no representan una sesión ni operaciones reales.</p>
   <p id="home-pending" class="visually-hidden">Opción pendiente de integración. Esta pantalla no realiza búsquedas ni envía, reserva o guarda datos.</p>
@@ -28,7 +29,7 @@
         <input id="home-search" type="search" placeholder="Buscar artículos..." readonly aria-disabled="true" aria-describedby="home-pending">
       </div>
       <button class="home-notifications home-icon-control" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="home-pending" title="Notificaciones: opción pendiente"><img src="assets/icons/campana.svg" width="24" height="24" alt=""></button>
-      <a class="home-account-link" href="cuenta.html" aria-label="Mi cuenta de María López"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
+      <a class="home-account-link" href="cuenta.html" aria-label="Mi cuenta de María López (ejemplo de Figma)"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
     </header>
   </div>
 
@@ -36,6 +37,7 @@
        Desktop: el contenido vuelve al desplazamiento normal del documento. -->
   <div class="home-viewport home-scroll" role="region" aria-label="Contenido desplazable de Inicio" tabindex="0">
     <main id="contenido" class="home-main page-width" tabindex="-1" aria-describedby="home-demo">
+      <p class="alert home-demo-notice" id="home-demo-notice">Demostración de Figma: María, las cifras, la actividad y la próxima entrega son ejemplos. No hay una sesión, reservas ni conversaciones reales conectadas en esta pantalla.</p>
       <section class="home-welcome panel" aria-labelledby="home-title">
         <h1 id="home-title">¡Hola, María!</h1>
         <p>Explora artículos y continúa con tus coordinaciones pendientes.</p>
@@ -48,7 +50,7 @@
         </div>
       </section>
 
-      <section class="home-summary" aria-label="Resumen de actividad de ejemplo">
+      <section class="home-summary" aria-label="Resumen de actividad de ejemplo" aria-describedby="home-demo-notice">
         <dl class="home-metrics">
           <div class="home-metric panel"><dt>Reserva activa</dt><dd>1</dd></div>
           <div class="home-metric panel"><dt>Mensajes nuevos</dt><dd>3</dd></div>
@@ -56,7 +58,7 @@
         </dl>
       </section>
 
-      <section class="home-coordination" aria-label="Actividad y coordinación">
+      <section class="home-coordination" aria-label="Actividad y coordinación de ejemplo" aria-describedby="home-demo-notice">
         <section class="home-activity panel" aria-labelledby="home-activity-title">
           <h2 class="home-section-title" id="home-activity-title">Actividad reciente</h2>
           <ul class="home-activity-list">
@@ -99,7 +101,15 @@
 
       <section class="home-recommendations" aria-labelledby="home-recommendations-title">
         <h2 class="home-section-title" id="home-recommendations-title">Recomendados para ti</h2>
-        <div class="home-products">
+        <div class="alert home-catalog-notice" id="home-catalog-notice" data-estado="pendiente">
+          <p id="home-catalog-status" role="status" aria-live="polite" aria-atomic="true">Integración pendiente: estos artículos son ejemplos de Figma, no resultados de Supabase ni recomendaciones personalizadas.</p>
+          <button class="button button-outline" id="home-refresh" type="button" hidden>Consultar artículos de prueba</button>
+          <button class="button button-outline" id="home-retry" type="button" hidden>Reintentar consulta</button>
+        </div>
+        <noscript>Se conservan los ejemplos de Figma. Los estados del catálogo requieren JavaScript.</noscript>
+        <div id="home-catalog-results" aria-busy="false" aria-describedby="home-catalog-count">
+        <p class="visually-hidden" id="home-catalog-count">4 artículos de ejemplo de Figma</p>
+        <div class="home-products" id="home-demo-products">
           <article class="product-card home-product" aria-labelledby="home-product-macbook">
             <div class="product-card-media">
               <img src="assets/images/productos/macbook-air-m1.jpg" width="1376" height="768" alt="MacBook Air abierta, con teclado y pantalla visibles.">
@@ -148,6 +158,8 @@
             <p class="home-product-seller">Diego Hernández · 4.7 · 28 calificaciones</p>
             <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="home-pending" tabindex="0" aria-label="Ver detalle de Audífonos Sony WH-1000XM4 (pendiente)" title="Detalle de Audífonos Sony WH-1000XM4: pantalla pendiente">Ver detalle</a>
           </article>
+        </div>
+        <div class="home-products" id="home-live-products" hidden></div>
         </div>
       </section>
     </main>
