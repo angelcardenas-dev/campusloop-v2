@@ -6,11 +6,12 @@
   <meta name="description" content="Explora el catálogo demostrativo de CampusLoop: artículos académicos, tecnológicos y de entretenimiento de estudiantes de Lima.">
   <title>Explorar artículos — CampusLoop</title>
   <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/catalogo.js"></script>
 </head>
-<body class="home-page">
+<body class="home-page" data-catalogo>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
   <p id="explore-demo" class="visually-hidden">Prototipo estático. Los ocho artículos, precios, estados y vendedores son datos de ejemplo de Figma; no representan una sesión ni operaciones reales.</p>
-  <p id="explore-static" class="visually-hidden">Control demostrativo sin funcionamiento. Las búsquedas, filtros y ordenamiento no modifican el catálogo ni envían o guardan información.</p>
+  <p id="explore-static" class="visually-hidden">Integración pendiente. Puedes preparar filtros, pero los ejemplos de Figma no se filtran ni se presentan como resultados de Supabase. Las opciones sin identificadores confirmados están deshabilitadas.</p>
   <p id="explore-pending" class="visually-hidden">
     Acceso pendiente de integración. Las opciones sin destino disponible
     permanecen demostrativas y no realizan operaciones.
@@ -26,11 +27,11 @@
         <a href="publicar.html">Publicar</a>
         <a href="reservas.html">Reservas</a>
       </nav>
-      <!-- Sin form ni envíos. Los controles son únicamente visuales. -->
+      <!-- Buscar prepara la consulta del catálogo; no envía formularios HTML. -->
       <div class="home-search home-screen-search">
         <img src="assets/icons/explorar-20.svg" width="20" height="20" alt="">
-        <label class="visually-hidden" for="explore-header-search">Buscar artículos (demostración)</label>
-        <input id="explore-header-search" type="search" placeholder="Buscar artículos..." readonly aria-disabled="true" aria-describedby="explore-static">
+        <label class="visually-hidden" for="explore-header-search">Buscar artículos; pulsa Enter para aplicar</label>
+        <input id="explore-header-search" type="search" maxlength="120" placeholder="Buscar artículos..." aria-describedby="explore-static">
       </div>
       <button class="home-notifications home-icon-control" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="explore-pending" title="Notificaciones: opción pendiente"><img src="assets/icons/campana.svg" width="24" height="24" alt=""></button>
       <a class="home-account-link" href="cuenta.html" aria-label="Mi cuenta de María López"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
@@ -42,65 +43,94 @@
       <div class="explore-heading">
         <div class="explore-heading-copy">
           <h1>Explorar artículos</h1>
-          <p class="explore-intro">Encuentra artículos publicados por estudiantes verificados de Lima.</p>
+          <p class="explore-intro">Encuentra artículos de la comunidad universitaria de Lima.</p>
         </div>
         <div class="field explore-sort">
-          <span class="explore-filter-title" id="explore-sort-label">Ordenar por</span>
-          <button class="form-control explore-select" type="button" aria-disabled="true" aria-labelledby="explore-sort-label explore-sort-value" aria-describedby="explore-static"><span id="explore-sort-value">Más recientes</span></button>
+          <label class="explore-filter-title" for="explore-sort">Ordenar por</label>
+          <select class="form-control explore-select" id="explore-sort" aria-describedby="explore-static">
+            <option value="recientes">Más recientes</option>
+            <option value="precio-menor">Precio: menor a mayor</option>
+            <option value="precio-mayor">Precio: mayor a menor</option>
+          </select>
         </div>
       </div>
 
       <div class="field explore-mobile-search">
         <label for="explore-search">Buscar artículos</label>
-        <input class="form-control" id="explore-search" type="search" placeholder="Artículos, categorías o palabras clave" readonly aria-disabled="true" aria-describedby="explore-static">
+        <input class="form-control" id="explore-search" type="search" maxlength="120" placeholder="Artículos, categorías o palabras clave" aria-describedby="explore-static">
       </div>
-      <div class="explore-mobile-controls" aria-label="Controles demostrativos del catálogo">
-        <button class="button button-outline" type="button" aria-disabled="true" aria-describedby="explore-static">Filtros</button>
-        <button class="button button-outline" type="button" aria-disabled="true" aria-describedby="explore-static">Más recientes</button>
+      <div class="explore-mobile-controls" aria-label="Controles del catálogo">
+        <button class="button button-outline" id="explore-toggle-filters" type="button" aria-controls="explore-filters" aria-expanded="false">Filtros</button>
+        <label class="visually-hidden" for="explore-sort-mobile">Ordenar artículos</label>
+        <select class="button button-outline explore-select" id="explore-sort-mobile" aria-describedby="explore-static">
+          <option value="recientes">Más recientes</option>
+          <option value="precio-menor">Precio: menor a mayor</option>
+          <option value="precio-mayor">Precio: mayor a menor</option>
+        </select>
       </div>
 
+      <div class="alert explore-integration" id="explore-notice" data-estado="pendiente">
+        <p id="explore-status" role="status" aria-live="polite" aria-atomic="true">Integración pendiente: los 8 artículos visibles son ejemplos de Figma, no resultados recibidos de Supabase.</p>
+        <p class="field-hint" id="explore-source-hint">Las opciones sin identificadores confirmados permanecen deshabilitadas.</p>
+        <button class="button button-outline" id="explore-retry" type="button" hidden>Reintentar consulta</button>
+      </div>
+      <noscript>Los filtros requieren JavaScript. Se muestran únicamente los ejemplos estáticos de Figma.</noscript>
+
       <div class="explore-content">
-        <aside class="panel explore-filters" aria-labelledby="explore-filters-title" aria-describedby="explore-static">
-          <h2 id="explore-filters-title">Filtros</h2>
-          <div class="explore-filter-group" role="group" aria-labelledby="explore-category">
-            <h3 class="explore-filter-title" id="explore-category">Categoría</h3>
-            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-category-0" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-category-0">Académico</span></div>
-            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-category-1" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-category-1">Tecnológico</span></div>
-            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-category-2" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-category-2">Entretenimiento</span></div>
+        <aside class="panel explore-filters" id="explore-filters" data-abierto="false" aria-labelledby="explore-filters-title" aria-describedby="explore-static">
+          <h2 id="explore-filters-title" tabindex="-1">Filtros</h2>
+          <button class="button button-outline explore-close-filters" id="explore-close-filters" type="button">Cerrar filtros</button>
+          <form class="explore-filter-fields" id="explore-filter-form" novalidate>
+          <fieldset class="explore-filter-group">
+            <legend class="explore-filter-title">Categoría</legend>
+            <div id="explore-category-options" class="explore-option-list">
+              <label class="explore-option"><input type="checkbox" disabled> Académico</label>
+              <label class="explore-option"><input type="checkbox" disabled> Tecnológico</label>
+              <label class="explore-option"><input type="checkbox" disabled> Entretenimiento</label>
+            </div>
+          </fieldset>
+          <div class="field">
+            <label for="explore-university">Universidad</label>
+            <select class="form-control explore-select" id="explore-university" disabled aria-describedby="explore-static"><option value="">Todas las universidades</option></select>
           </div>
           <div class="field">
-            <span class="explore-filter-title" id="explore-university-label">Universidad / campus</span>
-            <button class="form-control explore-select" type="button" aria-disabled="true" aria-labelledby="explore-university-label explore-university-value" aria-describedby="explore-static"><span id="explore-university-value">Todas las universidades</span></button>
+            <label for="explore-campus">Campus</label>
+            <select class="form-control explore-select" id="explore-campus" disabled aria-describedby="explore-static"><option value="">Todos los campus</option></select>
           </div>
-          <div class="explore-filter-group" role="group" aria-labelledby="explore-state">
-            <h3 class="explore-filter-title" id="explore-state">Estado del producto</h3>
-            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-state-0" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-state-0">Disponible</span></div>
-            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-state-1" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-state-1">Reservado</span></div>
-            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-state-2" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-state-2">Vendido</span></div>
-          </div>
+          <fieldset class="explore-filter-group">
+            <legend class="explore-filter-title">Estado del artículo</legend>
+            <div id="explore-state-options" class="explore-option-list">
+              <label class="explore-option"><input type="checkbox" disabled> Disponible</label>
+              <label class="explore-option"><input type="checkbox" disabled> Reservado</label>
+              <label class="explore-option"><input type="checkbox" disabled> Vendido</label>
+            </div>
+          </fieldset>
           <div class="field">
             <label for="explore-min-price">Precio mínimo (S/)</label>
-            <input class="form-control" id="explore-min-price" type="text" inputmode="numeric" value="0" readonly aria-disabled="true" aria-describedby="explore-static">
+            <input class="form-control" id="explore-min-price" type="text" inputmode="decimal" maxlength="18" placeholder="0" aria-describedby="explore-status">
           </div>
           <div class="field">
             <label for="explore-max-price">Precio máximo (S/)</label>
-            <input class="form-control" id="explore-max-price" type="text" inputmode="numeric" value="3000" readonly aria-disabled="true" aria-describedby="explore-static">
+            <input class="form-control" id="explore-max-price" type="text" inputmode="decimal" maxlength="18" placeholder="Sin máximo" aria-describedby="explore-status">
           </div>
-          <div class="explore-filter-group" role="group" aria-labelledby="explore-condition">
-            <h3 class="explore-filter-title" id="explore-condition">Condición</h3>
-            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-condition-0" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-condition-0">Nuevo</span></div>
-            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-condition-1" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-condition-1">Como nuevo</span></div>
-            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-condition-2" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-condition-2">Buen estado</span></div>
-            <div class="explore-option" role="checkbox" aria-checked="false" aria-disabled="true" aria-labelledby="explore-condition-3" aria-describedby="explore-static" tabindex="0"><span class="explore-checkbox" aria-hidden="true"></span><span id="explore-condition-3">Usado</span></div>
-          </div>
-          <button class="button button-outline" type="button" aria-disabled="true" aria-describedby="explore-static">Limpiar filtros</button>
-          <button class="button button-primary" type="button" aria-disabled="true" aria-describedby="explore-static">Aplicar filtros</button>
+          <fieldset class="explore-filter-group">
+            <legend class="explore-filter-title">Condición</legend>
+            <div id="explore-condition-options" class="explore-option-list">
+              <label class="explore-option"><input type="checkbox" disabled> Nuevo</label>
+              <label class="explore-option"><input type="checkbox" disabled> Como nuevo</label>
+              <label class="explore-option"><input type="checkbox" disabled> Buen estado</label>
+              <label class="explore-option"><input type="checkbox" disabled> Usado</label>
+            </div>
+          </fieldset>
+          <button class="button button-outline" id="explore-clear" type="button">Limpiar filtros</button>
+          <button class="button button-primary" id="explore-apply" type="button">Aplicar filtros</button>
+          </form>
         </aside>
 
-        <section class="explore-results" aria-labelledby="explore-count">
+        <section class="explore-results" id="explore-results" aria-labelledby="explore-count" aria-busy="false">
           <h2 class="visually-hidden">Catálogo de artículos</h2>
-          <p class="explore-count" id="explore-count">Mostrando 8 de 8 artículos</p>
-          <div class="explore-products">
+          <p class="explore-count" id="explore-count">8 artículos de ejemplo · Figma</p>
+          <div class="explore-products" id="explore-demo-products">
             <article class="product-card explore-product" aria-labelledby="explore-product-macbook">
               <div class="product-card-media">
                 <img src="assets/images/productos/macbook-air-m1.jpg" width="1376" height="768" alt="MacBook Air abierta, con teclado y pantalla visibles.">
@@ -198,7 +228,8 @@
               <a class="button button-primary" role="link" aria-disabled="true" aria-describedby="explore-pending" tabindex="0" aria-label="Ver detalle de Física Universitaria (pendiente)" title="Detalle de este artículo: fuera del recorrido asignado">Ver detalle</a>
             </article>
           </div>
-          <p class="explore-pagination">Página 1 de 1</p>
+          <div class="explore-products" id="explore-live-products" hidden></div>
+          <p class="explore-pagination" id="explore-pagination">Ejemplos de diseño; no representan una página del catálogo remoto.</p>
         </section>
       </div>
     </main>
