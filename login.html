@@ -9,7 +9,7 @@
 </head>
 <body class="auth-page">
   <a class="skip-link" href="#contenido">Saltar al formulario</a>
-  <p id="auth-pending" class="visually-hidden">Vista estática. La autenticación real y la recuperación de contraseña están pendientes de implementación. No se envían ni se guardan tus datos.</p>
+  <p id="auth-pending" class="visually-hidden">La recuperación de contraseña y la opción Recordarme están pendientes de implementación.</p>
 
   <main id="contenido" class="auth-main page-width" tabindex="-1">
     <div class="auth-layout">
@@ -31,29 +31,31 @@
           <p>Continúa con tu cuenta para comprar y vender entre estudiantes.</p>
         </div>
 
-        <!-- Sin campos con name ni botón submit: esta etapa no envía credenciales. -->
-        <form class="auth-form" novalidate aria-describedby="auth-pending">
+        <form id="login-form" class="auth-form" method="post" novalidate>
           <div class="auth-field">
             <label for="correo">Correo universitario</label>
-            <input class="auth-control" id="correo" type="email" autocomplete="username" inputmode="email" spellcheck="false" placeholder="maria.lopez@pucp.edu.pe">
+            <input class="auth-control" id="correo" name="correo" type="email" autocomplete="username" inputmode="email" spellcheck="false" required maxlength="254" aria-describedby="correo-error" placeholder="maria.lopez@pucp.edu.pe">
+            <p id="correo-error" class="auth-hint" hidden></p>
           </div>
 
           <div class="auth-field">
             <label for="contrasena">Contraseña</label>
-            <input class="auth-control" id="contrasena" type="password" autocomplete="current-password" placeholder="••••••••">
+            <input class="auth-control" id="contrasena" name="contrasena" type="password" autocomplete="current-password" required maxlength="128" aria-describedby="contrasena-error" placeholder="••••••••">
+            <p id="contrasena-error" class="auth-hint" hidden></p>
           </div>
 
           <div class="auth-options">
             <label class="auth-remember" for="recordarme"><input id="recordarme" type="checkbox" aria-describedby="auth-pending"><span>Recordarme</span></label>
-            <a class="auth-recovery" role="link" aria-disabled="true" aria-describedby="auth-pending" tabindex="0" title="Recuperación de contraseña pendiente">¿Olvidaste tu contraseña?</a>
+            <span class="auth-recovery" aria-describedby="auth-pending" title="Recuperación de contraseña pendiente">¿Olvidaste tu contraseña?</span>
           </div>
 
-          <a class="button button-primary auth-submit" href="inicio.html" aria-describedby="auth-demo-info">Ingresar</a>
-          <p id="auth-demo-info" class="auth-hint">Acceso demostrativo: no se validan credenciales.</p>
+          <button class="button button-primary auth-submit" type="submit" disabled>Ingresar</button>
+          <div id="login-mensaje" role="status" aria-live="polite" aria-atomic="true" hidden></div>
           <a class="auth-register" href="registro.html">¿Aún no tienes una cuenta? Crear cuenta</a>
         </form>
       </section>
     </div>
   </main>
+  <script type="module" src="js/acceso-ui.js"></script>
 </body>
 </html>

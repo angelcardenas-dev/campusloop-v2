@@ -9,7 +9,7 @@
 </head>
 <body class="auth-page">
   <a class="skip-link" href="#contenido">Saltar al formulario</a>
-  <p id="auth-pending" class="visually-hidden">Vista estática. La creación de cuentas, la validación y la verificación de correo están pendientes de implementación. No se envían ni se guardan tus datos o la aceptación de términos.</p>
+  <p id="auth-pending" class="visually-hidden">La aceptación de términos se comprueba en este formulario, pero todavía no se registra en el servidor.</p>
 
   <main id="contenido" class="auth-main page-width" tabindex="-1">
     <div class="auth-layout">
@@ -30,41 +30,53 @@
           <p>Únete a la comunidad universitaria de Lima.</p>
         </div>
 
-        <!-- Sin campos con name ni botón submit: esta etapa no envía datos. -->
-        <form class="auth-form" method="post" novalidate aria-describedby="auth-pending">
+        <form id="registro-form" class="auth-form" method="post" novalidate>
           <div class="auth-field">
             <label for="nombre">Nombre completo</label>
-            <input class="auth-control" id="nombre" type="text" autocomplete="name" placeholder="María López">
+            <input class="auth-control" id="nombre" name="nombre" type="text" autocomplete="name" required minlength="2" maxlength="100" aria-describedby="nombre-error" placeholder="María López">
+            <p id="nombre-error" class="auth-hint" hidden></p>
           </div>
 
           <div class="auth-field">
             <label for="universidad">Universidad</label>
-            <input class="auth-control" id="universidad" type="text" autocomplete="organization" placeholder="Pontificia Universidad Católica del Perú">
+            <select class="auth-control" id="universidad" name="universidad" required aria-describedby="universidad-error">
+              <option value="" selected disabled>Catálogo pendiente de integración</option>
+            </select>
+            <p id="universidad-error" class="auth-hint" hidden></p>
           </div>
 
           <div class="auth-field">
             <label for="campus">Campus</label>
-            <input class="auth-control" id="campus" type="text" autocomplete="off" placeholder="San Miguel · Lima">
+            <select class="auth-control" id="campus" name="campus" required disabled aria-describedby="campus-hint campus-error">
+              <option value="" selected disabled>Primero selecciona una universidad</option>
+            </select>
+            <p id="campus-hint" class="visually-hidden">El campus se habilita después de seleccionar una universidad.</p>
+            <p id="campus-error" class="auth-hint" hidden></p>
           </div>
 
           <div class="auth-field">
             <label for="correo">Correo universitario</label>
-            <input class="auth-control" id="correo" type="email" autocomplete="email" inputmode="email" spellcheck="false" placeholder="maria.lopez@pucp.edu.pe">
+            <input class="auth-control" id="correo" name="correo" type="email" autocomplete="email" inputmode="email" spellcheck="false" required maxlength="254" aria-describedby="correo-error" placeholder="maria.lopez@pucp.edu.pe">
+            <p id="correo-error" class="auth-hint" hidden></p>
           </div>
 
           <div class="auth-field">
             <label for="contrasena">Contraseña</label>
-            <input class="auth-control" id="contrasena" type="password" autocomplete="new-password" minlength="8" aria-describedby="password-hint" placeholder="••••••••">
+            <input class="auth-control" id="contrasena" name="contrasena" type="password" autocomplete="new-password" required minlength="8" maxlength="128" aria-describedby="password-hint contrasena-error" placeholder="••••••••">
             <p id="password-hint" class="auth-hint">Mínimo 8 caracteres.</p>
+            <p id="contrasena-error" class="auth-hint" hidden></p>
           </div>
 
           <div class="auth-field">
             <label for="confirmar-contrasena">Confirmar contraseña</label>
-            <input class="auth-control" id="confirmar-contrasena" type="password" autocomplete="new-password" placeholder="••••••••">
+            <input class="auth-control" id="confirmar-contrasena" name="confirmar-contrasena" type="password" autocomplete="new-password" required minlength="8" maxlength="128" aria-describedby="confirmar-contrasena-error" placeholder="••••••••">
+            <p id="confirmar-contrasena-error" class="auth-hint" hidden></p>
           </div>
 
-          <label class="auth-remember auth-terms" for="terminos"><input id="terminos" type="checkbox" aria-describedby="auth-pending"><span>Acepto los Términos y Condiciones y la Política de Privacidad.</span></label>
-          <button class="button button-primary auth-submit" type="button" aria-disabled="true" aria-describedby="auth-pending" title="Creación de cuenta pendiente de implementación">Crear cuenta</button>
+          <label class="auth-remember auth-terms" for="terminos"><input id="terminos" name="terminos" type="checkbox" required aria-describedby="auth-pending terminos-error"><span>Acepto los Términos y Condiciones y la Política de Privacidad.</span></label>
+          <p id="terminos-error" class="auth-hint" hidden></p>
+          <button class="button button-primary auth-submit" type="submit" disabled>Crear cuenta</button>
+          <div id="registro-mensaje" role="status" aria-live="polite" aria-atomic="true" hidden></div>
           <a class="auth-register" href="login.html">¿Ya tienes una cuenta? Iniciar sesión</a>
 
           <aside class="auth-info" aria-labelledby="student-account-title">
@@ -75,5 +87,6 @@
       </section>
     </div>
   </main>
+  <script type="module" src="js/acceso-ui.js"></script>
 </body>
 </html>
