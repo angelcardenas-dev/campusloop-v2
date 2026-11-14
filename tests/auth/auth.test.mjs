@@ -84,8 +84,16 @@ function sdkSimulado() {
   return { auth, estado, llamadas, listeners, emitir };
 }
 
-async function cargarAuth({ sdk = sdkSimulado(), proveedor } = {}) {
+async function cargarAuth({ sdk = sdkSimulado(), proveedor, configuracion } = {}) {
   const e = entorno();
+  const configReal = e.modulo('config-publica.js');
+  await configReal.link(() => { throw new Error('Importación inesperada'); });
+  await configReal.evaluate();
+  // Inyecta solo valores de prueba; ejecuta el validador de producción sin red.
+  const configInyectada = new SyntheticModule(['CONFIGURACION_PUBLICA', 'validarDestinoConfirmacion'], function () {
+    this.setExport('CONFIGURACION_PUBLICA', configuracion ?? configReal.namespace.CONFIGURACION_PUBLICA);
+    this.setExport('validarDestinoConfirmacion', configReal.namespace.validarDestinoConfirmacion);
+  }, { context: e.contexto });
   let consultasCliente = 0;
   const obtener = proveedor ?? (async () => {
     consultasCliente++;
@@ -96,11 +104,12 @@ async function cargarAuth({ sdk = sdkSimulado(), proveedor } = {}) {
   }, { context: e.contexto });
   const modulo = e.modulo('auth.js');
   await modulo.link(nombre => {
+    if (nombre === './config-publica.js') return configInyectada;
     assert.equal(nombre, './supabase-cliente.js');
     return inyectado;
   });
   await modulo.evaluate();
-  return { ...e, sdk, auth: modulo.namespace, consultasCliente: () => consultasCliente };
+  return { ...e, sdk, config: configReal.namespace, auth: modulo.namespace, consultasCliente: () => consultasCliente };
 }
 
 function sinSecretos(valor) {
@@ -208,7 +217,7 @@ test('integración offline de proveedor real y Auth: un cliente para dos operaci
   assert.equal(cliente.control.intentosRed, 0); assert.equal(e.control.intentosRed, 0);
 });
 
-test('registro válido: solo email/password a signUp, sin datos de perfil ni tokens de salida', async () => {
+test('registro sin destino explícito: conserva solo email/password a signUp y el resultado anterior', async () => {
   const e = await cargarAuth();
   const r = await e.auth.registrar(registro());
   assert.deepEqual(plano(r), { ok: true, datos: { estado: 'AUTENTICADO', usuario: { id: USUARIO.id, correo: USUARIO.email } }, error: null });
@@ -399,4 +408,137 @@ test('respuestas SDK incompletas no anuncian autenticación', async () => {
   for (const r of [await e.auth.registrar(registro()), await e.auth.iniciarSesion(USUARIO.email, 'prueba'), await e.auth.obtenerEstadoAuth()]) {
     assert.equal(r.ok, false); assert.equal(r.error.codigo, 'SERVIDOR'); sinSecretos(r);
   }
+});
+
+// Retornos exclusivamente sintéticos/locales: no hay registros reales ni DNS.
+const origenAppPrueba = 'https://campusloop.example.invalid';
+const retornoAppPrueba = origenAppPrueba + '/auth/confirmacion.html';
+const retornoLocalPrueba = 'http://127.0.0.1:5501/tests/auth/prueba-navegador.html';
+const configRetorno = () => ({ appOrigin: origenAppPrueba, authEmailRedirectTo: retornoAppPrueba });
+
+test('configuración de retorno: ausente/vacía conserva Site URL, sin exigir origen o claves', async () => {
+  const { config } = await cargarCliente();
+  for (const valor of [undefined, {}, { authEmailRedirectTo: '' }, { appOrigin: 'sin-usar', authEmailRedirectTo: '' }]) {
+    assert.deepEqual(plano(config.validarDestinoConfirmacion(valor)), { ok: true, datos: { emailRedirectTo: null }, error: null });
+  }
+  assert.equal(config.CONFIGURACION_PUBLICA.supabaseUrl, '');
+  assert.equal(config.CONFIGURACION_PUBLICA.supabasePublishableKey, '');
+  assert.equal(config.CONFIGURACION_PUBLICA.appOrigin, '');
+  assert.equal(config.CONFIGURACION_PUBLICA.authEmailRedirectTo, '');
+});
+
+for (const [nombre, appOrigin, authEmailRedirectTo, esperado] of [
+  ['local aprobado', 'http://127.0.0.1:5501', retornoLocalPrueba, retornoLocalPrueba],
+  ['HTTPS producción sintética', origenAppPrueba, retornoAppPrueba, retornoAppPrueba],
+  ['origen con slash final', origenAppPrueba + '/', retornoAppPrueba, retornoAppPrueba],
+  ['ruta limpia HTTPS', origenAppPrueba, origenAppPrueba + '/auth/confirmacion', origenAppPrueba + '/auth/confirmacion'],
+  ['puerto HTTPS explícito', origenAppPrueba + ':8443', origenAppPrueba + ':8443/auth/confirmacion.html', origenAppPrueba + ':8443/auth/confirmacion.html'],
+  ['hostname normalizado', origenAppPrueba.toUpperCase().replace('HTTPS:', 'https:'), retornoAppPrueba, retornoAppPrueba],
+]) test(`registro con retorno válido: ${nombre}`, async () => {
+  const e = await cargarAuth({ configuracion: { appOrigin, authEmailRedirectTo } });
+  const r = await e.auth.registrar(registro());
+  assert.equal(r.ok, true); assert.equal(r.datos.estado, 'AUTENTICADO'); sinSecretos(r);
+  assert.deepEqual(plano(e.sdk.llamadas), [['signUp', { email: 'comprador@example.invalid', password: registro().contrasena, options: { emailRedirectTo: esperado } }]]);
+  assert.equal(e.control.intentosRed, 0); assert.equal(e.control.mensajesConsola, 0);
+});
+
+for (const [nombre, cambio] of [
+  ['otro origen', { authEmailRedirectTo: 'https://externo.example.invalid/auth/confirmacion.html' }],
+  ['subdominio distinto', { authEmailRedirectTo: 'https://otro.campusloop.example.invalid/auth/confirmacion.html' }],
+  ['sufijo engañoso', { authEmailRedirectTo: 'https://campusloop.example.invalid.evil.invalid/auth/confirmacion.html' }],
+  ['puerto distinto', { authEmailRedirectTo: origenAppPrueba + ':8443/auth/confirmacion.html' }],
+  ['javascript', { authEmailRedirectTo: 'javascript:alert(1)' }],
+  ['data', { authEmailRedirectTo: 'data:text/html,contenido' }],
+  ['HTTP externo', { appOrigin: 'http://campusloop.example.invalid', authEmailRedirectTo: 'http://campusloop.example.invalid/auth/confirmacion.html' }],
+  ['HTTP loopback en otro puerto', { appOrigin: 'http://127.0.0.1:5500', authEmailRedirectTo: 'http://127.0.0.1:5500/tests/auth/prueba-navegador.html' }],
+  ['alias localhost no aprobado', { appOrigin: 'http://localhost:5501', authEmailRedirectTo: 'http://localhost:5501/tests/auth/prueba-navegador.html' }],
+  ['downgrade desde HTTPS', { authEmailRedirectTo: retornoLocalPrueba }],
+  ['relativo', { authEmailRedirectTo: '/auth/confirmacion.html' }],
+  ['relativo al protocolo', { authEmailRedirectTo: '//externo.example.invalid/auth/confirmacion.html' }],
+  ['URL sin slash de autoridad', { authEmailRedirectTo: 'https:campusloop.example.invalid/auth/confirmacion.html' }],
+  ['usuario y contraseña', { authEmailRedirectTo: 'https://usuario:dato-no-publicable@campusloop.example.invalid/auth/confirmacion.html' }],
+  ['query next', { authEmailRedirectTo: retornoAppPrueba + '?next=https://externo.example.invalid' }],
+  ['código sensible', { authEmailRedirectTo: retornoAppPrueba + '?code=dato-no-publicable' }],
+  ['token en fragmento', { authEmailRedirectTo: retornoAppPrueba + '#access_token=dato-no-publicable' }],
+  ['query vacío', { authEmailRedirectTo: retornoAppPrueba + '?' }],
+  ['fragmento vacío', { authEmailRedirectTo: retornoAppPrueba + '#' }],
+  ['slash codificado', { authEmailRedirectTo: origenAppPrueba + '/auth%2fconfirmacion.html' }],
+  ['doble codificación', { authEmailRedirectTo: origenAppPrueba + '/auth%252fconfirmacion.html' }],
+  ['segmento padre', { authEmailRedirectTo: origenAppPrueba + '/auth/../confirmacion.html' }],
+  ['segmento punto', { authEmailRedirectTo: origenAppPrueba + '/auth/./confirmacion.html' }],
+  ['slash doble', { authEmailRedirectTo: origenAppPrueba + '//externo.example.invalid/confirmacion.html' }],
+  ['backslash', { authEmailRedirectTo: origenAppPrueba + '/auth\\confirmacion.html' }],
+  ['salto de línea', { authEmailRedirectTo: retornoAppPrueba + '\n' }],
+  ['espacio al inicio', { authEmailRedirectTo: ' ' + retornoAppPrueba }],
+  ['solo espacios', { authEmailRedirectTo: '   ' }],
+  ['ruta con caracteres no ASCII', { authEmailRedirectTo: origenAppPrueba + '/confirmación.html' }],
+  ['destino excesivo', { authEmailRedirectTo: origenAppPrueba + '/' + 'a'.repeat(2050) }],
+  ['destino nulo', { authEmailRedirectTo: null }],
+  ['destino numérico', { authEmailRedirectTo: 123 }],
+  ['destino objeto', { authEmailRedirectTo: {} }],
+  ['sin origen confiable', { appOrigin: '' }],
+  ['origen con ruta', { appOrigin: origenAppPrueba + '/auth' }],
+  ['origen con parámetros', { appOrigin: origenAppPrueba + '?next=dato-no-publicable' }],
+  ['origen nulo', { appOrigin: null }],
+  ['loopback ambiguo', { appOrigin: 'http://2130706433:5501', authEmailRedirectTo: retornoLocalPrueba }],
+]) test(`retorno inválido bloquea registro antes del cliente: ${nombre}`, async () => {
+  const configuracion = { ...configRetorno(), ...cambio };
+  const e = await cargarAuth({ configuracion });
+  const validacion = e.config.validarDestinoConfirmacion(configuracion);
+  const r = await e.auth.registrar(registro());
+  assert.equal(validacion.ok, false); assert.equal(validacion.error.codigo, 'CONFIGURACION');
+  assert.equal(r.ok, false); assert.equal(r.error.codigo, 'CONFIGURACION');
+  assert.equal(e.consultasCliente(), 0); assert.equal(e.sdk.llamadas.length, 0);
+  assert.equal(e.control.intentosRed, 0); assert.equal(e.control.mensajesConsola, 0);
+  assert.equal(JSON.stringify([validacion, r]).includes('dato-no-publicable'), false); sinSecretos(r);
+});
+
+test('registro no acepta retorno/origen/opciones desde los datos del formulario', async () => {
+  const e = await cargarAuth({ configuracion: configRetorno() });
+  const r = await e.auth.registrar({ ...registro(), emailRedirectTo: 'https://externo.example.invalid',
+    authEmailRedirectTo: 'https://externo.example.invalid', appOrigin: 'https://externo.example.invalid',
+    options: { emailRedirectTo: 'https://externo.example.invalid' } });
+  assert.equal(r.ok, true);
+  assert.equal(e.sdk.llamadas[0][1].options.emailRedirectTo, retornoAppPrueba);
+  const ausente = await cargarAuth();
+  await ausente.auth.registrar({ ...registro(), options: { emailRedirectTo: retornoAppPrueba } });
+  assert.equal(Object.hasOwn(ausente.sdk.llamadas[0][1], 'options'), false);
+});
+
+test('registro con destino explícito conserva PENDIENTE_CONFIRMACION y no persiste perfil', async () => {
+  const e = await cargarAuth({ configuracion: configRetorno() }); e.sdk.estado.session = null;
+  const r = await e.auth.registrar(registro());
+  assert.equal(r.datos.estado, 'PENDIENTE_CONFIRMACION'); sinSecretos(r);
+  assert.deepEqual(Object.keys(e.sdk.llamadas[0][1]).sort(), ['email', 'options', 'password']);
+});
+
+test('UUID, contraseña, correo y términos siguen rechazados antes del cliente con retorno válido', async () => {
+  const e = await cargarAuth({ configuracion: configRetorno() });
+  for (const [, invalido] of invalidos) assert.equal((await e.auth.registrar(invalido)).error.codigo, 'VALIDACION');
+  assert.equal(e.consultasCliente(), 0); assert.equal(e.sdk.llamadas.length, 0);
+});
+
+test('retorno inválido no afecta login, estado, usuario, guarda, eventos o logout', async () => {
+  const e = await cargarAuth({ configuracion: { ...configRetorno(), authEmailRedirectTo: 'javascript:alert(1)' } });
+  for (const resultado of [await e.auth.iniciarSesion(USUARIO.email, 'prueba'), await e.auth.obtenerEstadoAuth(),
+    await e.auth.obtenerUsuarioActual(), await e.auth.requerirAutenticacion()]) assert.equal(resultado.ok, true);
+  const recibidos = []; const cancelar = e.auth.escucharCambiosAuth(r => recibidos.push(r));
+  await esperar(); cancelar(); assert.equal(recibidos[0].evento, 'INITIAL_SESSION');
+  assert.equal((await e.auth.cerrarSesion()).datos.estado, 'NO_AUTENTICADO');
+});
+
+test('retorno explícito con proveedor compartido: un cliente, opciones PKCE intactas, sin red', async () => {
+  const cliente = await cargarCliente(); const sdk = sdkSimulado(); let creaciones = 0;
+  const proveedor = cliente.cliente.crearProveedorCliente({ configuracion: { ...configuracionPrueba(), ...configRetorno() },
+    cargarSdk: async () => ({ createClient(url, clave, opciones) {
+      creaciones++; assert.equal(url, configuracionPrueba().supabaseUrl);
+      assert.equal(opciones.auth.flowType, 'pkce'); assert.equal(opciones.auth.detectSessionInUrl, true);
+      return { auth: sdk.auth };
+    } }),
+  });
+  const e = await cargarAuth({ sdk, proveedor, configuracion: configRetorno() });
+  const resultados = await Promise.all([e.auth.registrar(registro()), e.auth.obtenerEstadoAuth()]);
+  assert.ok(resultados.every(r => r.ok)); assert.equal(creaciones, 1);
+  assert.equal(sdk.llamadas.find(l => l[0] === 'signUp')[1].options.emailRedirectTo, retornoAppPrueba);
+  assert.equal(cliente.control.intentosRed, 0); assert.equal(e.control.intentosRed, 0);
 });
