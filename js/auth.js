@@ -1,4 +1,5 @@
 import { obtenerClienteSupabase } from './supabase-cliente.js';
+import { CONFIGURACION_PUBLICA, validarDestinoConfirmacion } from './config-publica.js';
 
 /* Datos */
 const MENSAJES = Object.freeze({
@@ -92,11 +93,15 @@ function comprobarRespuesta(respuesta) {
 
 export async function registrar(datosRegistro) {
   if (!registroValido(datosRegistro)) return fallo('VALIDACION');
+  const destino = validarDestinoConfirmacion(CONFIGURACION_PUBLICA);
+  if (!destino.ok) return fallo('CONFIGURACION');
   return ejecutar(async auth => {
-    const datos = comprobarRespuesta(await auth.signUp({
+    const solicitud = {
       email: datosRegistro.correo.trim().toLowerCase(),
       password: datosRegistro.contrasena,
-    }));
+    };
+    if (destino.datos.emailRedirectTo) solicitud.options = { emailRedirectTo: destino.datos.emailRedirectTo };
+    const datos = comprobarRespuesta(await auth.signUp(solicitud));
     const usuario = reducirUsuario(datos?.user);
     if (!usuario) return fallo('SERVIDOR');
     // No persistir nombre/campus/roles/metadatos. Perfiles corresponde a Bernabé.
