@@ -1216,6 +1216,36 @@ main.page-width > section + section { margin-top: var(--space-24); }
 }
 
 
+/* --- Alertas dinámicas para formularios --- */
+.msj-dinamico {
+    display: none !important;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.msj-dinamico.is-error,
+.msj-dinamico.is-exito {
+    display: block !important; 
+}
+
+.msj-dinamico.is-error {
+    color: #DC2626;
+    background-color: #FEF2F2;
+}
+
+.msj-dinamico.is-exito {
+    color: #16A34A;
+    background-color: #ECFDF3;
+}
+
+.input-error {
+    border-color: #DC2626 !important;
+}
+
+
+
 /* RESERVAS / MARICIELO */
 /* Reservas — Maricielo. Figma 278:3929 (1440 × 968), 278:4006 (390 × 844)
    y consulta Mobile 303:1433 (390 × 844). Componentes: Interaction 301:335,
