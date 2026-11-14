@@ -50,7 +50,7 @@
                     <div class="upload-gallery">
                         <img src="assets/images/productos/apuntes-calculo.jpg" alt="Apuntes de Cálculo" class="main-photo">
                         <div class="photo-counter">
-                            <span class="text-blue">1/5 fotos</span> · <span class="text-blue">Apuntes de Cálculo</span>
+                            <span class="text-blue">1/1 foto</span> · <span class="text-blue">Apuntes de Cálculo</span>
                         </div>
                     </div>
 
@@ -89,18 +89,21 @@
                     <!-- 4. Ubicación -->
                     <h2 class="mt-2">4. Ubicación y disponibilidad</h2>
                     <div class="form-group">
-                        <label>Campus de entrega</label>
+                        <label>Campus del vendedor</label>
                         <input type="text" value="PUCP · San Miguel">
                     </div>
                     <div class="form-group">
                         <label>Disponibilidad</label>
-                        <input type="text" value="Coordinar con el comprador">
+                        <input type="text" value="A coordinar en Reservas">
                     </div>
+
+                    <!-- Contenedor para mensajes de error/éxito-->
+                    <div id="mensaje-formulario" class="msj-dinamico"></div>
 
                     <!-- Botones -->
                     <div class="publish-actions mt-2">
                         <button type="button" class="btn-secondary">Guardar borrador</button>
-                        <a href="publicar-exito.html" class="btn-primary">Publicar artículo</a>
+                        <button type="button" class="btn-primary" id="btn-publicar">Publicar artículo</button>
                     </div>
                 </div>
             </div>
@@ -110,7 +113,7 @@
                 <div class="ai-card">
                     <h3>Asistente IA · Opcional</h3>
                     <p>Puedes pedir sugerencias para el título o la descripción. Tú decides qué aplicar; nada se publica automáticamente.</p>
-                    <button type="button" class="btn-secondary">Ver sugerencias</button>
+                    <button type="button" class="btn-secondary" id="btn-generar-ia">Generar sugerencia con IA</button>
                 </div>
             </aside>
         </div>
@@ -123,5 +126,8 @@
         <a href="publicar.html" aria-current="page"><img src="assets/icons/publicar.svg" width="24" height="24" alt=""><span>Publicar</span></a>
         <a href="reservas.html"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
     </nav>
+
+    <script src="js/publicaciones.js"></script>
+
 </body>
 </html>
