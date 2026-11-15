@@ -1,0 +1,9 @@
+[build]
+  command = "node scripts/preparar-netlify.mjs"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+
+[build.processing.html]
+  pretty_urls = false

@@ -292,6 +292,35 @@ aserciones; no se relajan pruebas para aceptar un cambio incompatible.
 Todos los registros y respuestas de esta suite son simulados, nunca evidencia de
 creación de cuentas ni de retorno PKCE real.
 
+## Preparación reducida PKCE offline — 14/11/2026
+
+Rama `feature/angel/pruebas-pkce-offline`, base `4a584d8` de origin/develop.
+Se añaden únicamente `retorno-pkce.mjs` (arnés sin HTML ni arranque automático)
+y `pkce.test.mjs` (cinco escenarios). El arnés adapta el procesamiento de bb882f4
+como referencia, sin fusionar ni modificar las ramas históricas. Conserva query
+y fragmento ajenos a Auth, espera la inicialización antes de limpiar y separa un
+fallo de verificación posterior del estado de confirmación del correo. Memoriza
+la operación para impedir un segundo procesamiento desde la misma instancia.
+
+```sh
+node --experimental-vm-modules --test tests/auth/pkce.test.mjs
+node --experimental-vm-modules --test tests/auth/auth.test.mjs
+```
+
+Los cinco casos son: sin código, retorno válido, error de confirmación, limpieza
+posterior al SDK conservando parámetros ajenos y verificación posterior fallida.
+Se ejecutan Auth y el proveedor singleton de producción dentro de VM; solo el SDK
+y URL/history son dobles. No hay fetch, CDN, correo, navegador ni almacenamiento.
+El contador de canjes pertenece al doble: no demuestra el comportamiento interno
+de supabase-js real. `retorno-pkce.mjs` es exclusivamente un arnés de pruebas;
+ninguna pantalla del producto lo importa y no resuelve el callback de producción.
+Siguen pendientes el SDK real, su limpieza propia de URL, enlace/verificador PKCE,
+plantilla de correo y origen autorizados. No se conectó Supabase ni se modificó
+producción, contratos o configuración. No se repiten las suites generales/Chrome.
+No cubre plantillas personalizadas TokenHash/verifyOtp ni fallos de history del
+navegador real. Resultado ejecutado: **5 PKCE + 94 Auth correctas; 0 fallidas y
+0 omitidas**. La prueba original Auth no se modifica.
+
 ## Pendientes de integración y pruebas reales
 
 - Entrega de Bernabé: esquema final/perfiles/catálogos/trigger mínimo,

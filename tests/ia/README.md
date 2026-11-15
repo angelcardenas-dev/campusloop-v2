@@ -5,6 +5,13 @@ Angel, preparación del 13/11/2026. Rama `feature/angel/ia-us17`, desde
 Los detalles de integración siguientes son una propuesta para acordar con Matías;
 no modifican el contrato aprobado ni acreditan proveedor o servicios funcionando.
 
+**Actualización del 14/11/2026 — adaptador de identidad:** rama
+`feature/angel/ia-auth-servidor`, basada en
+`4e8695ea0a5deadc0e775cf2da0b8529bf64470d` (develop tras integrar PR #37).
+Se conserva la preparación original del 13/11 y sus resultados históricos de
+143 pruebas. La actualización actual ejecuta solo los cuatro tests del adaptador;
+no vuelve a ejecutar ni suma aquellas suites al resultado actual.
+
 ## Archivos y arquitectura
 
 - `js/asistente.js`: servicio vanilla, validación, fetch a `/api/asistente`, aborto,
@@ -12,9 +19,12 @@ no modifican el contrato aprobado ni acreditan proveedor o servicios funcionando
   No consulta ni cambia inputs, artículos, SQL, borradores o almacenamiento propio.
 - `netlify/functions/asistente.mjs`: entrada Netlify con Request/Response nativos,
   validación independiente del navegador, controles previos y transporte NVIDIA.
+- `netlify/lib/auth-usuario.mjs`: adaptador de identidad mediante un cliente oficial
+  Supabase inyectado; fuera de `functions/` para no crear otra ruta pública.
 - `tests/ia/fixtures.mjs`: datos y credenciales exclusivamente sintéticos.
 - `tests/ia/cliente.test.mjs`: módulos VM, eventos y transporte simulado.
 - `tests/ia/servidor.test.mjs`: Request/Response locales, controles y proveedor dobles.
+- `tests/ia/auth-servidor.test.mjs`: cuatro escenarios offline del adaptador de identidad.
 - Este README: contrato de consumo, fronteras de seguridad y pendientes.
 
 Recorrido futuro: Publicar (Matías) → asistente.js → POST /api/asistente → función
@@ -182,7 +192,7 @@ preview frente a revisión real, aceptación parcial, copia/restauración, cance
 al abandonar/Publicar y confirmación del formato extractivo. Las tres direcciones
 de eventos siguen §9; no se crearon eventos alternativos ni se tocó su módulo.
 
-## Adaptadores pendientes de Bernabé y Angel
+## Adaptadores del servidor y dependencias pendientes
 
 Interfaces exclusivamente servidor de `crearHandlerAsistente()`:
 
@@ -191,6 +201,77 @@ Interfaces exclusivamente servidor de `crearHandlerAsistente()`:
 | verificarUsuario({ token, signal }) | SDK oficial getUser o validación oficial de claims; devuelve { id: UUID, esAnonimo: false } o null para token inválido. Red/servicio caído debe fallar, nunca autorizar ni decodificar JWT sin verificar |
 | verificarVendedor({ usuarioId, token, signal }) | Lectura protegida de la fuente autorizada de vendedor; true/false. No usar roles de JSON ni user_metadata editable |
 | reservarCuota({ usuarioId, solicitudId, token, signal }) | Operación PostgreSQL atómica que verifica actor, límite por usuario Y global, deduplicación y reserva previa al upstream |
+
+### Adaptador de identidad preparado el 14/11/2026
+
+`crearVerificadorUsuario({ cliente })`, en `netlify/lib/auth-usuario.mjs`, devuelve
+`verificarUsuario({ token, signal })`. Invoca exclusivamente
+`cliente.auth.getUser(token)` con el token explícito. No usa getSession, no
+decodifica JWT ni consulta perfiles. No registra errores o credenciales.
+
+- Identidad válida y no anónima: `{ id: UUID, esAnonimo: false }`, sin metadata,
+  correo, sesión ni tokens.
+- Token ausente/inválido, rechazo reconocido de Auth, sesión inexistente o usuario
+  anónimo/ausente: `null`. El handler existente lo transforma en HTTP 401.
+- Red, límites del servicio, errores desconocidos, cliente ausente o respuesta
+  incompleta: excepción con código `CONTROLES_NO_DISPONIBLES` y mensaje seguro;
+  el handler existente deniega con HTTP 503, sin propagar el error original.
+- Rechazos documentados: `bad_jwt`, `session_expired`, `session_not_found`,
+  `user_not_found` y `user_banned`. No se usa `jwt_expired`. El SDK puede convertir
+  `session_not_found` en `AuthSessionMissingError`, también reconocido.
+  La clasificación usa el código/clase, sin exigir HTTP 400/401/403: el middleware
+  Auth responde 403 para `user_not_found` al no existir el usuario del token; se
+  cubre además una variante sintética 404 para evitar acoplarse al estado HTTP.
+  Esta variante no acredita una respuesta remota 404 de getUser. Los HTTP 429 y
+  5xx conservan la clasificación de fallo del servicio, incluso si incluyen un
+  código de rechazo; los errores desconocidos nunca se convierten en autorización.
+- La firma oficial getUser(jwt) no admite AbortSignal. Se comprueba cancelación
+  antes de llamar y después de resolver/rechazar, sin propagar signal.reason.
+  Esto evita entregar identidad tardía; **no cancela la petición de red del SDK**.
+  El timeout/cancelación general del handler sigue vigente.
+
+Se revisó el entorno: la función usa ESM `.mjs` compatible con Netlify/Node y
+actualmente no hay paquete SDK ni manifiesto npm del servidor. El cargador esm.sh
+de `js/supabase-cliente.js` corresponde al navegador y no se reutiliza en Node.
+No se añadieron paquetes, cargadores CDN, clientes alternativos ni dependencias.
+La inyección consume el cliente oficial; no implementa autenticación propia.
+
+**Persistencia:** en el navegador, el SDK oficial administra la sesión con
+`persistSession: true`, su almacenamiento y la renovación de tokens mediante
+el cliente compartido existente. `localstorage.js` no debe guardar ni renovar JWT
+manualmente; se reserva para borradores, filtros y preferencias no sensibles.
+El cliente servidor es distinto: sin persistencia de sesión ni almacenamiento
+del navegador; verifica el token explícito de cada solicitud con getUser(token).
+
+**Pendiente de ensamblaje, no de este adaptador:** provisionar y empaquetar el SDK
+oficial v2 del servidor (referencia del proyecto: 2.119.0), con configuración real
+autorizada, sin service_role, sin persistencia, refresco automático, detección de
+retorno ni debug de sesión. No se creó ese cliente ni se validó el SDK real.
+No importar el cliente del navegador ni compartir sesiones entre solicitudes.
+En ese ensamblaje se podrá inyectar
+`verificarUsuario: crearVerificadorUsuario({ cliente: clienteOficialServidor })`
+en `crearHandlerAsistente`. El export predeterminado permanece intacto y cerrado:
+sin verificarVendedor/reservarCuota efectivos responde 503, aunque se active IA.
+
+Prueba reducida, sin red ni descarga del SDK:
+
+```sh
+node --test tests/ia/auth-servidor.test.mjs
+```
+
+Cuatro escenarios: identidad válida (incluye cancelación y comprobación del 503),
+token rechazado/expirado, usuario anónimo/ausente y servicio indisponible.
+Se cubren errores devueltos y lanzados. No acredita autenticación remota, permiso
+de vendedor, cuota real, proveedor IA ni despliegue; no sustituye las 99 pruebas
+históricas de IA, que no se repitieron para esta tarea reducida.
+
+Fuentes oficiales consultadas: [getUser](https://supabase.com/docs/reference/javascript/auth-getuser),
+[errores Auth](https://supabase.com/docs/guides/auth/debugging/error-codes),
+[firma del SDK](https://github.com/supabase/auth-js/blob/master/src/GoTrueClient.ts)
+y [ESM en Netlify](https://docs.netlify.com/build/functions/optional-configuration/#module-format).
+Clasificación contrastada también con el [middleware Auth](https://github.com/supabase/auth/blob/master/internal/api/auth.go),
+la [conversión de errores del SDK](https://github.com/supabase/auth-js/blob/master/src/lib/fetch.ts)
+y sus [clases de error](https://github.com/supabase/auth-js/blob/master/src/lib/errors.ts).
 
 Reserva autorizada: `{ permitida: true, nueva: true, reservaId: UUID }`; denegada:
 `{ permitida: false }`; ID repetido: `{ permitida: true, nueva: false }` → 409.
@@ -259,7 +340,14 @@ calidad del modelo, gratuidad, accesibilidad visual o despliegue. Toda prueba re
 continúa pendiente de autorización y de controles efectivos. Conservar edición
 manual si IA está caída; eso no equivale a completar US17 real en producción.
 
-Resultado offline de esta preparación: **99 pruebas de IA + 44 de Auth = 143
-correctas, 0 fallidas**. Sintaxis de los cinco módulos JS/MJS nuevos comprobada;
+Resultado histórico de la preparación original del **13/11/2026**:
+**99 pruebas de IA + 44 de Auth = 143 correctas, 0 fallidas**.
+En aquella preparación: sintaxis de los cinco módulos JS/MJS nuevos comprobada;
 revisión estática sin credenciales detectadas, flags apagados y sin cambios en los
 72 archivos previamente versionados. No se descargó ni ejecutó el SDK real.
+
+Resultado offline de la actualización del **14/11/2026**:
+**4 tests del adaptador correctos, 0 fallidos y 0 omitidos** con
+`node --test tests/ia/auth-servidor.test.mjs`. No se repitieron suites generales,
+no se instaló el SDK y no se contactó Supabase ni NVIDIA. Las 143 pruebas anteriores
+pertenecen al historial y no son el total ejecutado en esta actualización.
