@@ -1216,6 +1216,101 @@ main.page-width > section + section { margin-top: var(--space-24); }
 }
 
 
+/* --- Alertas dinámicas para formularios --- */
+.msj-dinamico {
+    display: none !important;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.msj-dinamico.is-error,
+.msj-dinamico.is-exito,
+.msj-dinamico.is-info {
+    display: block !important; 
+}
+
+.msj-dinamico.is-error {
+    color: #DC2626;
+    background-color: #FEF2F2;
+}
+
+.msj-dinamico.is-exito {
+    color: #16A34A;
+    background-color: #ECFDF3;
+}
+
+.msj-dinamico.is-info {
+    color: #2640A9;
+    background-color: #EEF2FF;
+}
+
+.input-error {
+    border-color: #DC2626 !important;
+}
+
+
+/* --- Estilos para la propuesta de la IA --- */
+.ia-propuesta {
+    display: none;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid #D9E0F2;
+    border-radius: 8px;
+    background: #F7F9FF;
+}
+
+.ia-propuesta-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.ia-propuesta-item {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.ia-propuesta-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.ia-propuesta-actions .btn-primary,
+.ia-propuesta-actions .btn-secondary {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    margin-top: 0;
+}
+
+/* --- Estilos para los inputs editables dentro de la propuesta IA --- */
+.ia-propuesta-item label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: #111827;
+}
+
+.ia-propuesta-item input,
+.ia-propuesta-item textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #D9E0F2;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.ia-propuesta-item textarea {
+    resize: vertical;
+}
+
+
+
 /* RESERVAS / MARICIELO */
 /* Reservas — Maricielo. Figma 278:3929 (1440 × 968), 278:4006 (390 × 844)
    y consulta Mobile 303:1433 (390 × 844). Componentes: Interaction 301:335,
