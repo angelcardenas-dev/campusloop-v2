@@ -1,6 +1,6 @@
 # CampusLoop V2 — propuesta de activación manual de vendedores
 
-Fecha: 14/11/2026, Perú. Responsable técnico: Bernabé.
+Actualización documental: 15/11/2026, Perú. Responsable técnico: Bernabé.
 Estado: DISEÑO PARA REVISIÓN DE COORDINACIÓN. No autoriza implementación.
 Fuente de reglas: aclaración definitiva de coordinación transmitida en esta tarea.
 Se conservan los contratos aprobados, las migraciones y los cambios locales previos.
@@ -10,15 +10,16 @@ Este documento no contiene migraciones ni políticas ejecutables.
 
 Una cuenta de estudiante conserva siempre sus capacidades de comprador. Ser vendedor
 es una capacidad adicional del mismo perfil, no otra cuenta ni un rol excluyente.
-Con o sin experiencia, el estudiante puede solicitarla. Toda decisión requiere
+Con o sin experiencia y sin enlaces comerciales, el estudiante puede solicitarla.
+La ausencia de ventas previas, portafolio o enlaces comerciales no impide el envío. Toda decisión requiere
 personal autorizado: estados exactamente `pendiente`, `aprobado`, `rechazado`.
 No hay aprobación automática por experiencia, tiempo transcurrido, registro ni
 confirmación de correo. El resultado se guarda como notificación interna persistente;
 no se envía correo de aprobación. Publicar requiere aprobación efectiva.
 
-El plazo máximo obligatorio es dos días. Se propone contabilizar 48 horas corridas
-desde el envío, sujeto a ratificar si coordinación entiende días calendario/hábiles
-y hora de corte. Se registra una fecha límite servidor. Vencerla NO cambia el estado:
+El plazo máximo definitivo es de 48 horas corridas desde el envío, incluidos
+fines de semana y feriados, sin hora de corte. Se propone registrar en servidor
+responder_antes_de = enviada_en + 48 horas. Vencerla NO cambia el estado:
 la solicitud sigue pendiente, se muestra vencida y se escala al personal. Una decisión
 tardía se registra como tal; no se rechaza una decisión manual por llegar tarde.
 La fecha límite y una cola ordenada no garantizan por sí solas el plazo: hacen falta
@@ -96,7 +97,7 @@ transaccional protegida; no mediante una FK sola.
 | normas_aceptadas_en | timestamptz servidor al aceptar y enviar |
 | estado | Texto enumerado: pendiente inicialmente; aprobado/rechazado terminales |
 | enviada_en | timestamptz servidor |
-| responder_antes_de | timestamptz servidor, posterior al envío; cálculo ratificado del plazo |
+| responder_antes_de | timestamptz servidor, posterior al envío; enviada_en + 48 horas corridas |
 | revisor_id | UUID FK revisores_vendedores.perfil_id, NULL mientras pendiente |
 | decidida_en | timestamptz, NULL mientras pendiente, >= enviada_en al decidir |
 | motivo_decision | Texto plano 1–1000; propuesta: obligatorio en toda decisión y visible al solicitante |
@@ -145,7 +146,9 @@ autorización actual. No se adopta ningún mecanismo remoto sin inventariarlo.
 
 El alta inicial y la baja de revisores serían operaciones administrativas privadas,
 fuera de las RPC del estudiante. No hay autoinscripción de revisores ni concesión
-mediante raw_user_meta_data. Elegir responsables y procedimiento antes de implementar.
+mediante raw_user_meta_data. Coordinación designa a los revisores y administradores; no se delega esa
+designación al solicitante. Falta identificar a las personas y aprobar el
+procedimiento técnico de altas y bajas antes de implementar.
 
 ### notificaciones
 
@@ -292,6 +295,13 @@ su inserción. La implementación futura debe preservar su funcionamiento delibe
 
 ## 9. Flujo de notificación y frontend
 
+Recorrido definitivo a implementar: las notificaciones se consultan desde la
+campana junto al avatar, con acceso al resultado e historial propio. Tras consultar
+la autorización efectiva: **perfil vendedor activo → Publicar artículo → formulario
+de publicación**. Estas decisiones no acreditan una integración funcional; su
+implementación corresponde a los responsables frontend, sin modificar sus módulos
+en esta tarea.
+
 El commit de decisión hace visible resultado, autorización y notificación a la vez.
 Realtime es opcional para avisar de cambios; al entrar/recargar se consulta historial
 durable y no leídos. Sincronizar/deduplicar por UUID, no crear notificaciones al recibir
@@ -318,13 +328,15 @@ No se ejecutaron pruebas de implementación en esta tarea: el documento es conce
 Las pruebas previas del trigger fueron locales y no validan este flujo. No se
 inspeccionó ni ejecutó SQL en Supabase compartido.
 
-Antes de implementar, aprobar:
+Las reglas definitivas anteriores no quedan pendientes de ratificación. Antes
+de implementar, coordinación debe aprobar el esquema y los contratos propuestos
+y concretar los siguientes aspectos pendientes:
 
 1. Tres tablas nuevas (doce totales) o reutilización demostrada de autorización
    administrativa existente. Identificar quién habilita/deshabilita revisores,
    quiénes atienden la cola y la auditoría de esas acciones.
-2. Interpretación operativa de dos días y cobertura/escalamiento. El plazo obligatorio
-   no se relaja por esta decisión; nunca activa aprobación automática.
+2. Cobertura humana y escalamiento para cumplir las 48 horas corridas desde el
+   envío, ya definitivas. El vencimiento nunca activa aprobación automática.
 3. Identificador y verificación para una cuenta por estudiante; criterios de revisión
    institucional, privacidad/retención y regularización de duplicados. No usar
    experiencia como barrera de acceso ni declarar que la unicidad Auth resuelve esto.

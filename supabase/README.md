@@ -1,4 +1,41 @@
-# PostgreSQL TB4 — FASE 3, Etapa A
+# PostgreSQL TB4 — Etapa A y componente B/A
+
+## Estado documental al 15/11/2026
+
+Rama actual: `integracion/bernabe`. Tres migraciones versionadas: tablas,
+índices y trigger mínimo de perfiles, en ese orden. Implementado en repositorio
+no significa aplicado o probado en Supabase real. Esta corrección es documental.
+
+La revisión técnica y las pruebas locales históricas no sustituyen la aprobación
+de coordinación sobre esquema, contratos o despliegue. La
+[propuesta vendedor](../docs/PROPUESTA_ACTIVACION_VENDEDORES_TB4.md) recoge las reglas
+definitivas: solicitudes sin experiencia ni enlaces comerciales, 48 horas corridas
+desde el envío, nunca aprobación por vencimiento, revisores y administradores
+designados por coordinación, campana junto al avatar y recorrido perfil vendedor
+activo → Publicar artículo → formulario. Tablas y RPC siguen siendo propuestas.
+
+No están implementados RLS de aplicación, GRANTS de aplicación, RPC de negocio,
+notificaciones persistentes ni configuración/políticas Storage. El REVOKE de
+la función del trigger sí existe y no equivale a esos controles. No exponer el
+conjunto por Data REST sin completar autorización; los permisos remotos no se
+inspeccionaron.
+
+Usuarios preexistentes: el trigger solo cubre INSERT futuros de Auth. Pendiente
+inventariar cuentas sin perfil y vendedores activos sin evidencia, definir su
+regularización y autorizarla por separado. No se ejecuta backfill ni se modifican
+datos reales.
+
+Validación actual: lectura de SQL, documentos, historial y diff; sin repetir SQL.
+Los resultados de PostgreSQL 18 descritos abajo son históricos, con Auth simulado.
+No acreditan GoTrue/signUp, correo, REST, roles reales, aislamiento entre usuarios,
+Storage ni Realtime. Esas validaciones requieren Supabase real y autorización
+separada; no se ejecutan en el proyecto compartido en esta tarea. Concurrencia de
+reservas y flujo vendedor tampoco están probados.
+
+## Registro histórico y reconciliación
+
+Las notas siguientes conservan la evidencia previa; se actualizan las pendientes
+de Etapa A para no presentar el trigger implementado como trabajo futuro.
 
 ## Continuación 14/11/2026: reconciliación y componente B/A
 
@@ -39,7 +76,8 @@ modificó el servicio compartido. No hubo commit/push. El clúster local se detu
 Referencias: [SECURITY DEFINER](https://www.postgresql.org/docs/18/sql-createfunction.html)
 y [RLS](https://www.postgresql.org/docs/18/ddl-rowsecurity.html).
 
-Auditoría y propuesta aprobadas por Bernabé en esta sesión. Se continúa en
+El registro histórico consigna revisión técnica y conformidad de Bernabé.
+Esto no acredita aprobación de coordinación ni autorización de despliegue. Se continúa en
 `integracion/bernabe`, conservando las dos migraciones A y los contratos aprobados.
 Las decisiones históricas descritas más abajo corresponden a Etapa A.
 
@@ -82,12 +120,14 @@ declaran probados RLS, aislamiento entre usuarios, RPC, Storage ni concurrencia.
 Se detiene tras componente A; B/C/D se revisarán por separado. No aplicar este
 conjunto a una API expuesta: todavía falta RLS y grants. Sin push, merge ni deploy.
 
-SQL preparado para revisión en `feature/bernabe/esquema-rls`. **No ejecutado en Supabase ni autorizado para despliegue.** No usar db push/reset contra el proyecto compartido.
+Etapa A se preparó históricamente en `feature/bernabe/esquema-rls`; la rama
+actual es `integracion/bernabe`. **No ejecutado en Supabase ni autorizado para despliegue.** No usar db push/reset contra el proyecto compartido.
 
 Orden:
 
 1. `migrations/20261113000100_tablas_tb4.sql`: exactamente nueve tablas, FK, CHECK, claves candidatas y defaults.
 2. `migrations/20261113000200_indices_tb4.sql`: unicidad normalizada, índices de consultas/FK y reserva activa única.
+3. `migrations/20261114000100_trigger_perfil_minimo.sql`: trigger mínimo Auth implementado en B/A.
 
 Requiere PostgreSQL con `gen_random_uuid()` y `auth.users` existente (Supabase). No crea Auth, extensiones, buckets, usuarios ni otras tablas. Migraciones de una sola aplicación: sin `IF NOT EXISTS` para no ocultar diferencias con objetos previos. Antes de cualquier aplicación futura hay que inventariar el esquema real.
 
@@ -96,7 +136,7 @@ Requiere PostgreSQL con `gen_random_uuid()` y `auth.users` existente (Supabase).
 - UUID PK, fechas `timestamptz DEFAULT now()`. Perfiles sin UUID automático: PK/FK a Auth, nombre/campus NULL, vendedor FALSE; sin correo ni credenciales. Se conserva versión del diseño para concurrencia.
 - Precio `bigint > 0`, PEN. BIGINT excede el rango seguro de Number: el futuro servicio debe rechazar importes no representables con exactitud o acordar serialización decimal antes de consumir REST. No se declara resuelto esto con un parseo Number directo.
 - Foto en las siete columnas solicitadas, sin JSON duplicado. El ejemplo `select=...imagen` de SPEC §8 deberá alinearse en el servicio con `imagen_bucket`, `imagen_ruta`, `imagen_url`, `imagen_formato`, `imagen_bytes`, `imagen_ancho`, `imagen_alto`. El SPEC exige alineación con migraciones y no fija expresamente JSON como representación física. No se modifica el contrato aprobado ni se crea una vista/API adicional aquí.
-- Una foto obligatoria, MIME JPEG/PNG/WebP, ruta bajo vendedor y extensión coherente, metadatos positivos. El límite de 5 MiB del diseño sigue como propuesta, no se impone sin ratificación; tampoco se fija bucket/origen remoto desconocido. CHECK no demuestra existencia ni contenido real del objeto.
+- Una foto obligatoria, MIME JPEG/PNG/WebP, ruta bajo vendedor y extensión coherente, metadatos positivos. La propuesta histórica de 5 MiB se sustituyó por el objetivo de 2 MiB descrito arriba, todavía sin restricción SQL ni Storage; tampoco se fija bucket/origen remoto desconocido. CHECK no demuestra existencia ni contenido real del objeto.
 - Artículo disponible/reservado/vendido con `eliminado_en` para borrado lógico, no un cuarto estado. Índices de catálogo excluyen borrados; no son filtros de seguridad ni impiden DELETE. Historial no usa cascadas: FK `ON DELETE RESTRICT`; no se implementa borrado de cuentas.
 - Relaciones compuestas evitan conversación/reserva con vendedor distinto al del artículo y reserva enlazada a conversación de otro artículo/comprador/vendedor. Las claves candidatas adicionales no crean nuevas tablas. La FK de conversación es opcional, sus otros componentes no son NULL.
 - Estados de reserva pendiente/confirmada activos; completada/cancelada terminales en el diseño. Índice único parcial garantiza una activa. Los CHECK solo validan conjuntos/formas, **no transiciones ni sincronización con artículos**.
@@ -106,11 +146,11 @@ Requiere PostgreSQL con `gen_random_uuid()` y `auth.users` existente (Supabase).
 
 ## Lo que aún no está implementado
 
-Etapa B requiere aprobación: trigger mínimo de perfil, generación/actualización protegida de fechas y versiones, RLS, grants por columna, autoría `auth.uid()`, vendedores autorizados, RPC de reservas con bloqueo/cancelación, inmutabilidad de participantes y políticas Storage. Los defaults no impiden que un actor con permisos suministre valores propios.
+El trigger mínimo ya está implementado en B/A. Siguen pendientes de implementación y de las aprobaciones correspondientes: generación/actualización protegida de fechas y versiones, RLS, grants por columna, autoría `auth.uid()`, vendedores autorizados, RPC de reservas con bloqueo/cancelación, inmutabilidad de participantes y políticas Storage. Los defaults no impiden que un actor con permisos suministre valores propios.
 
 **No aplicar estas migraciones solas a un esquema expuesto por Data REST:** aún no hay RLS/grants. Etapa A es estructura para revisión, no una entrega segura para frontend. No se declaran probadas privacidad, autorización o reserva transaccional.
 
-Pendiente de ratificación antes de Etapa B: quién confirma/completa/cancela, criterios de activación vendedor, permisos de lectura pública, aceptación de puntos y tratamiento de borrado de cuenta. No se implementan esas decisiones silenciosamente. Los valores estructurales de estado/condición provienen del diseño revisado; si se cambian tras revisión, habrá que actualizarlo antes de aplicar.
+Pendiente de ratificación antes de Etapa B: quién confirma/completa/cancela, criterios institucionales de revisión vendedor (las reglas definitivas del flujo ya están documentadas), permisos de lectura pública, aceptación de puntos y tratamiento de borrado de cuenta. No se implementan esas decisiones silenciosamente. Los valores estructurales de estado/condición provienen del diseño revisado; si se cambian tras revisión, habrá que actualizarlo antes de aplicar.
 
 Etapa C: semillas separadas con los 11 UUID del manifiesto, solo cuando se aprueben sus datos, y pruebas integrales de integridad/RLS/concurrencia. No hay semillas ni pruebas de RPC en esta etapa.
 
