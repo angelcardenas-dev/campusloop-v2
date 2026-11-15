@@ -13,6 +13,13 @@ es una capacidad adicional del mismo perfil, no otra cuenta ni un rol excluyente
 Con o sin experiencia y sin enlaces comerciales, el estudiante puede solicitarla.
 La ausencia de ventas previas, portafolio o enlaces comerciales no impide el envío. Toda decisión requiere
 personal autorizado: estados exactamente `pendiente`, `aprobado`, `rechazado`.
+El estudiante podrá proporcionar enlaces a sus páginas de venta de forma
+completamente opcional. Son información complementaria para los revisores humanos,
+nunca un requisito obligatorio ni un criterio automático de aprobación. Omitirlos
+no impide solicitar, incluso sin experiencia. La representación, persistencia y
+validación de esos enlaces se definirán con coordinación y frontend antes de
+implementar; esta precisión no añade columnas ni cambia las firmas conceptuales
+de RPC o los contratos de esquema pendientes de aprobación.
 No hay aprobación automática por experiencia, tiempo transcurrido, registro ni
 confirmación de correo. El resultado se guarda como notificación interna persistente;
 no se envía correo de aprobación. Publicar requiere aprobación efectiva.
@@ -104,7 +111,7 @@ transaccional protegida; no mediante una FK sola.
 | version | Entero positivo, inicial 1; incrementado por servidor al decidir |
 
 Una única pendiente por solicitante mediante unicidad condicional, incluso con
-peticiones concurrentes. Como no se propone revocación, una única aprobada histórica
+peticiones concurrentes. Como no se propone revocación de vendedor, una única aprobada histórica
 por solicitante; múltiples rechazadas se conservan. Pendiente implica revisor,
 decidida_en y motivo NULL; terminal implica los tres presentes. Revisor distinto
 del solicitante. Toda FK de historial con borrado restringido, sin cascadas.
@@ -150,6 +157,26 @@ mediante raw_user_meta_data. Coordinación designa a los revisores y administrad
 designación al solicitante. Falta identificar a las personas y aprobar el
 procedimiento técnico de altas y bajas antes de implementar.
 
+Propuesta de procedimiento, todavía sin implementar:
+
+1. Coordinación designa expresamente administradores y revisores. No constan
+   nombres, usuarios ni autorizaciones ya concedidas en la evidencia de esta
+   ronda; la designación de personas queda pendiente de coordinación.
+2. Un administrador designado habilitaría únicamente el permiso específico
+   `revisar_vendedores` tras verificar la decisión de coordinación. Registrar
+   actor, destinatario, fecha y motivo, con el mecanismo administrativo que se
+   apruebe; no crear otro esquema de permisos en esta corrección.
+3. La revocación deshabilitaría ese permiso para decisiones futuras, conservando
+   expedientes y decisiones anteriores. Cada decisión debe volver a comprobar
+   la habilitación vigente y coordinarse con bajas concurrentes, como propone
+   la sección 6. Esta revocación afecta a revisión, no diseña revocación de vendedor.
+4. No se permite autoasignación. Los solicitantes no pueden asignar ni modificar
+   permisos de revisores. La administración tampoco deriva autoridad de campos
+   enviados por el solicitante ni de metadatos editables.
+
+El procedimiento requiere ratificación de coordinación y autorización de
+implementación separada. No se crean permisos, GRANTS, RPC ni cuentas en esta tarea.
+
 ### notificaciones
 
 | Columna | Tipo conceptual y regla |
@@ -191,7 +218,7 @@ Si están desalineados, denegar publicación e investigar; no aprobar ni reparar
 automáticamente desde frontend. El servidor también debe proteger campos privados,
 identidad, fechas y versión. El servicio de completar perfil no toca vendedor_activado.
 
-No se diseña aquí suspensión/revocación. Su incorporación futura debe definir qué
+No se diseña aquí suspensión/revocación de vendedor. Su incorporación futura debe definir qué
 pasa con publicaciones existentes y con el historial; no reinterpretar rechazado
 como revocación de una aprobación previa. Datos/semillas con vendedores TRUE sin
 aprobación deberán inventariarse y regularizarse mediante revisión explícita, sin
@@ -342,7 +369,7 @@ y concretar los siguientes aspectos pendientes:
    experiencia como barrera de acceso ni declarar que la unicidad Auth resuelve esto.
 4. Campos mínimos de solicitud, versión de normas y motivo visible obligatorio.
    No recolectar documentos/evidencias adicionales sin justificar necesidad y protección.
-5. Permitir nueva solicitud tras rechazo y sus límites; no incluir revocaciones sin
+5. Permitir nueva solicitud tras rechazo y sus límites; no incluir revocaciones de vendedor sin
    un flujo adicional acordado.
 6. Proyección pública/privada, interfaz de revisores y responsables frontend. Ratificar
    contratos RPC y control conjunto de booleano/evidencia antes de cerrar RLS/GRANTS.

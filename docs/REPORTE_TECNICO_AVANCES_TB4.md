@@ -1,13 +1,17 @@
 # CampusLoop V2 — reporte técnico de correcciones y avances TB4
 
 Fecha de corte documental: 15/11/2026, Perú. Rama auditada: `integracion/bernabe`.
-HEAD actual: `6fe22b374a42de1b98a304299fb4824591810cf1` (`6fe22b3`). Destino indicado por el responsable: PR #36 hacia `develop`.
-Este reporte es una auditoría de archivos e historial, no una autorización de despliegue.
-Estado: actualizado después del primer commit de correcciones documentales,
-`6fe22b3`, que incorporó los tres documentos. Esta actualización modifica solo
-el reporte y queda sin commit; no se hace commit ni push. Si se autorizan nuevos
-commits de correcciones, el cierre definitivo deberá reflejar su último SHA y
-el inventario final; no se anticipa un SHA futuro.
+HEAD comprobado antes de esta ronda: `5d9f15034a35b927274525f9d2386862ba5d1008`
+(`5d9f150`), igual a la referencia local `origin/integracion/bernabe`.
+Destino: PR #36 hacia `develop`, abierto, sin fusionar y pendiente de aprobación,
+según el contexto remoto confirmado por el responsable para esta ronda.
+Este reporte es una auditoría documental y de Git, no una autorización de despliegue.
+
+Alcance del corte: revisión de solo lectura del historial y contenido de ambas
+ramas, seguida de correcciones únicamente en los tres documentos indicados.
+El árbol estaba limpio al inicio. No se hace commit, push ni integración.
+El futuro SHA documental se comunicará después del commit y, si se autoriza,
+de su publicación; `5d9f150` no representa ese HEAD futuro.
 
 ## 1. Resultado general y alcance de la evidencia
 
@@ -24,18 +28,22 @@ La activación manual de vendedores sigue siendo una propuesta documental.
 | Propuesto | Diseño documentado sin implementación ejecutable |
 | Pendiente | Falta acuerdo, implementación o validación; se especifica cuál |
 
-La revisión documental anterior utilizó `git status`, `branch -vv`, `log`, `show`,
-`merge-base`, `rev-list` y `diff`, además de leer migraciones, tests y documentos.
-En esta actualización se verificaron estado local, historial, contenido del commit,
-inventarios y diff, y se intentó consultar el PR. En esta tarea no se
-volvieron a ejecutar pruebas SQL: los resultados históricos están respaldados por
-lo consignado sobre ejecuciones locales anteriores en este reporte y en [supabase/README.md](../supabase/README.md).
+Comprobaciones ejecutadas ahora: `git status`, `log`, `rev-parse`,
+`merge-base`, `rev-list --left-right --count`, `show`, `ls-tree` y `diff`,
+lectura de los tres documentos y del contenido relevante de `origin/develop`,
+revisión de coherencia y `git diff --check`.
+No se repitieron pruebas SQL, Auth, IA, publicaciones ni Netlify. Los pases
+locales conservados en las secciones siguientes son históricos, consignados
+en el reporte previo y en [supabase/README.md](../supabase/README.md).
 No se consultó ni ejecutó SQL en Supabase compartido.
 
-Se intentó consultar el PR #36: `gh` no está disponible y las consultas web a
-GitHub y a su API no devolvieron el PR. No se verificaron en vivo estado
-abierto/cerrado, revisiones, checks, aprobaciones ni SHA remoto actual.
-Las referencias `origin/*` descritas son las disponibles localmente; no se hizo fetch.
+Fuente remota para esta ronda: el responsable confirmó PR #36 abierto y pendiente
+de aprobación, 9 commits y 10 archivos en la revisión anterior. Esta sesión
+corrobora el historial y el inventario con referencias Git locales, sin fetch ni
+nueva consulta de GitHub. No se inventan revisiones individuales, aprobaciones
+registradas, resultados de checks ni estado de mergeabilidad.
+Los intentos fallidos de consultar GitHub descritos en versiones anteriores son
+históricos; no invalidan el contexto confirmado posteriormente por el responsable.
 
 ## 2. Bases de comparación y commits
 
@@ -49,9 +57,11 @@ No se interpreta «estado inicial» como un snapshot inventado. Se distinguen:
 | `98fc3e2` | Integración de Etapa A mediante PR #35 |
 | `d2c0e73` | Corte histórico: trigger y pruebas locales documentadas |
 | `9117238` | Corte anterior: reporte eliminado del árbol versionado |
-| `6fe22b3` | HEAD actual; primer commit de correcciones documentales |
+| `6fe22b3` | Primer commit de correcciones documentales, ya histórico |
+| `5d9f150` | HEAD comprobado antes de esta ronda; actualización posterior del reporte |
 
-Commits presentes en la rama y ausentes de las referencias develop comparadas:
+Nueve commits presentes en `origin/integracion/bernabe` y ausentes de
+`origin/develop`, verificados ahora con Git:
 
 | Commit | Cambio real |
 | --- | --- |
@@ -63,9 +73,11 @@ Commits presentes en la rama y ausentes de las referencias develop comparadas:
 | `ac13c1b` | Incorporó el reporte técnico de 316 líneas |
 | `9117238` | Eliminó el reporte; antes del primer commit de correcciones existía sin seguimiento |
 | `6fe22b3` | Actualizó propuesta y README y reincorporó el reporte; tres documentos, sin cambios funcionales |
+| `5d9f150` | Actualizó únicamente el reporte: +51/-34 líneas; sin cambios funcionales |
 
-Estos ocho commits describen el conjunto local candidato al PR #36; confirmar en
-GitHub que su cabecera sigue coincidiendo antes de presentarlos como inventario remoto.
+Estos nueve commits coinciden en número con la revisión remota informada por el
+responsable. Antes de integrar se deben volver a comprobar cabecera, revisiones
+y checks en GitHub; el inventario actual es evidencia de las referencias locales.
 El hecho de estar committeados se comprueba ahora con Git: las restricciones «sin
 commit/push» de las tareas anteriores describían esas actuaciones del agente, no
 el estado futuro del repositorio. No se atribuye quién ejecutó operaciones posteriores.
@@ -73,7 +85,7 @@ el estado futuro del repositorio. No se atribuye quién ejecutó operaciones pos
 ### Inventario de archivos
 
 El diff de commits frente a `origin/develop` local muestra diez archivos añadidos,
-1608 líneas añadidas, ningún archivo modificado preexistente ni eliminado en ese
+1625 líneas añadidas, ningún archivo modificado preexistente ni eliminado en ese
 diff. En el corte anterior `9117238` eran nueve archivos y 1213 líneas añadidas.
 
 | Archivo | Frente a base común | Desde Etapa A `7d0e3f2` | Función |
@@ -95,19 +107,25 @@ de Angel ya integrado por la línea develop/PR #33, no de las correcciones SQL d
 Bernabé. No aparecen en el aporte de diez archivos frente a la base común actual.
 No se atribuyen esos cambios a Bernabé ni a la continuación del trigger.
 
-El inventario anterior corresponde a commits hasta `6fe22b3`, sin incluir la
+El inventario anterior corresponde a commits hasta `5d9f150`, sin incluir la
 actualización actual sin commit. En `9117238`, incorporar y eliminar el reporte
 se cancelaban en el diff neto; `6fe22b3` lo reincorporó como archivo versionado.
 Ese primer commit contiene 411 inserciones y 16 eliminaciones en tres documentos:
 
 | Archivo actualizado en `6fe22b3` | Cambio en ese commit | Corrección documental |
 | --- | --- | --- |
-| docs/REPORTE_TECNICO_AVANCES_TB4.md | Reincorporado: +343 líneas | Trazabilidad, inventario y evidencia histórica; ahora se actualiza a `6fe22b3` sin commit |
+| docs/REPORTE_TECNICO_AVANCES_TB4.md | Reincorporado: +343 líneas | Trazabilidad, inventario y evidencia histórica; actualizado después en `5d9f150` |
 | docs/PROPUESTA_ACTIVACION_VENDEDORES_TB4.md | Modificado: +22/-10 líneas | Sin experiencia ni enlaces comerciales; 48 horas corridas; nunca autoaprobación; designación por coordinación; campana y recorrido de publicación |
 | supabase/README.md | Modificado: +46/-6 líneas | Trigger implementado, revisión técnica frente a aprobación, usuarios preexistentes y límites de seguridad y pruebas |
 
-Al inicio de esta actualización el árbol estaba limpio. Ahora solo el reporte
-tiene cambios sin commit; la propuesta y el README permanecen como en `6fe22b3`.
+Al inicio de esta ronda el árbol estaba limpio. Esta ronda deja únicamente tres
+documentos modificados, sin commit:
+
+| Documento | Corrección de esta ronda |
+| --- | --- |
+| docs/REPORTE_TECNICO_AVANCES_TB4.md | HEAD previo, nueve commits, diez archivos, PR según fuente confirmada, divergencia y dependencias |
+| docs/PROPUESTA_ACTIVACION_VENDEDORES_TB4.md | Enlaces comerciales opcionales y procedimiento propuesto de habilitación/revocación de revisores, sin cambiar tablas ni RPC |
+| supabase/README.md | DTO pendiente de coordinación y validación frontend; separación de revisión, propuesta, aprobación y autorización |
 
 No se modifican SQL, contratos ni módulos funcionales de otros integrantes.
 Validación actual: contraste de los tres documentos con Git y las migraciones,
@@ -164,7 +182,7 @@ que un actor con permisos envíe valores propios; faltan protecciones de escritu
 | Tema | Diseño/estado inicial | Estado real actual |
 | --- | --- | --- |
 | Precio | Diseño INTEGER, 0–2147483647; A eligió BIGINT >0 | BIGINT >0 sigue en SQL. Objetivo ratificado posteriormente: INTEGER 1–2147483647; migración correctiva pendiente |
-| Foto | Diseño `imagen` JSONB | Siete columnas implementadas. DTO `imagen` documentado para normalización; servicio/adaptador inexistente |
+| Foto | Diseño `imagen` JSONB | Siete columnas implementadas. DTO `imagen` como propuesta técnica pendiente de ratificación por coordinación y validación frontend; servicio/adaptador inexistente |
 | Tamaño | Diseño 5 MiB; SPEC propone ≤2 MiB | Se documentó objetivo 1–2097152 bytes. No se añadió límite SQL/Storage |
 | Lugares externos | Referencia SPEC a campus conocido | campus_id nullable implementado y probado; excepción ratificada, sin editar SPEC |
 | Contexto de conversaciones/reservas | Reglas de participantes en diseño | FK compuestas evitan vendedor y conversación de otro contexto; no sustituyen autorización |
@@ -214,13 +232,21 @@ manual implementada. El default FALSE no es por sí solo autorización completa.
 ## 5. Activación de vendedores: propuesta, no implementación
 
 Evidencia: [propuesta de activación](PROPUESTA_ACTIVACION_VENDEDORES_TB4.md),
-origen en `827f2e4` y reglas documentales actualizadas en `6fe22b3`.
+origen en `827f2e4`, reglas actualizadas en `6fe22b3` y precisiones
+documentales de esta ronda todavía sin commit.
 
 El estudiante conserva comprador y solicita capacidad vendedor con la misma cuenta,
-independientemente de experiencia. Puede solicitar sin experiencia ni enlaces comerciales. Revisión humana
+independientemente de experiencia. Los enlaces a páginas de venta son opcionales
+y complementarios para revisión humana; la falta de experiencia o enlaces no
+impide solicitar y ninguno produce aprobación automática. Su representación técnica
+requiere acuerdo posterior, sin cambiar ahora el esquema ni los contratos. Revisión humana
 obligatoria en 48 horas corridas desde el envío, nunca aprobación automática por
 vencimiento y sin correo de aprobación. Coordinación designa revisores y
-administradores. Notificaciones consultables desde la campana junto al avatar;
+administradores; no constan personas ni autorizaciones concedidas en la evidencia
+de esta ronda. Su designación y procedimiento quedan pendientes de coordinación.
+Se propone habilitar/revocar el permiso específico con auditoría administrativa,
+sin autoasignación ni cambios de permisos por solicitantes; no se implementa.
+Notificaciones consultables desde la campana junto al avatar;
 recorrido definitivo: perfil vendedor activo → Publicar artículo → formulario.
 Son decisiones documentadas, sin implementación del flujo en esta corrección.
 
@@ -233,7 +259,7 @@ Son decisiones documentadas, sin implementación del flujo en esta corrección.
 Transiciones: envío → pendiente; pendiente → aprobado o rechazado por revisor
 habilitado diferente del solicitante. Terminales inmutables. Nueva solicitud tras
 rechazo sería otro expediente, sujeto a acuerdo. Una pendiente por estudiante y
-una aprobada histórica por identidad bajo el alcance sin revocaciones propuesto.
+una aprobada histórica por identidad bajo el alcance sin revocaciones de vendedor propuesto.
 
 RPC conceptuales: enviar_solicitud_vendedor, consultar_mis_solicitudes,
 consultar_solicitudes_revision, aprobar_solicitud_vendedor,
@@ -307,41 +333,116 @@ prueba histórica de Etapa A y preparar una suite integral posterior es un pendi
 La auditoría actual no ejecutó las suites Auth/IA/catálogo de otros integrantes ni
 les atribuye resultados. No existen pruebas de backend real acreditadas por estos SQL.
 
-## 8. Estado Git y revisión del PR
+## 8. Estado Git, PR y divergencia
 
-| Elemento | Evidencia actual local (15/11/2026) |
+| Elemento | Evidencia al corte documental del 15/11/2026 |
 | --- | --- |
 | Rama | integracion/bernabe |
-| HEAD | 6fe22b374a42de1b98a304299fb4824591810cf1 |
-| origin/integracion/bernabe local | 91172383aa8cd175483e7614c8dc82279ef6318a; rama un commit por delante, sin fetch |
-| Árbol al inicio de esta actualización | Limpio; los tres documentos ya versionados en `6fe22b3` |
-| develop local | 4a584d8 |
-| origin/develop local | b578621 |
-| origin/develop...HEAD | 4 exclusivos de origin/develop; 8 exclusivos de integración |
-| Base común | 4a584d8 |
-| Cambios sin commit actuales | Únicamente docs/REPORTE_TECNICO_AVANCES_TB4.md |
-| Revisión técnica histórica | Pruebas locales finales consignadas como correctas; no repetidas ahora |
-| Decisiones definitivas vendedor | Incorporadas del encargo; no autorizan tablas, RPC ni despliegue |
-| Aprobación coordinación de esquema/contratos propuestos | Pendiente; no se deduce de revisión técnica |
-| Estado/revisiones/aprobaciones/checks GitHub | Consulta intentada sin éxito; estado remoto no verificado |
+| HEAD previo a esta ronda | 5d9f15034a35b927274525f9d2386862ba5d1008 |
+| origin/integracion/bernabe local | Mismo SHA; rama sincronizada con esa referencia, sin fetch ahora |
+| Árbol inicial | Limpio |
+| develop local | 4a584d8; no confundir con origin/develop |
+| origin/develop local | 6b87e2d083dc49faa63d913e6b336863de220c3c |
+| origin/develop...origin/integracion/bernabe | 13 exclusivos de develop; 9 exclusivos de integración |
+| Ancestro común | 4a584d8231c5798d7706c3bd2f9d65bc89a6c968 |
+| Cambios actuales sin commit | Únicamente los tres documentos de esta ronda |
+| PR #36 | Abierto, sin fusionar, pendiente de aprobación, según confirmación del responsable |
+| Revisión remota anterior informada | 9 commits y 10 archivos; inventario corroborado con Git local |
+| Revisiones individuales y checks GitHub | No consultados ahora; no se acreditan resultados ni aprobaciones nuevas |
+| Aprobación de esquema/contratos e implementación/despliegue | No acreditada por esta revisión técnica; pendiente de coordinación |
 
-Estar un commit por delante de origin/integracion/bernabe local no demuestra que
-`6fe22b3` esté publicado ni confirma el estado remoto de GitHub. No se comprobó merge limpio:
-esa comparación no se ejecutó y el recuento no demuestra ausencia de conflictos.
-El [PR #36](https://github.com/angelcardenas-dev/campusloop-v2/pull/36) se identifica
-por la indicación del usuario. No se pudo acreditar su estado real remoto:
-`gh pr view` no se ejecutó por ausencia de `gh`; la consulta web de la página
-falló con «Cache miss» y la API no fue accesible mediante esa herramienta.
-No se afirma que esté abierto, cerrado, fusionado, aprobado o que incluya `6fe22b3`.
-Queda pendiente una consulta autenticada de estado, ramas, SHA, revisiones y checks.
-No se modificó el PR ni se realizó integración en esta tarea.
+Los estados de versiones previas (HEAD `9117238` o `6fe22b3`, referencias
+alineadas o un commit adelantadas, divergencia 4/7 o 4/8 y consultas web fallidas)
+son cortes históricos, no el estado actual. El PR se identifica en
+[GitHub](https://github.com/angelcardenas-dev/campusloop-v2/pull/36), pero esta ronda
+no realiza una nueva verificación remota de su interfaz o API.
+
+### Commits exclusivos de develop
+
+- `b69c43a`: feat: implementar validaciones y ajustes de UI en publicar (Sprint 2)
+- `53a5ae6`: test(auth): add offline PKCE return coverage
+- `4e8695e`: Merge pull request #37 from angelcardenas-dev/feature/angel/pruebas-pkce-offline
+- `e5c1c83`: feat(ia): preparar verificacion de identidad servidor
+- `b578621`: Merge pull request #38 from angelcardenas-dev/feature/angel/ia-auth-servidor
+- `b94b26e`: chore(netlify): preparar publicación estática controlada TB4
+- `76a4d38`: Merge pull request #39 from angelcardenas-dev/chore/angel/netlify-preparacion
+- `c2d3807`: fix: corregir estados y propuesta IA de Publicar
+- `e009d57`: Merge pull request #34 from angelcardenas-dev/feature/matias/publicaciones
+- `695a2af`: Merge remote-tracking branch 'origin/develop' into integracion/matias
+- `b6d1c3b`: chore(netlify): incluir modulo de publicaciones en build
+- `47d2e54`: fix(publicar): corregir validacion y accesibilidad de sugerencias
+- `6b87e2d`: Merge pull request #40 from angelcardenas-dev/integracion/matias
+
+Los nueve exclusivos de integración están enumerados en la sección 2.
+El resultado `13 9` se reprodujo ahora con
+`git rev-list --left-right --count origin/develop...origin/integracion/bernabe`.
+
+### Archivos cambiados desde el ancestro común
+
+En integración: los diez archivos añadidos de la sección 2, obtenidos con
+`git diff --name-status 4a584d8 HEAD`. En develop, doce rutas:
+
+- `.gitignore` (M).
+- `css/styles.css` (M).
+- `js/publicaciones.js` (A).
+- `netlify.toml` (A).
+- `netlify/lib/auth-usuario.mjs` (A).
+- `publicar.html` (M).
+- `scripts/preparar-netlify.mjs` (A).
+- `tests/auth/README.md` (M).
+- `tests/auth/pkce.test.mjs` (A).
+- `tests/auth/retorno-pkce.mjs` (A).
+- `tests/ia/README.md` (M).
+- `tests/ia/auth-servidor.test.mjs` (A).
+
+No hay intersección entre los conjuntos de rutas cambiadas por cada rama desde
+el ancestro común. El diff directo entre puntas mezcla aportes de ambos lados y
+no equivale al aporte del PR. No se ejecutó merge ni simulación de integración:
+la ausencia de rutas compartidas no demuestra mergeabilidad ni compatibilidad funcional.
+
+### Riesgos y dependencias para revisión conjunta
+
+- Documentación: develop modifica README de Auth/IA; integración añade documentación
+  de BD y vendedores. No hay edición concurrente de la misma ruta, pero deben
+  reconciliarse las afirmaciones sobre preparación y alcance antes de aprobar.
+- Publicaciones: `origin/develop:js/publicaciones.js` simula envío con temporizador
+  y termina en `integracion_pendiente`; no persiste artículos. Debe conectarse
+  posteriormente al servicio autorizado, con perfil vendedor efectivo, contratos
+  de precio/imagen, catálogos y controles servidor. El trigger no habilita ventas.
+- Auth/IA: `netlify/lib/auth-usuario.mjs` valida identidad mediante
+  `auth.getUser(token)`, no consulta perfiles ni verifica vendedor. Identidad
+  válida y perfil mínimo no sustituyen autorización para publicar o usar IA
+  restringida a vendedores. El trigger puede hacer fallar el alta si no inserta
+  el perfil; su propietario y permisos reales y los usuarios anteriores siguen pendientes.
+- Netlify: `scripts/preparar-netlify.mjs` usa una lista estática de páginas/recursos
+  que incluye publicaciones; `netlify.toml` configura build y directorio de
+  funciones. Esto no despliega migraciones, crea Storage ni conecta por sí solo
+  Auth/IA o artículos. No se ejecutó build ni despliegue en esta ronda.
+- Seguridad y DTO: RLS, GRANTS de aplicación, RPC de negocio, notificaciones y
+  Storage siguen pendientes. El DTO de imagen es propuesta técnica a ratificar
+  por coordinación y validar con frontend; no se cambia el contrato para resolver
+  estas dependencias silenciosamente.
+
+### Propuesta de resolución preservando historial
+
+Después de la revisión y autorización de coordinación, volver a comprobar
+referencias, cabecera del PR, revisiones, checks y posibles conflictos sobre las
+puntas vigentes. Proponer un merge normal del PR #36 hacia develop, conservando
+sus commits; no squash, rebase ni reescritura. Si aparecen conflictos, revisar su
+resolución con los responsables de cada módulo y validar la combinación en un
+entorno aislado autorizado antes de fusionar. No traer cambios de otros
+integrantes a esta rama dentro de la corrección documental. Un merge Git no
+autoriza ejecutar migraciones o desplegar.
+
+Esta ronda solo analiza y documenta: no integra, no fusiona el PR, no crea commits
+ni hace push. El nuevo SHA documental se informará después de autorización.
 
 ## 9. Pendientes priorizados y criterio de preparación para Supabase
 
 | Prioridad | Trabajo pendiente | Evidencia necesaria para cerrarlo |
 | --- | --- | --- |
 | P0: acuerdos | Aprobar esquema/contratos del flujo vendedor; concretar designados y cobertura del plazo definitivo; resolver identidad única, visibilidad y actores de reservas/puntos | Decisiones explícitas y revisión con consumidores |
-| P0: coherencia | Migración aditiva del rango INTEGER y 2 MiB; ratificar DTO con Angel/Matías | SQL nuevo y pruebas de límites, sin reescribir A |
+| P0: coherencia | Migración aditiva del rango INTEGER y 2 MiB; ratificar DTO por coordinación y validarlo con Angel/Matías | Acuerdo explícito; después SQL autorizado y pruebas de límites, sin reescribir A |
 | P0: autorización | RLS/GRANTS mínimos para las nueve tablas y las nuevas que se aprueben; bloqueo de campos privados/identidad/booleano | Negativos con anon, titular, tercero y revisores; trigger sigue funcionando |
 | P1: flujo vendedor | Implementar únicamente el modelo aprobado y decisión/notificación atómica | Concurrencia, idempotencia, baja de revisor, no autoaprobación y publicación denegada antes de aprobar |
 | P1: transacciones | RPC crear/cancelar reserva, bloqueos en orden uniforme y estados sincronizados | Dos sesiones compiten: una activa; cancelación consistente y terceros denegados |

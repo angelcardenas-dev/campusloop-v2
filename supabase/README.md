@@ -13,6 +13,20 @@ definitivas: solicitudes sin experiencia ni enlaces comerciales, 48 horas corrid
 desde el envío, nunca aprobación por vencimiento, revisores y administradores
 designados por coordinación, campana junto al avatar y recorrido perfil vendedor
 activo → Publicar artículo → formulario. Tablas y RPC siguen siendo propuestas.
+Los enlaces a páginas de venta son opcionales y complementarios para revisión
+humana; no se exige experiencia ni enlaces y no producen aprobación automática.
+No constan personas designadas ni permisos de revisión concedidos en esta ronda;
+la designación y ratificación del procedimiento propuesto quedan pendientes.
+
+Se distinguen cuatro decisiones independientes:
+
+1. **Revisión técnica:** evalúa archivos, riesgos y evidencia; no concede aprobación.
+2. **Propuesta del responsable técnico:** describe una solución candidata y sus límites.
+3. **Aprobación de coordinación:** ratifica las decisiones de esquema, contratos y
+   responsables; no se presume por la conformidad del autor técnico.
+4. **Autorización de implementación y despliegue:** define expresamente qué se puede
+   ejecutar y en qué entorno. Aprobar una propuesta documental no autoriza por sí
+   solo a implementarla ni a desplegarla en Supabase compartido.
 
 No están implementados RLS de aplicación, GRANTS de aplicación, RPC de negocio,
 notificaciones persistentes ni configuración/políticas Storage. El REVOKE de
@@ -84,11 +98,13 @@ Las decisiones históricas descritas más abajo corresponden a Etapa A.
 - Objetivo aprobado para precio: INTEGER, 1–2147483647 céntimos, PEN.
   Aún no aplicado: Etapa A sigue usando BIGINT y su prueba de 3000000000 sigue vigente.
   Requiere una migración adicional independiente, nunca reescribir la anterior.
-- Fotografía: conservar las siete columnas físicas. DTO acordado como propuesta
-  aprobada por Bernabé: `imagen: { proveedor: 'supabase', bucket: 'articulos', ruta,
+- Fotografía: conservar las siete columnas físicas. DTO como propuesta técnica
+  del responsable, pendiente de ratificación por coordinación y validación con
+  los responsables frontend: `imagen: { proveedor: 'supabase', bucket: 'articulos', ruta,
   url, ancho, alto, formato, bytes }`. El servicio mapeará las columnas imagen_*;
   presentación de catálogo usa `foto: { url, alt }`. No hay adaptador implementado.
-  Ratificación con Angel/Matías pendiente antes de integrar sus consumidores.
+  Validación con Angel/Matías y ratificación de coordinación pendientes antes de
+  integrar consumidores; no constituye contrato aprobado ni autoriza implementación.
 - Tamaño objetivo: 1–2097152 bytes (2 MiB), JPEG/PNG/WebP; reemplaza la propuesta
   de 5 MiB del diseño. Restricción SQL y configuración Storage aún pendientes.
 - Lugares externos con campus_id NULL ratificados; ya implementados en Etapa A.
