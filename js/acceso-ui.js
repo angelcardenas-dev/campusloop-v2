@@ -235,11 +235,15 @@ function crearRegion(region) {
 
 function crearEstado(boton, form) {
   const estado = {
-    inicializado: false, comprobado: false, enviando: false, redirigiendo: false, turnoSesion: 0,
+    inicializado: false, comprobado: false, enviando: false, redirigiendo: false, desmontado: false,
+    turnoSesion: 0,
+    // Un temporizador por comprobación: cada una limpia el suyo y desmontar() cancela los pendientes.
+    avisosSesion: new Set(),
     // Único punto que escribe disabled: ningún finally habilita el botón directamente.
     actualizar() {
-      boton.disabled = !(estado.inicializado && estado.comprobado && !estado.enviando && !estado.redirigiendo);
-      if (estado.enviando) form.setAttribute('aria-busy', 'true');
+      boton.disabled = !(estado.inicializado && estado.comprobado && !estado.enviando
+        && !estado.redirigiendo && !estado.desmontado);
+      if (estado.enviando && !estado.desmontado) form.setAttribute('aria-busy', 'true');
       else form.removeAttribute('aria-busy');
     },
   };
@@ -248,6 +252,7 @@ function crearEstado(boton, form) {
 
 /* Funciones: redirección */
 function redirigir(ctx) {
+  if (ctx.estado.desmontado) return;
   ctx.estado.redirigiendo = true;
   ctx.estado.actualizar();
   try {
@@ -260,13 +265,17 @@ function redirigir(ctx) {
 /* Funciones: comprobación de sesión */
 async function comprobarSesion(ctx) {
   const { estado, region } = ctx;
-  if (estado.redirigiendo) return;
+  if (estado.redirigiendo || estado.desmontado) return;
   estado.turnoSesion += 1;
   const turno = estado.turnoSesion;
-  const vigente = () => turno === estado.turnoSesion && !estado.redirigiendo;
+  const vigente = () => turno === estado.turnoSesion && !estado.redirigiendo && !estado.desmontado;
   estado.comprobado = false;
   estado.actualizar();
-  const aviso = setTimeout(() => { if (vigente()) region.mostrarDeSesion(MENSAJES.SESION_DEMORA, 'info'); }, TIEMPO_AVISO_MS);
+  const aviso = setTimeout(() => {
+    estado.avisosSesion.delete(aviso);
+    if (vigente()) region.mostrarDeSesion(MENSAJES.SESION_DEMORA, 'info');
+  }, TIEMPO_AVISO_MS);
+  estado.avisosSesion.add(aviso);
   let clasificacion;
   try {
     clasificacion = clasificarSesion(await ctx.servicios.obtenerEstadoAuth());
@@ -274,8 +283,9 @@ async function comprobarSesion(ctx) {
     clasificacion = { tipo: 'INDETERMINADO' };
   } finally {
     clearTimeout(aviso);
+    estado.avisosSesion.delete(aviso);
   }
-  // Una comprobación antigua no escribe nada si ya empezó otra más reciente.
+  // Una comprobación antigua o desmontada no escribe nada.
   if (!vigente()) return;
 
   if (clasificacion.tipo === 'AUTENTICADO') {
@@ -311,14 +321,19 @@ async function procesarEnvio(ctx) {
   estado.enviando = true;
   estado.actualizar();
   try {
-    ctx.interpretar(await ctx.enviar(valores), ctx);
+    const resultado = await ctx.enviar(valores);
+    // Tras desmontar no se interpreta: ni mensajes ni redirección.
+    if (!estado.desmontado) ctx.interpretar(resultado, ctx);
   } catch {
     // Se conservan los datos del formulario.
-    region.mostrar(MENSAJES.INESPERADO, 'error', 'envio');
+    if (!estado.desmontado) region.mostrar(MENSAJES.INESPERADO, 'error', 'envio');
   } finally {
     estado.enviando = false;
-    estado.actualizar();
-    if (teniaFoco && !boton.disabled) boton.focus();
+    // Un montaje desmontado no vuelve a escribir en el botón: podría pertenecer ya a otro montaje.
+    if (!estado.desmontado) {
+      estado.actualizar();
+      if (teniaFoco && !boton.disabled) boton.focus();
+    }
   }
 }
 
@@ -348,10 +363,16 @@ function montarFormulario(form, definiciones, idMensaje, crearConfig) {
   const montaje = {
     comprobar: () => comprobarSesion(ctx),
     desmontar() {
+      if (ctx.estado.desmontado) return;
+      ctx.estado.desmontado = true;
+      ctx.estado.turnoSesion += 1; // Invalida comprobaciones en curso.
+      for (const aviso of ctx.estado.avisosSesion) clearTimeout(aviso);
+      ctx.estado.avisosSesion.clear();
       form.removeEventListener('submit', alEnviar);
       form.removeEventListener('input', alEditar);
       form.removeEventListener('change', alEditar);
       ctx.estado.inicializado = false;
+      ctx.region.ocultar(); // También cancela escrituras pendientes de la región.
       ctx.estado.actualizar();
       if (montajes.get(form) === montaje) montajes.delete(form);
     },
