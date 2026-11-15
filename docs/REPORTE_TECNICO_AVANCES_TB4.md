@@ -1,12 +1,13 @@
 # CampusLoop V2 — reporte técnico de correcciones y avances TB4
 
 Fecha de corte documental: 15/11/2026, Perú. Rama auditada: `integracion/bernabe`.
-HEAD actual: `91172383aa8cd175483e7614c8dc82279ef6318a` (`9117238`). Destino indicado por el responsable: PR #36 hacia `develop`.
+HEAD actual: `6fe22b374a42de1b98a304299fb4824591810cf1` (`6fe22b3`). Destino indicado por el responsable: PR #36 hacia `develop`.
 Este reporte es una auditoría de archivos e historial, no una autorización de despliegue.
-Estado: borrador previo a commits. No se crean commits ni push por instrucción
-del responsable. La versión definitiva debe actualizarse después del último
-commit de correcciones autorizado, con su SHA y el inventario final. Ese paso
-queda pendiente; no se anticipa un SHA futuro.
+Estado: actualizado después del primer commit de correcciones documentales,
+`6fe22b3`, que incorporó los tres documentos. Esta actualización modifica solo
+el reporte y queda sin commit; no se hace commit ni push. Si se autorizan nuevos
+commits de correcciones, el cierre definitivo deberá reflejar su último SHA y
+el inventario final; no se anticipa un SHA futuro.
 
 ## 1. Resultado general y alcance de la evidencia
 
@@ -23,15 +24,17 @@ La activación manual de vendedores sigue siendo una propuesta documental.
 | Propuesto | Diseño documentado sin implementación ejecutable |
 | Pendiente | Falta acuerdo, implementación o validación; se especifica cuál |
 
-Se utilizaron `git status`, `branch -vv`, `log`, `show`, `merge-base`, `rev-list` y
-`diff`, además de lectura de migraciones, tests y documentos. En esta tarea no se
+La revisión documental anterior utilizó `git status`, `branch -vv`, `log`, `show`,
+`merge-base`, `rev-list` y `diff`, además de leer migraciones, tests y documentos.
+En esta actualización se verificaron estado local, historial, contenido del commit,
+inventarios y diff, y se intentó consultar el PR. En esta tarea no se
 volvieron a ejecutar pruebas SQL: los resultados históricos están respaldados por
 lo consignado sobre ejecuciones locales anteriores en este reporte y en [supabase/README.md](../supabase/README.md).
 No se consultó ni ejecutó SQL en Supabase compartido.
 
-El reporte anterior consignó una consulta fallida de GitHub del PR #36.
-En esta corrección no se consultó GitHub. No se verificaron
-en vivo estado abierto/cerrado, revisiones, checks, aprobaciones ni SHA remoto actual.
+Se intentó consultar el PR #36: `gh` no está disponible y las consultas web a
+GitHub y a su API no devolvieron el PR. No se verificaron en vivo estado
+abierto/cerrado, revisiones, checks, aprobaciones ni SHA remoto actual.
 Las referencias `origin/*` descritas son las disponibles localmente; no se hizo fetch.
 
 ## 2. Bases de comparación y commits
@@ -45,7 +48,8 @@ No se interpreta «estado inicial» como un snapshot inventado. Se distinguen:
 | `7d0e3f2` | Etapa A terminada; estado inicial del trabajo de continuación y seguridad |
 | `98fc3e2` | Integración de Etapa A mediante PR #35 |
 | `d2c0e73` | Corte histórico: trigger y pruebas locales documentadas |
-| `9117238` | HEAD actual; correcciones documentales sin commit |
+| `9117238` | Corte anterior: reporte eliminado del árbol versionado |
+| `6fe22b3` | HEAD actual; primer commit de correcciones documentales |
 
 Commits presentes en la rama y ausentes de las referencias develop comparadas:
 
@@ -57,9 +61,10 @@ Commits presentes en la rama y ausentes de las referencias develop comparadas:
 | `827f2e4` | Propuesta de activación manual de vendedores |
 | `d2c0e73` | Trigger mínimo, dos pruebas B/A y ampliación del README |
 | `ac13c1b` | Incorporó el reporte técnico de 316 líneas |
-| `9117238` | Eliminó el reporte; al iniciar esta corrección existía sin seguimiento |
+| `9117238` | Eliminó el reporte; antes del primer commit de correcciones existía sin seguimiento |
+| `6fe22b3` | Actualizó propuesta y README y reincorporó el reporte; tres documentos, sin cambios funcionales |
 
-Estos siete commits describen el conjunto local candidato al PR #36; confirmar en
+Estos ocho commits describen el conjunto local candidato al PR #36; confirmar en
 GitHub que su cabecera sigue coincidiendo antes de presentarlos como inventario remoto.
 El hecho de estar committeados se comprueba ahora con Git: las restricciones «sin
 commit/push» de las tareas anteriores describían esas actuaciones del agente, no
@@ -67,8 +72,9 @@ el estado futuro del repositorio. No se atribuye quién ejecutó operaciones pos
 
 ### Inventario de archivos
 
-`git diff --name-status origin/develop...HEAD` muestra nueve archivos añadidos,
-1213 líneas añadidas, ningún archivo modificado preexistente ni eliminado en ese diff.
+El diff de commits frente a `origin/develop` local muestra diez archivos añadidos,
+1608 líneas añadidas, ningún archivo modificado preexistente ni eliminado en ese
+diff. En el corte anterior `9117238` eran nueve archivos y 1213 líneas añadidas.
 
 | Archivo | Frente a base común | Desde Etapa A `7d0e3f2` | Función |
 | --- | --- | --- | --- |
@@ -76,27 +82,32 @@ el estado futuro del repositorio. No se atribuye quién ejecutó operaciones pos
 | `supabase/migrations/20261113000100_tablas_tb4.sql` | Creado | Sin cambios | Nueve tablas, FK, CHECK y claves candidatas |
 | `supabase/migrations/20261113000200_indices_tb4.sql` | Creado | Sin cambios | 25 índices explícitos |
 | `tests/db/estructura_etapa_a.sql` | Creado | Sin cambios | Integridad estructural de A |
-| `supabase/README.md` | Creado | Modificado: +82 líneas | Reconciliación, ejecución local y límites de seguridad |
+| `supabase/README.md` | Creado | Modificado: +128/-6 líneas | Reconciliación, ejecución local histórica y límites de seguridad |
 | `supabase/migrations/20261114000100_trigger_perfil_minimo.sql` | Creado | Creado | Perfil mínimo al insertar usuario Auth |
 | `tests/db/perfil_minimo_etapa_b.sql` | Creado | Creado | Perfil, metadatos, permisos y atomicidad |
 | `tests/db/seguridad_trigger_perfil.sql` | Creado | Creado | Propietario, ACL, search_path y RLS simulado |
 | `docs/PROPUESTA_ACTIVACION_VENDEDORES_TB4.md` | Creado | Creado | Diseño de revisión manual; no funcionalidad desplegada |
+| `docs/REPORTE_TECNICO_AVANCES_TB4.md` | Creado | Creado | Trazabilidad de avances y evidencia; reincorporado en `6fe22b3` |
 
 La comparación directa `7d0e3f2..HEAD` también incluye cambios de `js/auth.js`,
 `js/config-publica.js` y dos archivos `tests/auth/`. Proceden de `cb1e13a`, trabajo
 de Angel ya integrado por la línea develop/PR #33, no de las correcciones SQL de
-Bernabé. No aparecen en el aporte de nueve archivos frente a la base común actual.
+Bernabé. No aparecen en el aporte de diez archivos frente a la base común actual.
 No se atribuyen esos cambios a Bernabé ni a la continuación del trigger.
 
-El inventario anterior es el diff de commits hasta HEAD: incorporar y eliminar
-el reporte se cancelan en ese diff neto. Al inicio de esta corrección ya existía
-sin seguimiento; se conserva su contenido y se actualiza.
+El inventario anterior corresponde a commits hasta `6fe22b3`, sin incluir la
+actualización actual sin commit. En `9117238`, incorporar y eliminar el reporte
+se cancelaban en el diff neto; `6fe22b3` lo reincorporó como archivo versionado.
+Ese primer commit contiene 411 inserciones y 16 eliminaciones en tres documentos:
 
-| Archivo de esta corrección | Estado frente a HEAD | Cambio documental |
+| Archivo actualizado en `6fe22b3` | Cambio en ese commit | Corrección documental |
 | --- | --- | --- |
-| docs/REPORTE_TECNICO_AVANCES_TB4.md | Sin seguimiento; reincorporación pendiente | SHA, historial, inventario y distinción de evidencia |
-| docs/PROPUESTA_ACTIVACION_VENDEDORES_TB4.md | Modificado | Reglas definitivas y recorrido; tablas/RPC siguen propuestos |
-| supabase/README.md | Modificado | Trigger implementado, aprobaciones y límites |
+| docs/REPORTE_TECNICO_AVANCES_TB4.md | Reincorporado: +343 líneas | Trazabilidad, inventario y evidencia histórica; ahora se actualiza a `6fe22b3` sin commit |
+| docs/PROPUESTA_ACTIVACION_VENDEDORES_TB4.md | Modificado: +22/-10 líneas | Sin experiencia ni enlaces comerciales; 48 horas corridas; nunca autoaprobación; designación por coordinación; campana y recorrido de publicación |
+| supabase/README.md | Modificado: +46/-6 líneas | Trigger implementado, revisión técnica frente a aprobación, usuarios preexistentes y límites de seguridad y pruebas |
+
+Al inicio de esta actualización el árbol estaba limpio. Ahora solo el reporte
+tiene cambios sin commit; la propuesta y el README permanecen como en `6fe22b3`.
 
 No se modifican SQL, contratos ni módulos funcionales de otros integrantes.
 Validación actual: contraste de los tres documentos con Git y las migraciones,
@@ -203,7 +214,7 @@ manual implementada. El default FALSE no es por sí solo autorización completa.
 ## 5. Activación de vendedores: propuesta, no implementación
 
 Evidencia: [propuesta de activación](PROPUESTA_ACTIVACION_VENDEDORES_TB4.md),
-origen en `827f2e4` y reglas actualizadas sin commit en esta corrección.
+origen en `827f2e4` y reglas documentales actualizadas en `6fe22b3`.
 
 El estudiante conserva comprador y solicita capacidad vendedor con la misma cuenta,
 independientemente de experiencia. Puede solicitar sin experiencia ni enlaces comerciales. Revisión humana
@@ -301,23 +312,29 @@ les atribuye resultados. No existen pruebas de backend real acreditadas por esto
 | Elemento | Evidencia actual local (15/11/2026) |
 | --- | --- |
 | Rama | integracion/bernabe |
-| HEAD y origin/integracion/bernabe local | 91172383aa8cd175483e7614c8dc82279ef6318a; referencias iguales, sin fetch |
-| Árbol al inicio | Solo reporte sin seguimiento; otros dos documentos limpios |
+| HEAD | 6fe22b374a42de1b98a304299fb4824591810cf1 |
+| origin/integracion/bernabe local | 91172383aa8cd175483e7614c8dc82279ef6318a; rama un commit por delante, sin fetch |
+| Árbol al inicio de esta actualización | Limpio; los tres documentos ya versionados en `6fe22b3` |
 | develop local | 4a584d8 |
 | origin/develop local | b578621 |
-| origin/develop...HEAD | 4 exclusivos de origin/develop; 7 exclusivos de integración |
+| origin/develop...HEAD | 4 exclusivos de origin/develop; 8 exclusivos de integración |
 | Base común | 4a584d8 |
-| Cambios sin commit actuales | Los tres documentos del inventario de esta corrección |
+| Cambios sin commit actuales | Únicamente docs/REPORTE_TECNICO_AVANCES_TB4.md |
 | Revisión técnica histórica | Pruebas locales finales consignadas como correctas; no repetidas ahora |
 | Decisiones definitivas vendedor | Incorporadas del encargo; no autorizan tablas, RPC ni despliegue |
 | Aprobación coordinación de esquema/contratos propuestos | Pendiente; no se deduce de revisión técnica |
-| Revisiones/aprobaciones/checks GitHub | No verificados en vivo |
+| Estado/revisiones/aprobaciones/checks GitHub | Consulta intentada sin éxito; estado remoto no verificado |
 
-Estar alineado con origin/integracion/bernabe local no significa estar actualizado
-con develop ni confirma el estado remoto de GitHub. No se comprobó merge limpio:
+Estar un commit por delante de origin/integracion/bernabe local no demuestra que
+`6fe22b3` esté publicado ni confirma el estado remoto de GitHub. No se comprobó merge limpio:
 esa comparación no se ejecutó y el recuento no demuestra ausencia de conflictos.
-El PR #36 se identifica por la indicación del usuario, no por una consulta remota
-exitosa. No se modificó su estado ni se realizó integración en esta tarea.
+El [PR #36](https://github.com/angelcardenas-dev/campusloop-v2/pull/36) se identifica
+por la indicación del usuario. No se pudo acreditar su estado real remoto:
+`gh pr view` no se ejecutó por ausencia de `gh`; la consulta web de la página
+falló con «Cache miss» y la API no fue accesible mediante esa herramienta.
+No se afirma que esté abierto, cerrado, fusionado, aprobado o que incluya `6fe22b3`.
+Queda pendiente una consulta autenticada de estado, ramas, SHA, revisiones y checks.
+No se modificó el PR ni se realizó integración en esta tarea.
 
 ## 9. Pendientes priorizados y criterio de preparación para Supabase
 
