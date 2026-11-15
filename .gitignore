@@ -7,3 +7,6 @@ Thumbs.db
 
 # Registros temporales
 *.log
+
+# Artefacto estatico generado para Netlify
+/dist/
