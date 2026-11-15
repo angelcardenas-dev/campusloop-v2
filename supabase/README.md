@@ -1,5 +1,87 @@
 # PostgreSQL TB4 — FASE 3, Etapa A
 
+## Continuación 14/11/2026: reconciliación y componente B/A
+
+### Revisión adicional de seguridad del trigger (local)
+
+Se repitieron `perfil_minimo_etapa_b.sql` y `seguridad_trigger_perfil.sql` con
+psql ON_ERROR_STOP en PostgreSQL 18 desechable y Auth simulado: ambas pasaron.
+La segunda prueba inspecciona pg_proc, pg_roles, ACL y estado RLS; después revierte
+todos los cambios con ROLLBACK. Propietario observado: etapa_b, superusuario y
+BYPASSRLS local; propietario de perfiles también etapa_b; ACL {etapa_b=X/etapa_b},
+SECURITY DEFINER verdadero y proconfig con search_path vacío. Ningún grant a PUBLIC.
+Los roles sintéticos sin membresías no tienen EXECUTE ni INSERT en perfiles,
+pero la inserción Auth dispara el trigger correctamente. El propietario conserva
+su capacidad administrativa; revocar PUBLIC no limita a propietarios/superusuarios.
+
+Se probó además un propietario NOLOGIN, NOSUPERUSER, NOBYPASSRLS: con RLS habilitado
+y sin políticas el trigger inserta porque ese rol posee perfiles. FORCE RLS bloquea
+esa inserción y revierte también auth.users. Otro definidor NOSUPERUSER con BYPASSRLS
+y privilegio INSERT sí inserta incluso con FORCE. SECURITY DEFINER por sí solo no
+evade RLS: depende del propietario efectivo. Las futuras políticas deberán preservar
+el alta mínima sin conceder inserción de perfiles al frontend.
+
+Con search_path hostil del invocador, una tabla homónima en un esquema escribible,
+otra temporal y una función homónima a gen_random_uuid, solo public.perfiles recibió
+la fila. El cuerpo no usa SQL dinámico ni nombres de relación sin calificar;
+NEW.id es el registro del trigger. search_path vacío no elimina la búsqueda implícita
+de pg_catalog/pg_temp: la referencia public.perfiles es la protección decisiva para
+esta inserción. Los defaults actuales usan funciones incorporadas vinculadas al
+crear las tablas. El esquema, la tabla y sus triggers/defaults deben seguir bajo
+control administrativo; esto no garantiza seguridad de futuras funciones no
+calificadas ni de objetos modificables por roles no confiables.
+
+La migración no fija OWNER: lo recibe del rol que la ejecute. Estos resultados NO
+identifican al propietario ni los grants/membresías/default privileges del proyecto
+Supabase. Su inventario real y signUp/GoTrue siguen sin validar; no se consultó ni
+modificó el servicio compartido. No hubo commit/push. El clúster local se detuvo.
+
+Referencias: [SECURITY DEFINER](https://www.postgresql.org/docs/18/sql-createfunction.html)
+y [RLS](https://www.postgresql.org/docs/18/ddl-rowsecurity.html).
+
+Auditoría y propuesta aprobadas por Bernabé en esta sesión. Se continúa en
+`integracion/bernabe`, conservando las dos migraciones A y los contratos aprobados.
+Las decisiones históricas descritas más abajo corresponden a Etapa A.
+
+- Objetivo aprobado para precio: INTEGER, 1–2147483647 céntimos, PEN.
+  Aún no aplicado: Etapa A sigue usando BIGINT y su prueba de 3000000000 sigue vigente.
+  Requiere una migración adicional independiente, nunca reescribir la anterior.
+- Fotografía: conservar las siete columnas físicas. DTO acordado como propuesta
+  aprobada por Bernabé: `imagen: { proveedor: 'supabase', bucket: 'articulos', ruta,
+  url, ancho, alto, formato, bytes }`. El servicio mapeará las columnas imagen_*;
+  presentación de catálogo usa `foto: { url, alt }`. No hay adaptador implementado.
+  Ratificación con Angel/Matías pendiente antes de integrar sus consumidores.
+- Tamaño objetivo: 1–2097152 bytes (2 MiB), JPEG/PNG/WebP; reemplaza la propuesta
+  de 5 MiB del diseño. Restricción SQL y configuración Storage aún pendientes.
+- Lugares externos con campus_id NULL ratificados; ya implementados en Etapa A.
+
+Componente A: `migrations/20261114000100_trigger_perfil_minimo.sql`, después de
+las dos migraciones A. Trigger AFTER INSERT en auth.users, SECURITY DEFINER y
+search_path vacío, referencias calificadas y sin EXECUTE para PUBLIC. Solo
+inserta el UUID; no copia metadatos ni concede permisos de vendedor. Los errores
+se propagan y revierten la creación Auth. No rellena usuarios preexistentes;
+inventariarlos antes de una futura aplicación autorizada. Revisar propietario
+y privilegios reales de la función en ese entorno antes de aplicar.
+
+Verificación local realizada en PostgreSQL 18 desechable, 127.0.0.1:55440,
+sin Supabase ni credenciales reales. Se aplicaron las migraciones A, se ejecutó
+su prueba original y después se aplicó B/A y `tests/db/perfil_minimo_etapa_b.sql`.
+Todo pasó: perfil mínimo, metadatos hostiles ignorados, UPDATE Auth sin sobrescribir
+perfil, rollback atómico al fallar el trigger y ejecución desde un rol Auth
+sintético sin acceso directo a perfiles ni EXECUTE de la función. Datos y rol
+de prueba se revierten con ROLLBACK. La prueba requiere administrador local y
+auth.users simulado con id uuid PK y raw_user_meta_data jsonb.
+
+Para repetir, usar psql con host/puerto/usuario/base explícitos del clúster
+desechable, `-X -v ON_ERROR_STOP=1 -f tests/db/perfil_minimo_etapa_b.sql`, una vez
+aplicadas las tres migraciones. La prueba A original se ejecuta antes del trigger,
+pues inserta perfiles manualmente: no representa una prueba posterior a B/A.
+
+Pendiente real: signUp/GoTrue, correo y permisos efectivos de Supabase. No se
+declaran probados RLS, aislamiento entre usuarios, RPC, Storage ni concurrencia.
+Se detiene tras componente A; B/C/D se revisarán por separado. No aplicar este
+conjunto a una API expuesta: todavía falta RLS y grants. Sin push, merge ni deploy.
+
 SQL preparado para revisión en `feature/bernabe/esquema-rls`. **No ejecutado en Supabase ni autorizado para despliegue.** No usar db push/reset contra el proyecto compartido.
 
 Orden:
