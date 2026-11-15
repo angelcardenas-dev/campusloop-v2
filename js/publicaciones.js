@@ -15,17 +15,59 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnAceptarIA = document.getElementById("btn-aceptar-ia");
     const btnDescartarIA = document.getElementById("btn-descartar-ia");
 
+    const validaciones = new Map([
+        [inputTitulo, { error: document.getElementById("error-titulo"), vacio: "Por favor, ingresa un título para tu artículo." }],
+        [inputDescripcion, { error: document.getElementById("error-descripcion"), vacio: "Por favor, ingresa una descripción para tu artículo." }],
+        [iaTituloSug, { error: document.getElementById("error-ia-titulo"), vacio: "El título de la sugerencia está vacío. Edítalo o descarta la propuesta." }],
+        [iaDescSug, { error: document.getElementById("error-ia-descripcion"), vacio: "La descripción de la sugerencia está vacía. Edítala o descarta la propuesta." }],
+    ]);
+
     let estadoActual = "inicial";
+
+    function actualizarErrorCampo(campo, texto = "") {
+        const error = validaciones.get(campo).error;
+        const invalido = texto !== "";
+        campo.classList.toggle("input-error", invalido);
+        campo.setAttribute("aria-invalid", String(invalido));
+        error.textContent = texto;
+        error.hidden = !invalido;
+        // Añadir o retirar solo la referencia de este error, conservando ayudas previas.
+        const referencias = new Set((campo.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean));
+        if (invalido) referencias.add(error.id);
+        else referencias.delete(error.id);
+        if (referencias.size) campo.setAttribute("aria-describedby", [...referencias].join(" "));
+        else campo.removeAttribute("aria-describedby");
+    }
+
+    function validarCampo(campo) {
+        let texto = "";
+        if (!campo.value.trim()) texto = validaciones.get(campo).vacio;
+        else if (campo.maxLength >= 0 && campo.value.length > campo.maxLength) {
+            texto = `El campo admite un máximo de ${campo.maxLength} caracteres.`;
+        }
+        actualizarErrorCampo(campo, texto);
+        return texto === "";
+    }
 
     function mostrarMensaje(texto, tipo) {
         msjFormulario.className = "msj-dinamico";
         msjFormulario.textContent = texto;
-        
+
         if (tipo === "error") {
             msjFormulario.classList.add("is-error");
         } else if (tipo === "integracion_pendiente" || tipo === "info") {
             msjFormulario.classList.add("is-info");
         }
+    }
+
+    for (const [campo, configuracion] of validaciones) {
+        campo.addEventListener("input", () => {
+            if (campo.getAttribute("aria-invalid") !== "true") return;
+            const mensajeAnterior = configuracion.error.textContent;
+            if (!validarCampo(campo) || msjFormulario.textContent !== mensajeAnterior) return;
+            const pendiente = [...validaciones].find(([otro]) => otro.getAttribute("aria-invalid") === "true");
+            mostrarMensaje(pendiente ? pendiente[1].error.textContent : "Campo corregido. Puedes revisar los datos antes de continuar.", pendiente ? "error" : "info");
+        });
     }
 
     // --- 1. BOTÓN PUBLICAR ---
@@ -36,15 +78,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             estadoActual = "validando";
             msjFormulario.className = "msj-dinamico";
-            inputTitulo.classList.remove("input-error");
-            inputTitulo.setAttribute("aria-invalid", "false");
-
-            if (!inputTitulo.value.trim()) {
+            if (!validarCampo(inputTitulo)) {
                 estadoActual = "error";
-                msjFormulario.classList.add("is-error");
-                inputTitulo.classList.add("input-error");
-                inputTitulo.setAttribute("aria-invalid", "true");
-                msjFormulario.textContent = "Por favor, ingresa un título para tu artículo.";
+                mostrarMensaje(validaciones.get(inputTitulo).error.textContent, "error");
                 inputTitulo.focus();
                 return;
             }
@@ -70,7 +106,9 @@ document.addEventListener("DOMContentLoaded", () => {
             // Corregido punto 4: Tomar valores actuales del formulario
             iaTituloSug.value = inputTitulo.value;
             iaDescSug.value = inputDescripcion.value;
-            
+            actualizarErrorCampo(iaTituloSug);
+            actualizarErrorCampo(iaDescSug);
+
             contenedorIA.style.display = "block";
             mostrarMensaje("Generación simulada: Esta es una demostración visual. La IA real se conectará en el futuro.", "info");
         });
@@ -79,31 +117,30 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- 3. ACEPTAR PROPUESTA IA ---
     if (btnAceptarIA) {
         btnAceptarIA.addEventListener("click", () => {
-            // Marcar y enfocar el campo de sugerencia vacío
-            if (!iaTituloSug.value.trim()) {
-                iaTituloSug.classList.add("input-error");
-                iaTituloSug.focus();
-                mostrarMensaje("El título de la sugerencia está vacío. Edítalo o descarta la propuesta.", "error");
+            // Validar ambos sin retornos tempranos: cada error es independiente.
+            const tituloValido = validarCampo(iaTituloSug);
+            const descripcionValida = validarCampo(iaDescSug);
+            if (!tituloValido || !descripcionValida) {
+                const primeroInvalido = !tituloValido ? iaTituloSug : iaDescSug;
+                mostrarMensaje(validaciones.get(primeroInvalido).error.textContent, "error");
+                primeroInvalido.focus();
                 return;
             }
-            if (!iaDescSug.value.trim()) {
-                iaDescSug.classList.add("input-error");
-                iaDescSug.focus();
-                mostrarMensaje("La descripción de la sugerencia está vacía. Edítala o descarta la propuesta.", "error");
-                return;
-            }
-
-            // Limpiamos errores visuales
-            iaTituloSug.classList.remove("input-error");
-            iaDescSug.classList.remove("input-error");
 
             // Aplicamos los valores
             inputTitulo.value = iaTituloSug.value;
             inputDescripcion.value = iaDescSug.value;
-            
+            validarCampo(inputTitulo);
+            validarCampo(inputDescripcion);
+
             contenedorIA.style.display = "none";
-            // No modificamos el estado de validación del formulario principal
-            mostrarMensaje("Sugerencia aceptada (Simulación). Los textos editados se han aplicado al formulario.", "info");
+            // Conservar errores ajenos y el estado general de envío; aceptar no publica.
+            const otrosErrores = document.querySelector(".publish-form-area .input-error, .publish-form-area [aria-invalid='true']");
+            let mensaje = "Sugerencia aceptada (Simulación). Los textos editados se han aplicado al formulario.";
+            if (otrosErrores) mensaje += " Revisa los otros campos marcados.";
+            if (estadoActual === "enviando") mensaje = "Simulando proceso de publicación (sin conexión real)... " + mensaje;
+            mostrarMensaje(mensaje, otrosErrores ? "error" : "info");
+            inputTitulo.focus();
         });
     }
 
@@ -111,9 +148,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnDescartarIA) {
         btnDescartarIA.addEventListener("click", () => {
             contenedorIA.style.display = "none";
-            iaTituloSug.classList.remove("input-error");
-            iaDescSug.classList.remove("input-error");
+            actualizarErrorCampo(iaTituloSug);
+            actualizarErrorCampo(iaDescSug);
             mostrarMensaje("Propuesta descartada. El formulario conserva sus datos originales.", "info");
+            btnIA.focus();
         });
     }
 });
