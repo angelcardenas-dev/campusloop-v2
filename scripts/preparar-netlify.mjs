@@ -23,6 +23,7 @@ const RECURSOS = [
   'css/styles.css',
   'js/catalogo.js',
   'js/landing.js',
+  'js/publicaciones.js',
   'assets/fonts/inter-variable.woff2',
   'assets/fonts/license.txt',
   'assets/icons/campana.svg',

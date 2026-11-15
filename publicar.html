@@ -6,7 +6,7 @@
     <title>CampusLoop - Publicar artículo</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="activate-page-bg matias-page">
+<body class="activate-page-bg matias-page publish-page">
 
     <!-- HEADER GLOBAL -->
     <div class="home-header-band">
@@ -50,67 +50,94 @@
                     <div class="upload-gallery">
                         <img src="assets/images/productos/apuntes-calculo.jpg" alt="Apuntes de Cálculo" class="main-photo">
                         <div class="photo-counter">
-                            <span class="text-blue">1/5 fotos</span> · <span class="text-blue">Apuntes de Cálculo</span>
+                            <span class="text-blue">1/1 foto</span> · <span class="text-blue">Apuntes de Cálculo</span>
                         </div>
                     </div>
 
                     <!-- 2. Información -->
                     <h2 class="mt-2">2. Información del artículo</h2>
                     <div class="form-group">
-                        <label>Título del artículo</label>
-                        <input type="text" value="Apuntes de Cálculo — Ciclo 2026-2">
+                        <label for="input-titulo">Título del artículo</label>
+                        <input type="text" id="input-titulo" value="Apuntes de Cálculo — Ciclo 2026-2" maxlength="100" aria-invalid="false">
+                        <p id="error-titulo" class="publish-field-error" hidden></p>
                     </div>
                     <div class="form-group">
-                        <label>Categoría</label>
-                        <input type="text" value="Académico · Apuntes">
+                        <label for="input-categoria">Categoría</label>
+                        <input type="text" id="input-categoria" value="Académico · Apuntes">
                     </div>
                     <div class="form-group">
-                        <label>Precio (S/)</label>
-                        <input type="text" value="25">
+                        <label for="input-precio">Precio (S/)</label>
+                        <input type="text" id="input-precio" value="25">
                     </div>
                     <div class="form-group">
-                        <label>Condición del artículo</label>
-                        <input type="text" value="Buen estado">
+                        <label for="input-condicion">Condición del artículo</label>
+                        <input type="text" id="input-condicion" value="Buen estado">
                     </div>
                     <p class="helper-text">Estado inicial de la publicación: Disponible.</p>
 
                     <!-- 3. Descripción -->
                     <h2 class="mt-2">3. Descripción</h2>
                     <div class="form-group">
-                        <label>Describe tu artículo</label>
-                        <textarea rows="4" class="text-gray textarea-custom">Apuntes de Cálculo 1 organizados por temas, con ejercicios resueltos. Incluye carpeta.</textarea>
-                        <span class="helper-text">Máximo 1000 caracteres</span>
+                        <label for="input-descripcion">Describe tu artículo</label>
+                        <textarea id="input-descripcion" rows="4" class="text-gray textarea-custom" maxlength="1000" aria-invalid="false" aria-describedby="descripcion-ayuda">Apuntes de Cálculo 1 organizados por temas, con ejercicios resueltos. Incluye carpeta.</textarea>
+                        <p id="error-descripcion" class="publish-field-error" hidden></p>
+                        <span id="descripcion-ayuda" class="helper-text">Máximo 1000 caracteres</span>
                     </div>
                     <div class="form-group">
-                        <label>Accesorios incluidos</label>
-                        <input type="text" value="Carpeta y separadores">
+                        <label for="input-accesorios">Accesorios incluidos</label>
+                        <input type="text" id="input-accesorios" value="Carpeta y separadores">
                     </div>
 
                     <!-- 4. Ubicación -->
                     <h2 class="mt-2">4. Ubicación y disponibilidad</h2>
                     <div class="form-group">
-                        <label>Campus de entrega</label>
-                        <input type="text" value="PUCP · San Miguel">
+                        <label for="input-campus">Campus del vendedor</label>
+                        <input type="text" id="input-campus" value="PUCP · San Miguel">
                     </div>
                     <div class="form-group">
-                        <label>Disponibilidad</label>
-                        <input type="text" value="Coordinar con el comprador">
+                        <label for="input-disponibilidad">Disponibilidad</label>
+                        <input type="text" id="input-disponibilidad" value="A coordinar en Reservas">
                     </div>
+
+                    <!-- Contenedor para mensajes de error/éxito-->
+                    <div id="mensaje-formulario" class="msj-dinamico" role="status" aria-live="polite"></div>
 
                     <!-- Botones -->
                     <div class="publish-actions mt-2">
                         <button type="button" class="btn-secondary">Guardar borrador</button>
-                        <a href="publicar-exito.html" class="btn-primary">Publicar artículo</a>
+                        <button type="button" class="btn-primary" id="btn-publicar">Publicar artículo</button>
                     </div>
                 </div>
             </div>
+
 
             <!-- COLUMNA DERECHA: Asistente IA -->
             <aside class="publish-sidebar">
                 <div class="ai-card">
                     <h3>Asistente IA · Opcional</h3>
                     <p>Puedes pedir sugerencias para el título o la descripción. Tú decides qué aplicar; nada se publica automáticamente.</p>
-                    <button type="button" class="btn-secondary">Ver sugerencias</button>
+                    <button type="button" class="btn-secondary" id="btn-generar-ia">Generar sugerencia con IA</button>
+
+                    <!-- CONTENEDOR DE LA PROPUESTA -->
+                    <div id="ia-propuesta" class="ia-propuesta">
+                        <p class="ia-propuesta-title">Sugerencia generada (Demostración simulada):</p>
+
+                        <div class="ia-propuesta-item">
+                            <label for="ia-titulo-sugerido">Título sugerido:</label>
+                            <input type="text" id="ia-titulo-sugerido" value="" maxlength="100" aria-invalid="false">
+                            <p id="error-ia-titulo" class="publish-field-error" hidden></p>
+                        </div>
+                        <div class="ia-propuesta-item">
+                            <label for="ia-desc-sugerido">Descripción sugerida:</label>
+                            <textarea id="ia-desc-sugerido" rows="3" maxlength="1000" aria-invalid="false"></textarea>
+                            <p id="error-ia-descripcion" class="publish-field-error" hidden></p>
+                        </div>
+
+                        <div class="ia-propuesta-actions">
+                            <button type="button" class="btn-primary" id="btn-aceptar-ia">Aceptar</button>
+                            <button type="button" class="btn-secondary" id="btn-descartar-ia">Descartar</button>
+                        </div>
+                    </div>
                 </div>
             </aside>
         </div>
@@ -123,5 +150,8 @@
         <a href="publicar.html" aria-current="page"><img src="assets/icons/publicar.svg" width="24" height="24" alt=""><span>Publicar</span></a>
         <a href="reservas.html"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
     </nav>
+
+    <script src="js/publicaciones.js"></script>
+
 </body>
 </html>
