@@ -4,6 +4,40 @@ Fecha: 13/11/2026 (Perú). Responsable: Bernabé.
 Estado: PROPUESTA PENDIENTE DE APROBACIÓN. No es migración ni modifica contratos.
 Base inspeccionada: `1b44bfb`, rama `feature/bernabe/esquema-rls`.
 
+## Reconciliación posterior — corte del 16/11/2026 (America/Lima)
+
+La cabecera y las secciones de FASE 2 conservadas después de esta reconciliación
+son **diseño histórico del 13/11/2026**, no una descripción del esquema actual.
+En particular, la ausencia de migraciones y la propuesta de `imagen` JSONB
+corresponden a aquel corte. Se preservan para mantener la trazabilidad.
+
+**HEAD observado antes de esta corrección:**
+`a31ab905448de5b198d4721fa076e2c9f9924427`, rama `integracion/bernabe`.
+Fuentes: lectura de `supabase/migrations/20261113000100_tablas_tb4.sql`, historial
+Git y contrato de catálogo en `origin/develop`, contrastados con GitHub REST
+el 16/11/2026. Esta corrección solo modifica documentación; no modifica SQL.
+
+| Tema | Propuesta histórica de FASE 2 | Migración existente y reconciliación documental | Pendiente |
+| --- | --- | --- | --- |
+| Precio | `INTEGER`, inicialmente entre 0 y 2147483647 | `precio_centimos BIGINT NOT NULL`, con `CHECK (precio_centimos > 0)`. El DTO `precioCentimos` debe ser un número entero seguro de JavaScript, sin redondeo ni pérdida de precisión; se deben rechazar importes fuera del rango seguro | Decidir si se migra a `INTEGER` y si se admiten artículos gratuitos. Ninguna de estas decisiones implica SQL ya modificado |
+| Fotografías | Campo lógico `imagen` propuesto como JSONB | Siete columnas físicas: `imagen_bucket`, `imagen_ruta`, `imagen_url`, `imagen_formato`, `imagen_bytes`, `imagen_ancho`, `imagen_alto`. El DTO acordado documentalmente agrupa esos datos en el objeto lógico `imagen`; no existe una columna física JSONB `imagen` | Implementar y probar la normalización en el servicio de artículos. El contrato documental no acredita un servicio ya implementado |
+| Tamaño de fotografía | Máximo propuesto de 5 MiB | Objetivo posterior documentado: máximo 2 MiB (2097152 bytes). El SQL actual solo exige bytes y dimensiones positivos; no impone ese máximo | Configurar y verificar el límite de 2 MiB en Storage y los controles correspondientes. No es todavía un control efectivo |
+
+Referencia complementaria:
+[docs/CONTRATO_ARTICULOS_CATALOGO_TB4.md](https://github.com/angelcardenas-dev/campusloop-v2/blob/05c2172cd44cb01b30236ebde3275856c587e750/docs/CONTRATO_ARTICULOS_CATALOGO_TB4.md),
+incorporado en `develop` mediante PR #41, commit
+`05c2172cd44cb01b30236ebde3275856c587e750`. Documenta la conformidad técnica de
+Bernabé y Ángel, manteniendo pendientes las decisiones de coordinación sobre
+precio, fotografías y paginación. No autoriza SQL ni una conexión real.
+Se consultó en `develop` sin fusionarlo a esta rama ni copiar o modificar el contrato.
+
+Existen migraciones de tablas, índices y trigger mínimo en el repositorio; sus
+resultados locales reportados son históricos y no se repiten en esta corrección.
+No se han ejecutado migraciones en Supabase compartido como parte del trabajo
+documentado, ni verificado RLS real, Storage, RPC o concurrencia en producción.
+Las secciones siguientes conservan propuestas y comprobaciones de FASE 2;
+no deben interpretarse como evidencia de esos controles o servicios actuales.
+
 ## Decisiones y compatibilidad
 
 - Se conserva arquitectura C: Auth oficial, PostgreSQL/RLS/RPC, Storage y REST GET con fetch. No se modifica `js/auth.js` ni UI.

@@ -1,17 +1,20 @@
 # CampusLoop V2 — reporte técnico de correcciones y avances TB4
 
-Fecha de corte documental: 15/11/2026, Perú. Rama auditada: `integracion/bernabe`.
-HEAD comprobado antes de esta ronda: `5d9f15034a35b927274525f9d2386862ba5d1008`
-(`5d9f150`), igual a la referencia local `origin/integracion/bernabe`.
-Destino: PR #36 hacia `develop`, abierto, sin fusionar y pendiente de aprobación,
-según el contexto remoto confirmado por el responsable para esta ronda.
+Fecha de comprobación documental: **16/11/2026, America/Lima**.
+Rama auditada: `integracion/bernabe`.
+**HEAD observado antes de esta corrección:**
+`a31ab905448de5b198d4721fa076e2c9f9924427`, igual al HEAD remoto consultado y a
+`origin/integracion/bernabe` local. No se necesitó actualizar la rama.
+Destino: PR #36 hacia `develop`, abierto y sin fusionar, verificado mediante
+GitHub REST en la fecha de este corte. `develop` observado:
+`05c2172cd44cb01b30236ebde3275856c587e750`.
 Este reporte es una auditoría documental y de Git, no una autorización de despliegue.
 
-Alcance del corte: revisión de solo lectura del historial y contenido de ambas
-ramas, seguida de correcciones únicamente en los tres documentos indicados.
-El árbol estaba limpio al inicio. No se hace commit, push ni integración.
-El futuro SHA documental se comunicará después del commit y, si se autoriza,
-de su publicación; `5d9f150` no representa ese HEAD futuro.
+Alcance: comprobaciones de lectura y correcciones exclusivamente en este reporte
+y `docs/DISENO_ESQUEMA_CATALOGOS_TB4.md`. El árbol estaba limpio al inicio.
+Se dejan ambos documentos sin staging ni commit. No se incorpora `develop`, no se
+modifican otras ramas/worktrees y no se hace push ni integración. El SHA observado
+no pretende identificar un futuro commit documental, todavía no creado ni autorizado.
 
 ## 1. Resultado general y alcance de la evidencia
 
@@ -29,19 +32,22 @@ La activación manual de vendedores sigue siendo una propuesta documental.
 | Pendiente | Falta acuerdo, implementación o validación; se especifica cuál |
 
 Comprobaciones ejecutadas ahora: `git status`, `log`, `rev-parse`,
-`merge-base`, `rev-list --left-right --count`, `show`, `ls-tree` y `diff`,
-lectura de los tres documentos y del contenido relevante de `origin/develop`,
+`rev-list --left-right --count`, `show` y `diff`,
+lectura de los dos documentos, las columnas relevantes de la migración y el contrato en `origin/develop`,
 revisión de coherencia y `git diff --check`.
 No se repitieron pruebas SQL, Auth, IA, publicaciones ni Netlify. Los pases
 locales conservados en las secciones siguientes son históricos, consignados
 en el reporte previo y en [supabase/README.md](../supabase/README.md).
-No se consultó ni ejecutó SQL en Supabase compartido.
+No se consultó ni ejecutó SQL en Supabase compartido. Este trabajo no ha ejecutado
+migraciones en ese proyecto ni verificado RLS real, Storage, RPC o concurrencia en
+producción; las ejecuciones locales históricas no acreditan esos servicios.
 
-Fuente remota para esta ronda: el responsable confirmó PR #36 abierto y pendiente
-de aprobación, 9 commits y 10 archivos en la revisión anterior. Esta sesión
-corrobora el historial y el inventario con referencias Git locales, sin fetch ni
-nueva consulta de GitHub. No se inventan revisiones individuales, aprobaciones
-registradas, resultados de checks ni estado de mergeabilidad.
+Fuente remota actual: GitHub REST (`branches/develop`, `branches/integracion/bernabe`,
+`pulls/36`, su inventario de archivos/revisiones y comparación entre los SHA observados),
+contrastado con Git local el 16/11/2026. Se comprobaron diez commits exclusivos de
+Bernabé y diez archivos nuevos; divergencia 15/10. GitHub informó `mergeable=true`
+y `mergeable_state=blocked`. No había revisiones aprobatorias, check runs ni estados
+CI registrados en la consulta. **Ausencia de CI no significa pruebas aprobadas.**
 Los intentos fallidos de consultar GitHub descritos en versiones anteriores son
 históricos; no invalidan el contexto confirmado posteriormente por el responsable.
 
@@ -58,10 +64,11 @@ No se interpreta «estado inicial» como un snapshot inventado. Se distinguen:
 | `d2c0e73` | Corte histórico: trigger y pruebas locales documentadas |
 | `9117238` | Corte anterior: reporte eliminado del árbol versionado |
 | `6fe22b3` | Primer commit de correcciones documentales, ya histórico |
-| `5d9f150` | HEAD comprobado antes de esta ronda; actualización posterior del reporte |
+| `5d9f150` | Corte histórico del reporte, anterior a las correcciones de `a31ab90` |
+| `a31ab90` | HEAD observado antes de esta corrección; última ronda documental ya registrada en Git |
 
-Nueve commits presentes en `origin/integracion/bernabe` y ausentes de
-`origin/develop`, verificados ahora con Git:
+Diez commits presentes en `origin/integracion/bernabe` y ausentes de
+`origin/develop`, verificados con Git y GitHub REST el 16/11/2026:
 
 | Commit | Cambio real |
 | --- | --- |
@@ -74,19 +81,23 @@ Nueve commits presentes en `origin/integracion/bernabe` y ausentes de
 | `9117238` | Eliminó el reporte; antes del primer commit de correcciones existía sin seguimiento |
 | `6fe22b3` | Actualizó propuesta y README y reincorporó el reporte; tres documentos, sin cambios funcionales |
 | `5d9f150` | Actualizó únicamente el reporte: +51/-34 líneas; sin cambios funcionales |
+| `a31ab90` | Atendió observaciones del PR #36 en reporte, propuesta y README: tres documentos, +207/-63 líneas; sin cambios funcionales |
 
-Estos nueve commits coinciden en número con la revisión remota informada por el
-responsable. Antes de integrar se deben volver a comprobar cabecera, revisiones
-y checks en GitHub; el inventario actual es evidencia de las referencias locales.
+Estos diez commits coinciden con la comparación remota comprobada en GitHub.
+Antes de integrar se deben volver a comprobar cabecera, revisiones y checks,
+porque el estado remoto puede cambiar después de este corte.
 El hecho de estar committeados se comprueba ahora con Git: las restricciones «sin
 commit/push» de las tareas anteriores describían esas actuaciones del agente, no
 el estado futuro del repositorio. No se atribuye quién ejecutó operaciones posteriores.
 
 ### Inventario de archivos
 
-El diff de commits frente a `origin/develop` local muestra diez archivos añadidos,
-1625 líneas añadidas, ningún archivo modificado preexistente ni eliminado en ese
-diff. En el corte anterior `9117238` eran nueve archivos y 1213 líneas añadidas.
+El diff de commits frente a `origin/develop` muestra diez archivos añadidos:
+cuatro documentos, tres migraciones SQL y tres pruebas SQL. En el HEAD observado
+antes de esta corrección (`a31ab90`) son 1769 líneas añadidas, ningún archivo
+modificado preexistente ni eliminado en ese diff. Este inventario describe el
+snapshot ya publicado, no las correcciones locales sin commit del 16/11.
+En el corte histórico `9117238` eran nueve archivos y 1213 líneas añadidas.
 
 | Archivo | Frente a base común | Desde Etapa A `7d0e3f2` | Función |
 | --- | --- | --- | --- |
@@ -94,7 +105,7 @@ diff. En el corte anterior `9117238` eran nueve archivos y 1213 líneas añadida
 | `supabase/migrations/20261113000100_tablas_tb4.sql` | Creado | Sin cambios | Nueve tablas, FK, CHECK y claves candidatas |
 | `supabase/migrations/20261113000200_indices_tb4.sql` | Creado | Sin cambios | 25 índices explícitos |
 | `tests/db/estructura_etapa_a.sql` | Creado | Sin cambios | Integridad estructural de A |
-| `supabase/README.md` | Creado | Modificado: +128/-6 líneas | Reconciliación, ejecución local histórica y límites de seguridad |
+| `supabase/README.md` | Creado | Modificado | Reconciliación, ejecución local histórica y límites de seguridad |
 | `supabase/migrations/20261114000100_trigger_perfil_minimo.sql` | Creado | Creado | Perfil mínimo al insertar usuario Auth |
 | `tests/db/perfil_minimo_etapa_b.sql` | Creado | Creado | Perfil, metadatos, permisos y atomicidad |
 | `tests/db/seguridad_trigger_perfil.sql` | Creado | Creado | Propietario, ACL, search_path y RLS simulado |
@@ -107,8 +118,8 @@ de Angel ya integrado por la línea develop/PR #33, no de las correcciones SQL d
 Bernabé. No aparecen en el aporte de diez archivos frente a la base común actual.
 No se atribuyen esos cambios a Bernabé ni a la continuación del trigger.
 
-El inventario anterior corresponde a commits hasta `5d9f150`, sin incluir la
-actualización actual sin commit. En `9117238`, incorporar y eliminar el reporte
+El inventario anterior corresponde a commits hasta `a31ab90`, sin incluir esta
+corrección local. En `9117238`, incorporar y eliminar el reporte
 se cancelaban en el diff neto; `6fe22b3` lo reincorporó como archivo versionado.
 Ese primer commit contiene 411 inserciones y 16 eliminaciones en tres documentos:
 
@@ -118,18 +129,23 @@ Ese primer commit contiene 411 inserciones y 16 eliminaciones en tres documentos
 | docs/PROPUESTA_ACTIVACION_VENDEDORES_TB4.md | Modificado: +22/-10 líneas | Sin experiencia ni enlaces comerciales; 48 horas corridas; nunca autoaprobación; designación por coordinación; campana y recorrido de publicación |
 | supabase/README.md | Modificado: +46/-6 líneas | Trigger implementado, revisión técnica frente a aprobación, usuarios preexistentes y límites de seguridad y pruebas |
 
-Al inicio de esta ronda el árbol estaba limpio. Esta ronda deja únicamente tres
-documentos modificados, sin commit:
+La ronda histórica del 15/11 dejó tres documentos inicialmente sin commit.
+**Esas correcciones ya se incorporaron en `a31ab90`**; no son cambios pendientes
+de esta sesión:
 
-| Documento | Corrección de esta ronda |
+| Documento | Corrección histórica incorporada en `a31ab90` |
 | --- | --- |
 | docs/REPORTE_TECNICO_AVANCES_TB4.md | HEAD previo, nueve commits, diez archivos, PR según fuente confirmada, divergencia y dependencias |
 | docs/PROPUESTA_ACTIVACION_VENDEDORES_TB4.md | Enlaces comerciales opcionales y procedimiento propuesto de habilitación/revocación de revisores, sin cambiar tablas ni RPC |
 | supabase/README.md | DTO pendiente de coordinación y validación frontend; separación de revisión, propuesta, aprobación y autorización |
 
+La corrección actual del 16/11 deja exclusivamente este reporte y
+`docs/DISENO_ESQUEMA_CATALOGOS_TB4.md` modificados, sin staging ni commit:
+actualiza el estado comprobado y reconcilia precio, fotografías y tamaño con el
+SQL existente y el contrato documental de catálogo del PR #41.
 No se modifican SQL, contratos ni módulos funcionales de otros integrantes.
-Validación actual: contraste de los tres documentos con Git y las migraciones,
-revisión de coherencia y git diff. No se ejecutaron pruebas funcionales ni SQL.
+Validación actual: lectura, contraste con Git/GitHub y diff documental.
+No se ejecutaron pruebas funcionales ni SQL.
 
 ## 3. Etapa A: estructura PostgreSQL implementada
 
@@ -181,18 +197,19 @@ que un actor con permisos envíe valores propios; faltan protecciones de escritu
 
 | Tema | Diseño/estado inicial | Estado real actual |
 | --- | --- | --- |
-| Precio | Diseño INTEGER, 0–2147483647; A eligió BIGINT >0 | BIGINT >0 sigue en SQL. Objetivo ratificado posteriormente: INTEGER 1–2147483647; migración correctiva pendiente |
-| Foto | Diseño `imagen` JSONB | Siete columnas implementadas. DTO `imagen` como propuesta técnica pendiente de ratificación por coordinación y validación frontend; servicio/adaptador inexistente |
-| Tamaño | Diseño 5 MiB; SPEC propone ≤2 MiB | Se documentó objetivo 1–2097152 bytes. No se añadió límite SQL/Storage |
+| Precio | Diseño INTEGER, 0–2147483647; A eligió BIGINT >0 | BIGINT >0 sigue en SQL. DTO `precioCentimos`: entero JavaScript seguro, sin pérdida de precisión. La posible migración a INTEGER y la admisión de artículos gratuitos son decisiones pendientes; no se modificó SQL |
+| Foto | Diseño `imagen` JSONB | Siete columnas implementadas; DTO lógico `imagen` acordado documentalmente en el contrato de catálogo del PR #41. No existe columna física JSONB ni servicio de normalización implementado |
+| Tamaño | Diseño histórico: 5 MiB; SPEC propone ≤2 MiB | Objetivo posterior de máximo 2 MiB (2097152 bytes), documentado también en [supabase/README.md](../supabase/README.md) y el [contrato de catálogo del PR #41](https://github.com/angelcardenas-dev/campusloop-v2/blob/05c2172cd44cb01b30236ebde3275856c587e750/docs/CONTRATO_ARTICULOS_CATALOGO_TB4.md). Pendiente de configuración y verificación real en Storage; no se añadió límite SQL/Storage |
 | Lugares externos | Referencia SPEC a campus conocido | campus_id nullable implementado y probado; excepción ratificada, sin editar SPEC |
 | Contexto de conversaciones/reservas | Reglas de participantes en diseño | FK compuestas evitan vendedor y conversación de otro contexto; no sustituyen autorización |
 | Puntos incompletos | Riesgo de CHECK con NULL | CHECK exige presencia explícita de campos para evitar aceptación por resultado UNKNOWN |
 | Borrado | Necesidad de conservar historial | RESTRICT y eliminado_en; política de borrado de cuenta aún pendiente |
 | Prueba de borrado restringido | Primer pase histórico detectó excepción adicional | Test captura foreign_key_violation o restrict_violation; pase histórico final documentado correcto; no repetido ahora |
 
-La comparación entre `7d0e3f2` y HEAD confirmó que ambas migraciones A, su prueba y
-el diseño original están intactos. Las decisiones documentales posteriores no
-equivalen a alteraciones ya aplicadas al esquema.
+En el corte `a31ab90`, la comparación con `7d0e3f2` confirmó intactas ambas
+migraciones A, su prueba y el diseño original. Esta corrección añade únicamente
+una reconciliación al inicio del diseño, conservando el cuerpo histórico.
+Las decisiones documentales no equivalen a alteraciones ya aplicadas al esquema.
 
 ## 4. Etapa B/A: Auth y creación automática de perfiles
 
@@ -233,7 +250,7 @@ manual implementada. El default FALSE no es por sí solo autorización completa.
 
 Evidencia: [propuesta de activación](PROPUESTA_ACTIVACION_VENDEDORES_TB4.md),
 origen en `827f2e4`, reglas actualizadas en `6fe22b3` y precisiones
-documentales de esta ronda todavía sin commit.
+documentales incorporadas en `a31ab90`. La propuesta no se modifica en esta ronda.
 
 El estudiante conserva comprador y solicita capacidad vendedor con la misma cuenta,
 independientemente de experiencia. Los enlaces a páginas de venta son opcionales
@@ -335,27 +352,61 @@ les atribuye resultados. No existen pruebas de backend real acreditadas por esto
 
 ## 8. Estado Git, PR y divergencia
 
-| Elemento | Evidencia al corte documental del 15/11/2026 |
+### Estado comprobado el 16/11/2026
+
+Fuente: referencias e historial Git local, contrastados con GitHub REST para las
+ramas, comparación de commits, PR #36, archivos, revisiones, check runs y estados CI.
+Las referencias locales consultadas coincidían con los HEAD remotos; no se hizo
+fetch ni actualización de ramas en esta corrección.
+
+| Elemento | Evidencia comprobada antes de esta corrección |
+| --- | --- |
+| Rama | `integracion/bernabe` |
+| HEAD observado antes de esta corrección | `a31ab905448de5b198d4721fa076e2c9f9924427` |
+| `origin/integracion/bernabe` local y HEAD remoto | Ambos en `a31ab905448de5b198d4721fa076e2c9f9924427` |
+| Árbol inicial | Limpio; no se necesitó fast-forward |
+| `develop` local, `origin/develop` y HEAD remoto | `05c2172cd44cb01b30236ebde3275856c587e750` |
+| Divergencia `origin/develop...origin/integracion/bernabe` | 15 commits exclusivos de develop y 10 de integración |
+| Ancestro común | `4a584d8231c5798d7706c3bd2f9d65bc89a6c968` |
+| PR #36 | Abierto, sin fusionar; origen `integracion/bernabe`, destino `develop` |
+| Alcance publicado | Diez archivos nuevos: cuatro documentos, tres migraciones y tres pruebas SQL |
+| Conflictos técnicos según GitHub | `mergeable=true`; no acredita compatibilidad funcional |
+| Condiciones de integración según GitHub | `mergeable_state=blocked`; no se autoriza eludir requisitos ni fusionar |
+| Revisiones | Ninguna registrada; no hay aprobación acreditada |
+| CI | Sin check runs ni estados registrados en la consulta; no significa que hayan pasado pruebas |
+| Cambios locales de esta corrección | Solo los dos documentos autorizados, sin staging ni commit |
+| Servicios reales | Sin migraciones ejecutadas en Supabase compartido ni validación real de RLS, Storage, RPC o concurrencia en producción |
+
+El contrato de catálogo fue incorporado en `develop` mediante PR #41, merge
+`05c2172cd44cb01b30236ebde3275856c587e750`. Se consultó sin incorporarlo a esta
+rama ni modificarlo:
+[CONTRATO_ARTICULOS_CATALOGO_TB4.md](https://github.com/angelcardenas-dev/campusloop-v2/blob/05c2172cd44cb01b30236ebde3275856c587e750/docs/CONTRATO_ARTICULOS_CATALOGO_TB4.md).
+Su acuerdo documental no demuestra normalización implementada, REST operativo
+ni permisos efectivos de RLS o Storage.
+
+### Corte histórico del 15/11/2026 (conservado, no vigente)
+
+| Elemento | Evidencia histórica al corte documental del 15/11/2026 |
 | --- | --- |
 | Rama | integracion/bernabe |
-| HEAD previo a esta ronda | 5d9f15034a35b927274525f9d2386862ba5d1008 |
-| origin/integracion/bernabe local | Mismo SHA; rama sincronizada con esa referencia, sin fetch ahora |
+| HEAD observado en aquella ronda | 5d9f15034a35b927274525f9d2386862ba5d1008 |
+| origin/integracion/bernabe local | Mismo SHA en aquel corte; sin fetch en aquella ronda |
 | Árbol inicial | Limpio |
 | develop local | 4a584d8; no confundir con origin/develop |
 | origin/develop local | 6b87e2d083dc49faa63d913e6b336863de220c3c |
 | origin/develop...origin/integracion/bernabe | 13 exclusivos de develop; 9 exclusivos de integración |
 | Ancestro común | 4a584d8231c5798d7706c3bd2f9d65bc89a6c968 |
-| Cambios actuales sin commit | Únicamente los tres documentos de esta ronda |
+| Cambios entonces sin commit | Tres documentos; incorporados posteriormente en `a31ab90` |
 | PR #36 | Abierto, sin fusionar, pendiente de aprobación, según confirmación del responsable |
 | Revisión remota anterior informada | 9 commits y 10 archivos; inventario corroborado con Git local |
-| Revisiones individuales y checks GitHub | No consultados ahora; no se acreditan resultados ni aprobaciones nuevas |
+| Revisiones individuales y checks GitHub | No consultados en aquel corte; sin resultados ni aprobaciones acreditados entonces |
 | Aprobación de esquema/contratos e implementación/despliegue | No acreditada por esta revisión técnica; pendiente de coordinación |
 
 Los estados de versiones previas (HEAD `9117238` o `6fe22b3`, referencias
 alineadas o un commit adelantadas, divergencia 4/7 o 4/8 y consultas web fallidas)
-son cortes históricos, no el estado actual. El PR se identifica en
-[GitHub](https://github.com/angelcardenas-dev/campusloop-v2/pull/36), pero esta ronda
-no realiza una nueva verificación remota de su interfaz o API.
+son cortes históricos, como el de `5d9f150` y la divergencia 13/9 anterior.
+No son el estado actual. El [PR #36](https://github.com/angelcardenas-dev/campusloop-v2/pull/36)
+sí se volvió a comprobar mediante API de GitHub el 16/11/2026.
 
 ### Commits exclusivos de develop
 
@@ -372,18 +423,22 @@ no realiza una nueva verificación remota de su interfaz o API.
 - `b6d1c3b`: chore(netlify): incluir modulo de publicaciones en build
 - `47d2e54`: fix(publicar): corregir validacion y accesibilidad de sugerencias
 - `6b87e2d`: Merge pull request #40 from angelcardenas-dev/integracion/matias
+- `831ca9b`: incorporación del contrato documental de integración del catálogo TB4
+- `05c2172`: Merge pull request #41; integra el contrato documental de catálogo
 
-Los nueve exclusivos de integración están enumerados en la sección 2.
-El resultado `13 9` se reprodujo ahora con
+Los diez exclusivos de integración están enumerados en la sección 2.
+El resultado actual `15 10` se comprobó con
 `git rev-list --left-right --count origin/develop...origin/integracion/bernabe`.
+El resultado `13 9` pertenece al corte histórico anterior, no a esta comprobación.
 
 ### Archivos cambiados desde el ancestro común
 
 En integración: los diez archivos añadidos de la sección 2, obtenidos con
-`git diff --name-status 4a584d8 HEAD`. En develop, doce rutas:
+`git diff --name-status 4a584d8 HEAD`. En develop, trece rutas:
 
 - `.gitignore` (M).
 - `css/styles.css` (M).
+- `docs/CONTRATO_ARTICULOS_CATALOGO_TB4.md` (A).
 - `js/publicaciones.js` (A).
 - `netlify.toml` (A).
 - `netlify/lib/auth-usuario.mjs` (A).
@@ -419,9 +474,11 @@ la ausencia de rutas compartidas no demuestra mergeabilidad ni compatibilidad fu
   funciones. Esto no despliega migraciones, crea Storage ni conecta por sí solo
   Auth/IA o artículos. No se ejecutó build ni despliegue en esta ronda.
 - Seguridad y DTO: RLS, GRANTS de aplicación, RPC de negocio, notificaciones y
-  Storage siguen pendientes. El DTO de imagen es propuesta técnica a ratificar
-  por coordinación y validar con frontend; no se cambia el contrato para resolver
-  estas dependencias silenciosamente.
+  Storage siguen pendientes. El contrato de catálogo del PR #41 recoge el DTO
+  lógico de imagen a partir de siete columnas y el importe entero seguro; falta
+  implementar y validar el servicio/normalización. Precio cero, posible INTEGER,
+  límite efectivo de 2 MiB y paginación siguen pendientes de decisión o validación
+  según corresponda; no se cambia el contrato ni SQL para resolverlos aquí.
 
 ### Propuesta de resolución preservando historial
 
@@ -442,12 +499,12 @@ ni hace push. El nuevo SHA documental se informará después de autorización.
 | Prioridad | Trabajo pendiente | Evidencia necesaria para cerrarlo |
 | --- | --- | --- |
 | P0: acuerdos | Aprobar esquema/contratos del flujo vendedor; concretar designados y cobertura del plazo definitivo; resolver identidad única, visibilidad y actores de reservas/puntos | Decisiones explícitas y revisión con consumidores |
-| P0: coherencia | Migración aditiva del rango INTEGER y 2 MiB; ratificar DTO por coordinación y validarlo con Angel/Matías | Acuerdo explícito; después SQL autorizado y pruebas de límites, sin reescribir A |
+| P0: coherencia | Decidir si se mantiene BIGINT positivo, si se migra a INTEGER y si se admiten gratuitos; validar DTO seguro e imagen lógica con Angel/Matías; concretar controles del objetivo 2 MiB | Acuerdo explícito sobre decisiones pendientes; después implementación/SQL autorizado y pruebas de límites, sin reescribir A |
 | P0: autorización | RLS/GRANTS mínimos para las nueve tablas y las nuevas que se aprueben; bloqueo de campos privados/identidad/booleano | Negativos con anon, titular, tercero y revisores; trigger sigue funcionando |
 | P1: flujo vendedor | Implementar únicamente el modelo aprobado y decisión/notificación atómica | Concurrencia, idempotencia, baja de revisor, no autoaprobación y publicación denegada antes de aprobar |
 | P1: transacciones | RPC crear/cancelar reserva, bloqueos en orden uniforme y estados sincronizados | Dos sesiones compiten: una activa; cancelación consistente y terceros denegados |
 | P1: integridad servidor | Fechas/versiones protegidas, autoría Auth, participantes inmutables y catálogos activos | Pruebas directas fuera de UI y control de versión |
-| P1: Storage | Bucket articulos, propietario/ruta/MIME/límite real 2 MiB, permisos de lectura acordados | Subidas propias válidas; rechazo ajeno, excesivo y formato inválido, sin service_role frontend |
+| P1: Storage | Configurar bucket articulos, propietario/ruta/MIME y permisos de lectura acordados; implementar y verificar objetivo máximo 2 MiB, todavía no efectivo | Subidas propias válidas; rechazo ajeno, excesivo y formato inválido, sin service_role frontend |
 | P1: suite integral | Pruebas posteriores a todas las migraciones; separar históricas de A | Ejecución reproducible en base desechable sin inserciones duplicadas de perfil |
 | P2: datos/servicios | Semillas aprobadas, servicios/DTO, UI por responsables y notificaciones persistentes | Integración con cliente único y datos compartidos auténticos |
 | P2: preparación remota | Inventariar esquema, usuarios previos, OWNER/ACL/membresías/default privileges y Storage tras autorización | Plan revisado que respete objetos existentes y evite despliegue parcial inseguro |
