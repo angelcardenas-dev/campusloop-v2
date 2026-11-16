@@ -1,5 +1,34 @@
 # CampusLoop V2 — reporte técnico de correcciones y avances TB4
 
+## Nota de cierre — publicación verificada el 16/11/2026 (America/Lima)
+
+Este corte corresponde al estado de GitHub inmediatamente posterior a la publicación de `bde630b` y anterior al commit que incorpora esta nota. La publicación de esta última actualización documental añadirá un commit adicional sin modificar el inventario de diez archivos.
+
+Fuente de comprobación: Git local y consultas de lectura a GitHub REST sobre
+las ramas, el commit publicado, el PR #36, sus revisiones y la comparación de
+ambas puntas. Esta nota actualiza el estado de publicación. Los apartados
+siguientes conservan el corte previo a `bde630b`: las referencias a dos documentos
+«sin staging ni commit» y a que no se hizo push describen aquella preparación,
+no el estado publicado confirmado en este cierre.
+
+| Elemento | Estado confirmado |
+| --- | --- |
+| Commit documental publicado | `bde630b0caa90a3574e8604669df661bdace3fc0` (`bde630b`) |
+| HEAD remoto de `integracion/bernabe` | `bde630b0caa90a3574e8604669df661bdace3fc0`; coincide con el HEAD local comprobado |
+| HEAD remoto de `develop` | `05c2172cd44cb01b30236ebde3275856c587e750` |
+| Alcance del PR #36 actualizado | 11 commits y 10 archivos |
+| Comparación de integración frente a develop | 15 commits detrás y 11 delante; commits exclusivos de cada rama, no una relación fast-forward |
+| Estado del PR #36 | Abierto, sin fusionar y pendiente de aprobación; ninguna revisión registrada |
+| Integración según GitHub | `mergeable=true`, pero `mergeable_state=blocked`; esta publicación no autoriza fusionar ni eludir requisitos |
+
+El commit `bde630b` incorporó exclusivamente estos dos documentos:
+
+- `docs/DISENO_ESQUEMA_CATALOGOS_TB4.md`.
+- `docs/REPORTE_TECNICO_AVANCES_TB4.md`.
+
+La publicación documental no acredita migraciones ejecutadas en Supabase
+compartido ni validación real de RLS, Storage, RPC o concurrencia en producción.
+
 Fecha de comprobación documental: **16/11/2026, America/Lima**.
 Rama auditada: `integracion/bernabe`.
 **HEAD observado antes de esta corrección:**
