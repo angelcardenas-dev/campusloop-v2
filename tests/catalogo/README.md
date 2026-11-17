@@ -1,5 +1,94 @@
 # Explorar TB4 — preparación offline y propuesta de Inicio
 
+## Preparación de integración del catálogo — 17/11/2026 (America/Lima)
+
+Rama `feature/angel/catalogo-integracion`, base
+`e813936c954378b0f0be9da092a9dd741f0f1295`. Referencias: SPEC_TB4 §§5, 6, 8 y 13
+y `docs/CONTRATO_ARTICULOS_CATALOGO_TB4.md`. Implementación comprobada solo offline;
+el nombre del modo `real` no acredita consultas reales ni una conexión Supabase.
+
+- `crearControladorCatalogo()` admite `modo: 'real'` además de `prueba`. Exige
+  consulta y ambos adaptadores inyectados; si falta una función queda pendiente.
+  Construirlo o preparar filtros no consulta. Se mantienen secuencias, signal,
+  timeout, descarte de respuestas tardías, reintento explícito y filtros sin reset.
+- El montaje automático de Explorar no cambia: sigue pendiente, sin import de
+  `articulos.js`, SDK, credenciales, REST ni consulta al cargar la página.
+  Las tarjetas Figma siguen identificadas y no sustituyen una respuesta vacía/error.
+- Carga, contador, éxito y vacío distinguen prueba de consulta al servicio. El
+  número mostrado pertenece únicamente a la respuesta, no al catálogo completo.
+- Los dos adaptadores se exportan desde `js/catalogo.js`; no hay módulo público
+  adicional ni cambio de la lista Netlify. No se modifican HTML ni `landing.js`.
+
+`adaptarFiltros(seleccion)` recibe los nueve campos ya normalizados: búsqueda,
+categorías, universidad, campus, estados, condiciones, ambos precios en céntimos
+y orden. Conserva todos los valores y copia arrays. Rechaza campos ausentes,
+extensiones desconocidas, IDs/valores incompatibles e importes inseguros, en vez
+de omitir filtros. No construye parámetros PostgREST ni filtra una respuesta local.
+
+`adaptarArticulo(dto, { origenesImagen })` proyecta únicamente los campos públicos
+necesarios: UUID, título, PEN/céntimos seguros, nombres públicos o null, estado
+traducido y tono, y `foto` desde `imagen.url` con el título como texto alternativo.
+La segunda opción permite configurar el adaptador inyectado sin cambiar la firma
+de `consultarCatalogo(filtros, { signal })`. No derivar la lista de orígenes del DTO.
+La lista vacía no autoriza fotos externas. Se exige el objeto lógico `imagen` de
+proveedor Supabase y HTTPS de un origen exacto permitido, sin credenciales,
+query ni fragmento; tampoco se aceptan columnas físicas como sustituto del DTO.
+En modo real una foto incompatible invalida la respuesta; el fallback de fotos
+de prueba conserva su comportamiento. Los textos se presentan con textContent.
+
+La validación integral del DTO, relaciones, metadatos/binario de la fotografía y
+permisos sigue siendo responsabilidad del servicio/backend. La proyección no
+inventa campos ausentes ni acredita Storage. Se conserva la regla de presentación
+de céntimos no negativos: precio cero frente a BIGINT positivo, posible INTEGER,
+2 MiB y paginación siguen siendo pendientes documentados; no se decide SQL aquí.
+Detalle sigue deshabilitado hasta acordar su receptor y parámetro de UUID.
+
+Esquema de inyección futura, no ejecutado ni montado en los HTML:
+
+```js
+crearControladorCatalogo({
+  modo: 'real',
+  consultarCatalogo, // Servicio de Bernabé aún pendiente de integración.
+  adaptarFiltros,
+  adaptarArticulo: dto => adaptarArticulo(dto, { origenesImagen }),
+  opciones: catalogosAprobados,
+  origenesImagen,
+  alCambiar: presentarCatalogo,
+});
+```
+
+Antes de habilitarlo se requieren servicio/DTO y catálogos reales, configuración
+y sesión compartidas, autorización de coordinación y RLS/GRANTS efectivos probados.
+`landing.js` reutiliza el controlador pero todavía presenta mensajes offline:
+no pasarle modo real hasta una tarea específica que adapte su presentación.
+Su montaje pendiente y sus pruebas existentes permanecen compatibles.
+
+Verificaciones ejecutadas para esta actualización:
+
+```sh
+node --experimental-vm-modules --test tests/catalogo/catalogo.test.mjs tests/catalogo/integracion.test.mjs
+node --experimental-vm-modules --test tests/landing/landing.test.mjs
+node --check js/catalogo.js
+node --check tests/catalogo/integracion.test.mjs
+node scripts/preparar-netlify.mjs
+```
+
+Resultado: 40 pruebas anteriores de catálogo + 8 casos nuevos de integración +
+19 regresiones unitarias de Inicio = **67 correctas, 0 fallidas, 0 omitidas**.
+Inicio se ejecutó porque comparte este controlador. Los ocho casos nuevos cubren
+filtros completos, DTO/proyección, fotos incompatibles, pendiente/dependencias,
+carga/éxito/vacío/error/reintento, respuesta inválida, cancelación/secuencia y
+timeout/desconexión. Todo usa dobles, IDs y orígenes sintéticos sin llamadas reales.
+Construcción local: 56 archivos, 14 HTML, 364 referencias locales correctas.
+No se ejecutaron Chrome ni las suites de Auth, IA o Publicar en esta actualización.
+
+## Historial anterior conservado — preparación offline
+
+Las secciones siguientes describen los cortes históricos y sus resultados. Sus
+referencias a DTO desconocido o ausencia de modo real corresponden a aquella
+preparación; la actualización vigente se describe arriba. No se presentan sus
+pruebas de navegador como ejecutadas de nuevo el 17/11/2026.
+
 Rama `feature/angel/catalogo-explorar`, base
 `e6433813b8ec3da03fa040bc1fecd57775797ff9`. Contrato superior: SPEC_TB4.md §§5, 6 y 8.
 Esta preparación no conecta Supabase ni acredita REST-01/06 o catálogo compartido real.
