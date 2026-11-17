@@ -1,8 +1,13 @@
 /* Datos */
-// Este módulo no conoce el DTO, los filtros REST ni los catálogos definitivos.
-// Los adaptadores de presentación se acordarán con Bernabé antes de integrar.
+// Proyección del contrato documental de catálogo; sin REST, SDK ni catálogos inventados.
+// La consulta sigue inyectada y el montaje automático permanece pendiente.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ORDENES_UI = ['recientes', 'precio-menor', 'precio-mayor'];
+const CAMPOS_FILTROS = ['busqueda', 'categorias', 'universidad', 'campus', 'estados', 'condiciones',
+  'precioMinimoCentimos', 'precioMaximoCentimos', 'orden'];
+const ESTADOS_ARTICULO = Object.freeze({ disponible: { texto: 'Disponible', tono: 'positivo' },
+  reservado: { texto: 'Reservado', tono: 'aviso' }, vendido: { texto: 'Vendido', tono: 'neutral' } });
+const CONDICIONES_ARTICULO = ['nuevo', 'como_nuevo', 'buen_estado', 'usado'];
 const MENSAJES = Object.freeze({
   PENDIENTE: 'Integración pendiente: ejemplos de Figma, no resultados de Supabase. Los filtros no modifican estos ejemplos.',
   VALIDACION: 'Revisa la búsqueda, las opciones y los precios. Usa importes no negativos con hasta dos decimales.',
@@ -79,6 +84,11 @@ export function crearRutaDetalle(id, parametro) {
   if (!esId(id) || typeof parametro !== 'string' || !/^[A-Za-z][A-Za-z0-9_]{0,31}$/.test(parametro)) return null;
   return `detalle.html?${new URLSearchParams({ [parametro]: id })}`;
 }
+function origenesImagenValidos(origenes) {
+  return Array.isArray(origenes) && origenes.every(origen => {
+    try { const url = new URL(origen); return url.protocol === 'https:' && url.origin === origen; } catch { return false; }
+  });
+}
 function fotoSegura(foto, origenes) {
   if (!foto || !texto(foto.alt, 300) || typeof foto.url !== 'string') return null;
   if (/^assets\/images\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:jpe?g|png|webp)$/i.test(foto.url)) return { url: foto.url, alt: foto.alt };
@@ -88,26 +98,72 @@ function fotoSegura(foto, origenes) {
   } catch { /* Una foto insegura se sustituye, sin intentar cargarla. */ }
   return null;
 }
-function validarVista(vista, origenes, detalle) {
+function validarVista(vista, origenes, detalle, fotoRemotaObligatoria = false) {
   if (!vista || !esId(vista.id) || !texto(vista.titulo, 100) || vista.moneda !== 'PEN'
     || !Number.isSafeInteger(vista.precioCentimos) || vista.precioCentimos < 0) throw new TypeError('Vista inválida');
   for (const clave of ['categoriaTexto', 'ubicacionTexto', 'vendedorTexto', 'estadoTexto']) {
     if (vista[clave] != null && !texto(vista[clave], 200)) throw new TypeError('Texto de vista inválido');
   }
   if (vista.tono != null && !['neutral', 'positivo', 'aviso'].includes(vista.tono)) throw new TypeError('Tono de vista inválido');
+  const foto = fotoSegura(vista.foto, origenes);
+  // El DTO real exige fotografía HTTPS; conservar el fallback de las vistas de prueba.
+  if (fotoRemotaObligatoria && (!foto || !foto.url.startsWith('https://'))) throw new TypeError('Fotografía no permitida');
   return { id: vista.id, titulo: vista.titulo, moneda: 'PEN', precioCentimos: vista.precioCentimos,
     categoriaTexto: vista.categoriaTexto ?? null, ubicacionTexto: vista.ubicacionTexto ?? null,
     vendedorTexto: vista.vendedorTexto ?? null, estadoTexto: vista.estadoTexto ?? null, tono: vista.tono ?? 'neutral',
-    foto: fotoSegura(vista.foto, origenes), detalle: detalle.habilitado === true ? crearRutaDetalle(vista.id, detalle.parametro) : null };
+    foto, detalle: detalle.habilitado === true ? crearRutaDetalle(vista.id, detalle.parametro) : null };
+}
+
+/* Funciones: adaptadores del contrato de catálogo, sin construir consultas ni URLs REST. */
+export function adaptarFiltros(seleccion) {
+  if (!seleccion || typeof seleccion !== 'object' || Array.isArray(seleccion)
+    || Object.keys(seleccion).length !== CAMPOS_FILTROS.length
+    || !CAMPOS_FILTROS.every(campo => Object.hasOwn(seleccion, campo))) throw new TypeError('Filtros normalizados incompatibles');
+  if (typeof seleccion.busqueda !== 'string' || Array.from(seleccion.busqueda).length > 120
+    || /[\u0000-\u001f\u007f]/.test(seleccion.busqueda) || !ORDENES_UI.includes(seleccion.orden)) throw new TypeError('Filtros incompatibles');
+  for (const grupo of ['categorias', 'estados', 'condiciones']) {
+    const lista = seleccion[grupo];
+    if (!Array.isArray(lista) || lista.length > 200 || new Set(lista).size !== lista.length
+      || !Array.from(lista).every(valor => grupo === 'categorias' ? esId(valor)
+        : typeof valor === 'string' && (grupo === 'estados' ? Object.hasOwn(ESTADOS_ARTICULO, valor)
+          : CONDICIONES_ARTICULO.includes(valor)))) throw new TypeError('Selección incompatible');
+  }
+  for (const campo of ['universidad', 'campus']) {
+    if (seleccion[campo] !== '' && !esId(seleccion[campo])) throw new TypeError('Identificador incompatible');
+  }
+  for (const campo of ['precioMinimoCentimos', 'precioMaximoCentimos']) {
+    const valor = seleccion[campo];
+    if (valor !== null && (!Number.isSafeInteger(valor) || valor < 0)) throw new TypeError('Precio incompatible');
+  }
+  if (seleccion.precioMinimoCentimos !== null && seleccion.precioMaximoCentimos !== null
+    && seleccion.precioMinimoCentimos > seleccion.precioMaximoCentimos) throw new TypeError('Rango incompatible');
+  // Copiar todos los campos; rechazar extensiones desconocidas en lugar de omitir filtros.
+  return Object.fromEntries(CAMPOS_FILTROS.map(campo => [campo,
+    Array.isArray(seleccion[campo]) ? [...seleccion[campo]] : seleccion[campo]]));
+}
+
+export function adaptarArticulo(dto, { origenesImagen = [] } = {}) {
+  if (!origenesImagenValidos(origenesImagen) || !dto || typeof dto !== 'object' || Array.isArray(dto)
+    || typeof dto.estado !== 'string' || !Object.hasOwn(ESTADOS_ARTICULO, dto.estado)
+    || !dto.imagen || typeof dto.imagen !== 'object' || Array.isArray(dto.imagen)
+    || dto.imagen.proveedor !== 'supabase' || typeof dto.imagen.url !== 'string') throw new TypeError('DTO incompatible');
+  const estado = ESTADOS_ARTICULO[dto.estado];
+  const vista = validarVista({ id: dto.id, titulo: dto.titulo, moneda: dto.moneda, precioCentimos: dto.precioCentimos,
+    categoriaTexto: dto.categoriaNombre ?? null, ubicacionTexto: dto.campusNombre ?? null,
+    vendedorTexto: dto.vendedorNombre ?? null, estadoTexto: estado.texto, tono: estado.tono,
+    foto: { url: dto.imagen.url, alt: dto.titulo } }, origenesImagen, {}, true);
+  // La ruta de detalle la decide el controlador; no aceptar enlaces ni campos privados del DTO.
+  const { detalle, ...presentacion } = vista;
+  return presentacion;
 }
 
 export function crearControladorCatalogo({ modo = 'pendiente', consultarCatalogo, adaptarFiltros, adaptarArticulo,
   opciones = {}, origenesImagen = [], detalle = {}, alCambiar = () => {}, timeoutMs = 15000 } = {}) {
   const catalogos = opcionesDePresentacion(opciones);
-  if (!Array.isArray(origenesImagen) || !origenesImagen.every(o => {
-    try { const u = new URL(o); return u.protocol === 'https:' && u.origin === o; } catch { return false; }
-  }) || !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 20000) throw new TypeError('Configuración de presentación inválida');
-  const disponible = modo === 'prueba' && [consultarCatalogo, adaptarFiltros, adaptarArticulo].every(fn => typeof fn === 'function');
+  if (!origenesImagenValidos(origenesImagen) || !Number.isInteger(timeoutMs)
+    || timeoutMs < 1 || timeoutMs > 20000) throw new TypeError('Configuración de presentación inválida');
+  const disponible = ['prueba', 'real'].includes(modo)
+    && [consultarCatalogo, adaptarFiltros, adaptarArticulo].every(fn => typeof fn === 'function');
   let secuencia = 0, actual = null, cerrada = false;
   let estado = { estado: 'pendiente', mensaje: MENSAJES.PENDIENTE, vistas: [] };
   function publicar(nuevo) {
@@ -147,7 +203,8 @@ export function crearControladorCatalogo({ modo = 'pendiente', consultarCatalogo
       const interrumpir = codigo => { if (motivo) return; motivo = codigo; aborto.abort(); rechazar(new Error('Consulta interrumpida')); };
       const timer = setTimeout(() => interrumpir('TIEMPO_AGOTADO'), timeoutMs);
       actual = { cancelar: () => interrumpir('CANCELADO') };
-      publicar({ estado: 'cargando', mensaje: 'Prueba offline: consultando la dependencia simulada…', vistas: [] });
+      publicar({ estado: 'cargando', mensaje: modo === 'real' ? 'Consultando el catálogo…'
+        : 'Prueba offline: consultando la dependencia simulada…', vistas: [] });
       try {
         const respuesta = await Promise.race([Promise.resolve().then(() => {
           if (aborto.signal.aborted) throw new Error('Consulta cancelada');
@@ -156,11 +213,12 @@ export function crearControladorCatalogo({ modo = 'pendiente', consultarCatalogo
         if (cerrada || turno !== secuencia) return null;
         if (respuesta?.ok === false) return publicar({ estado: 'error', codigo: 'CONSULTA', mensaje: mensajeError(respuesta?.error?.codigo), vistas: [] });
         if (respuesta?.ok !== true || respuesta.error !== null || !Array.isArray(respuesta.datos) || respuesta.datos.length > 100) throw new TypeError('Respuesta inválida');
-        const vistas = Array.from(respuesta.datos, item => validarVista(adaptarArticulo(item), origenesImagen, detalle));
+        const vistas = Array.from(respuesta.datos, item => validarVista(adaptarArticulo(item), origenesImagen, detalle, modo === 'real'));
         if (new Set(vistas.map(v => v.id)).size !== vistas.length) throw new TypeError('Identificadores repetidos');
         return publicar({ estado: vistas.length ? 'listo' : 'vacio', vistas,
-          mensaje: vistas.length ? `Prueba offline: ${vistas.length} artículos en esta respuesta. Total del catálogo no informado.`
-            : 'Prueba offline: no hay coincidencias en esta respuesta. Puedes limpiar los filtros.' });
+          mensaje: vistas.length ? `${modo === 'prueba' ? 'Prueba offline: ' : ''}${vistas.length} ${vistas.length === 1 ? 'artículo' : 'artículos'} en esta respuesta. Total del catálogo no informado.`
+            : modo === 'prueba' ? 'Prueba offline: no hay coincidencias en esta respuesta. Puedes limpiar los filtros.'
+              : 'No hay coincidencias en esta respuesta. Puedes limpiar los filtros.' });
       } catch (error) {
         if (cerrada || turno !== secuencia || motivo === 'CANCELADO') return null;
         const codigo = motivo === 'TIEMPO_AGOTADO' ? motivo : error instanceof TypeError ? 'RESPUESTA_INVALIDA' : 'SERVIDOR';
@@ -243,16 +301,19 @@ export function montarCatalogo({ raiz, opciones = {}, ...dependencias } = {}) {
   }
   function renderizar(estado) {
     e.notice.dataset.estado = estado.estado; e.status.textContent = estado.mensaje;
-    e['source-hint'].textContent = dependencias.modo === 'prueba' ? 'Datos sintéticos y consulta inyectada exclusivamente para pruebas. No se contactó Supabase.' : 'Las opciones sin identificadores confirmados permanecen deshabilitadas.';
+    const prueba = dependencias.modo === 'prueba';
+    e['source-hint'].textContent = prueba ? 'Datos sintéticos y consulta inyectada exclusivamente para pruebas. No se contactó Supabase.'
+      : ['listo', 'vacio'].includes(estado.estado) ? 'Resultados de esta consulta al servicio; total global no informado.'
+        : 'Las opciones sin identificadores confirmados permanecen deshabilitadas.';
     e.results.setAttribute('aria-busy', String(estado.estado === 'cargando'));
     e.retry.hidden = estado.estado !== 'error' || ['VALIDACION', 'CONFIGURACION'].includes(estado.codigo);
     e['demo-products'].hidden = estado.estado !== 'pendiente';
     e['live-products'].hidden = !['listo', 'vacio'].includes(estado.estado);
     e['live-products'].replaceChildren(...estado.vistas.map(v => crearTarjeta(documento, v)));
     e.count.textContent = estado.estado === 'pendiente' ? '8 artículos de ejemplo · Figma'
-      : estado.estado === 'listo' ? `${estado.vistas.length} artículos en esta respuesta de prueba`
-        : estado.estado === 'vacio' ? '0 artículos en esta respuesta de prueba'
-          : estado.estado === 'cargando' ? 'Consulta de prueba en curso…' : 'Sin una consulta completada para estos filtros';
+      : estado.estado === 'listo' || estado.estado === 'vacio' ? `${estado.vistas.length} ${estado.vistas.length === 1 ? 'artículo' : 'artículos'} en esta respuesta${prueba ? ' de prueba' : ''}`
+        : estado.estado === 'cargando' ? (prueba ? 'Consulta de prueba en curso…' : 'Consulta en curso…')
+          : 'Sin una consulta completada para estos filtros';
     e.pagination.hidden = estado.estado !== 'pendiente';
     if (estado.codigo === 'VALIDACION') {
       e.filters.dataset.abierto = 'true'; e['toggle-filters'].setAttribute('aria-expanded', 'true');
