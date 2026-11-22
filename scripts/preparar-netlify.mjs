@@ -21,6 +21,9 @@ const PAGINAS = [
 ];
 const RECURSOS = [
   'css/styles.css',
+  'css/agente.css',
+  'js/agente-ui.js',
+  'js/agente-montaje.js',
   'js/acceso-ui.js',
   'js/auth.js',
   'js/supabase-cliente.js',
