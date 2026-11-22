@@ -525,3 +525,159 @@ Chrome, Netlify ni suites de otros módulos. No hay persistencia productiva ni p
 Auth conectado: la integración con Maricielo y los eventos reales de identidad,
 la restauración visible y la ratificación de retención/borrado siguen pendientes.
 **AG-03 no se declara completado.**
+
+## D1.3A — Coordinador offline y presentación opcional — 22/11/2026
+
+Base de esta entrega: `04a77e254aa76ffede53ebe714f24de7fdb0f6df`, tras PR #50.
+Rama: `feature/angel/agente-memoria-integracion`. No confundir las evidencias
+históricas D1.1/D1.2 con las comprobaciones de esta integración.
+
+### Implementado, sin activar en páginas
+
+`js/agente-memoria-coordinador.js` compone el widget y la memoria D1.2 mediante
+puertos inyectados. Importa únicamente el dominio D1.2; no importa Auth, Storage,
+catálogo, SDK ni un proveedor IA. La memoria sigue sin DOM. No hay montaje ni
+restauración automática y crear el coordinador no consulta identidad o almacenamiento.
+Un WeakMap mantiene un coordinador por instancia de widget, sin suscripciones repetidas.
+
+```js
+crearCoordinadorMemoria({
+  widget,                      // Instancia de montarAgente() con el puerto opcional.
+  obtenerIdentidad,             // ({signal}) => {id: UUID} | null; también asíncrono.
+  almacenamiento: null,         // Puerto propuesto de D1.2; doble en esta entrega.
+  producirContexto,             // Productor independiente y confiable; no historial.
+  categoriasPermitidas: [],     // Manifiesto confiable; no categorías del modelo.
+  politica: null,               // Sin política explícita no se accede al puerto.
+  ahora: Date.now               // Reloj inyectado; valores sintéticos en pruebas.
+});
+```
+
+| Método del coordinador | Comportamiento |
+|---|---|
+| `restaurar()` | Verifica identidad, recupera solo su clave mediante D1.2 y presenta resumen determinista. |
+| `actualizar()` | Invoca el productor estructurado, valida mediante D1.2 y presenta el contexto permitido; no recibe texto del chat. |
+| `borrar()` | Limpia historial visible y contexto, cancela la operación previa y elimina solo la clave propia cuando hay puerto/política configurados. |
+| `invalidarIdentidad()` | Síncrono: cancela operaciones, limpia contexto, texto efímero y voz/TTS del widget, y cierra el panel. No decide borrar automáticamente datos persistidos. |
+| `desmontar()` | Cancela memoria, retira escucha/registro y limpia datos efímeros y voz. No elimina el DOM del widget; su propietario conserva el desmontaje D1.1. |
+
+Los métodos asíncronos devuelven `{ok, datos, error}`. Se conservan los códigos seguros
+del dominio. Identidad inválida/fallida nunca se transforma en una cuenta ficticia;
+el anónimo conserva el chat efímero, sin clave persistente. Las respuestas canceladas
+no pueden restaurar contexto ni limpiar datos de un montaje nuevo. La cola física
+acotada pertenece a D1.2: el coordinador no añade otra. Un puerto que ignore abort no
+permite deshacer una escritura ya iniciada y puede retrasar una eliminación; no se
+prometen transacciones o bloqueo entre pestañas.
+
+### Puerto opcional del widget, compatible con D1.1
+
+- `presentarMemoria({estado, resumen})`: un aviso acotado dentro del log existente,
+  construido con `createElement` y `textContent`, sin mover foco ni editar textarea.
+  Estados de comprobación, contexto recordado/preparado/conservado, ausencia,
+  error y borrado son distintos. Nunca se anuncia resultado de catálogo o IA real.
+- `limpiarMemoria()`: elimina solamente ese aviso.
+- `limpiarPorIdentidad()`: limpia historial, borrador y avisos, detiene voz/TTS y cierra
+  el panel; al estar abierto devuelve el foco al launcher.
+- `escucharAccionesMemoria(callback)`: devuelve limpieza; notifica `borrar` solo por
+  el botón (después de limpiar la vista) y `desmontar` al desmontar el widget. El
+  coordinador no repite ese borrado/anuncio. El registro no emite evento inicial.
+  Las llamadas programáticas a `borrarHistorial()` siguen siendo solo visuales;
+  para coordinar borrado de memoria usar `coordinador.borrar()`.
+
+El aviso usa la región `role=log`, `aria-live=polite`, `aria-atomic=false`; se etiqueta
+como memoria de contexto y no como respuesta IA. No se incorpora a `obtenerHistorial()`
+ni al TTS, que sigue leyendo exclusivamente la bienvenida pública. El resumen de
+la UI debe proceder del coordinador: renderizar una cadena como texto evita XSS,
+pero no convierte texto libre en contenido público autorizado para persistir.
+No hay nuevos controles, estilos o cambios en el diseño aprobado. Sin coordinador,
+el montaje actual conserva el comportamiento D1.1 y no restaura nada.
+
+### Auth y almacenamiento: interfaces reales y dependencia pendiente
+
+Se inspeccionaron las siete exportaciones oficiales: `registrar`, `iniciarSesion`,
+`obtenerUsuarioActual`, `obtenerEstadoAuth`, `cerrarSesion`, `requerirAutenticacion`
+y `escucharCambiosAuth`. No se añaden funciones ni clientes de Auth.
+El futuro proveedor debe invocar `obtenerUsuarioActual()` fuera de callbacks del SDK:
+éxito con usuario `{id, correo}` se proyecta explícitamente a `{id}`; éxito con
+`datos:null` devuelve null; `ok:false` debe tratarse como fallo de verificación,
+no como sesión anónima válida. El coordinador rechaza DTO con correo/sesión/campos
+extra. No se pasa el objeto Auth completo a la memoria ni se leen JWT manualmente.
+
+La conexión futura de eventos usará `escucharCambiosAuth(callback)`, cuya cancelación
+ya devuelve una función; no se abre ninguna suscripción en D1.3A. Logout, cambio
+de cuenta o error de sesión deberán invalidar inmediatamente antes de renderizar
+otra cuenta y recuperar fuera del callback. Sin ese puente, no se detectan cambios
+externos entre llamadas: ni un UUID local ni la memoria son autorización del servidor.
+
+`js/localstorage.js` **no existe en esta base**. El anuncio de Maricielo no equivale
+a código/API revisados. El puerto mínimo interno propuesto sigue siendo:
+
+```js
+leer(clave, {signal})          // {ok:true, datos:string|null, error:null}
+guardar(clave, json, {signal}) // {ok:true, datos:null, error:null}
+eliminar(clave, {signal})      // {ok:true, datos:null, error:null}
+// Fallo: {ok:false, datos:null, error:{codigo:'CUOTA' | codigoSeguro}}
+```
+
+Estos nombres no son exports ratificados de Maricielo. D1.3B deberá comparar su API
+real y adaptar el puerto, preservar errores/cuota y resolver cancelación y orden.
+Clave por UUID, versión, 24 KiB, 7 días y política de logout/borrado siguen siendo
+propuestas, sin escritura productiva. `localStorage.clear()` está excluido.
+
+El productor productivo tampoco existe en esta entrega. No copiar el objeto completo
+de filtros ni `obtenerHistorial()`; D1.2 rechaza `busqueda` libre, datos privados,
+resultados de herramientas y campos desconocidos. Bernabé conserva su servicio y PR #52.
+
+### Qué demuestra la continuidad y qué sigue pendiente
+
+La primera instancia guarda en un Map de prueba un presupuesto de 10000 céntimos.
+Tras desmontar, una instancia nueva resuelve la misma identidad y presenta:
+«Contexto recordado: Estábamos buscando artículos con presupuesto máximo de
+S/ 100.00 ordenados por los más recientes. Debemos volver a consultar el catálogo.»
+El usuario puede seguir escribiendo y ese texto no se guarda automáticamente.
+Esto acredita **continuidad temática estructurada**, no memoria de una conversación
+completa, persistencia real en Chrome ni navegación/recarga con localStorage.
+
+**[PROPUESTA PARA REVISIÓN, no implementada]:** si hace falta mayor continuidad,
+acordar un resumen conversacional estructurado con intención de vocabulario cerrado,
+hechos públicos confirmados y procedencia verificable por la aplicación. Cada campo
+adicional requiere utilidad, validación, revisión de privacidad y retención propias.
+No autorizar texto libre/resúmenes del modelo por una regex o `esPublico:true`.
+Esta propuesta no amplía el esquema D1.2 ni modifica el contrato aprobado.
+
+D1.3B requiere API de Maricielo revisada, retención/consentimiento/borrado aprobados,
+proveedor real de identidad y eventos, productor confiable y conexión explícita al
+widget. Después, previa autorización, probar navegación Inicio ↔ Explorar y recarga
+en Chrome. **AG-03 continúa pendiente.** No hay proveedor IA o herramientas reales.
+
+### Verificación focalizada D1.3A
+
+```powershell
+node --test tests/agente/coordinador.test.mjs tests/agente/memoria.test.mjs
+node --test tests/agente/navegador.test.mjs
+node --check js/agente-memoria-coordinador.js
+node --check js/agente-ui.js
+node --check tests/agente/coordinador.test.mjs
+node --check tests/agente/navegador.test.mjs
+git diff --check
+```
+
+Resultados: **19 pruebas de coordinador**, **59 de dominio D1.2** y **52 en Chrome**
+(51 subpruebas y contenedor), sin fallos ni omisiones en las ejecuciones finales.
+Las 49 comprobaciones históricas de D1.1 se conservan; se añaden tres subpruebas
+de DOM/ARIA/foco, continuidad con widget real + Map y borrado/logout/voz-TTS.
+Se usa el arnés existente porque cambia el widget; no se ejecutan suites ajenas.
+Las identidades, almacenamiento, tiempo, reconocimiento y TTS son dobles explícitos.
+El DOM, teclado y CSS de Chrome son reales; no se usó micrófono físico. Las peticiones
+externas se bloquean; no hubo red de aplicación ni accesos a Web Storage global.
+
+La ejecución inicial de Chrome dentro del sandbox no habilitó CDP; se ejecutó con
+el permiso de proceso correspondiente, sin relajar los bloqueos del navegador.
+Se corrigió el `await` del nuevo montaje auxiliar CDP mediante una función async;
+no se cambiaron expectativas para ocultar un fallo de producción.
+
+Solo el servidor del arnés admite los dos módulos de memoria para probarlos.
+**No** se modifica la lista de Netlify ni el montaje de Inicio/Explorar o la Landing.
+`agente-ui.js` no importa esos módulos; `agente-montaje.js` permanece intacto.
+No se requiere un build: no cambian dependencias publicadas. En D1.3B habrá que
+autorizar las entradas `js/agente-memoria.js` y `js/agente-memoria-coordinador.js`
+en `RECURSOS` antes de importar el coordinador desde una página publicada.
