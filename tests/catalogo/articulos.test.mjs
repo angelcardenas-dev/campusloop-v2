@@ -286,3 +286,33 @@ test('rechaza fotos ausentes, inseguras o incoherentes con la migración', async
     comprobarError(await consultar(filtros()), 'RESPUESTA_INVALIDA', /fotografía/);
   }
 });
+
+test('normaliza una foto cuya URL pública coincide con el bucket y la ruta declarados', async () => {
+  const bucket = 'catalogo_fotos-2';
+  const ruta = VENDEDOR + '/Foto-2_A.webp';
+  const url = ORIGEN + '/storage/v1/object/public/' + bucket + '/' + ruta;
+  const { consultar } = await cargar({
+    fetchDoble: async () => respuesta([fila({ imagen_bucket: bucket, imagen_ruta: ruta, imagen_url: url })]),
+  });
+  const resultado = await consultar(filtros());
+  assert.equal(resultado.ok, true);
+  assert.deepEqual(plano(resultado.datos[0].imagen), {
+    proveedor: 'supabase', bucket, ruta, url, formato: 'image/webp', bytes: 125000, ancho: 1200, alto: 900,
+  });
+});
+
+for (const [caso, urls] of [
+  ['otro endpoint', [FOTO.replace('/object/public/', '/render/image/public/')]],
+  ['otro bucket', [FOTO.replace('/articulos/', '/otro-bucket/')]],
+  ['otra fotografía', [FOTO.replace('/foto.webp', '/otra.webp')]],
+  ['una ruta ambigua o manipulada', ['otra/../', '%2e%2e/', 'otra/%2e%2e/', './', '/'].map(
+    segmento => FOTO.replace('/foto.webp', '/' + segmento + 'foto.webp'),
+  ).concat(FOTO.replace('/foto.webp', '/%66oto.webp'), FOTO.replace('/foto.webp', '%2Ffoto.webp'), FOTO + '/')],
+]) {
+  test(`rechaza una URL del mismo origen dirigida a ${caso}`, async () => {
+    for (const imagen_url of urls) {
+      const { consultar } = await cargar({ fetchDoble: async () => respuesta([fila({ imagen_url })]) });
+      comprobarError(await consultar(filtros()), 'RESPUESTA_INVALIDA', /fotografía/);
+    }
+  });
+}

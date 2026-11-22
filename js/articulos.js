@@ -107,14 +107,11 @@ function normalizarImagen(fila, origen) {
     || !enteroPositivo(bytes) || !enteroPositivo(ancho) || !enteroPositivo(alto)) return null;
   const archivo = /^([0-9a-f-]+)\/[A-Za-z0-9_-]+\.([a-z]+)$/.exec(ruta);
   if (!archivo || archivo[1] !== fila.vendedor_id.toLowerCase()
-    || !EXTENSIONES_IMAGEN[formato].includes(archivo[2])
-    || typeof url !== 'string' || url.length > 2048
-    || !/^https:\/\/[A-Za-z0-9.-]+(?::\d+)?\/[^\s?#\\]+$/.test(url) || CONTROLES.test(url)) return null;
-  try {
-    if (new URL(url).origin !== origen) return null;
-  } catch {
-    return null;
-  }
+    || !EXTENSIONES_IMAGEN[formato].includes(archivo[2])) return null;
+
+  // El origen HTTPS ya está validado. Comparar el texto evita normalizar segmentos de la ruta.
+  const urlEsperada = `${origen}/storage/v1/object/public/${bucket}/${ruta}`;
+  if (url !== urlEsperada || CONTROLES.test(url)) return null;
   return { proveedor: 'supabase', bucket, ruta, url, formato, bytes, ancho, alto };
 }
 
