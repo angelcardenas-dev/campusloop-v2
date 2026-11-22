@@ -11,8 +11,8 @@ import {
 // auth.js real ni credenciales. UUID exclusivamente sintéticos, no cuentas reales.
 const URL_MODULO = new URL('../../js/localstorage.js', import.meta.url);
 const fuente = await readFile(URL_MODULO, 'utf8');
-// Código sin comentarios, para comprobaciones estáticas que no dependan de la documentación.
-const codigo = fuente.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\s\/\/ .*$/gm, '');
+// Código sin comentarios y con saltos normalizados para el análisis estático en LF/CRLF.
+const codigo = fuente.replace(/\r\n/g, '\n').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\s\/\/ .*$/gm, '');
 // SourceTextModule requiere `node --experimental-vm-modules`; sin él, solo se omiten
 // las pruebas de contexto aislado.
 const { SourceTextModule } = vm;
@@ -129,26 +129,124 @@ test('2. guardar y recuperar filtros con la estructura del contrato', () => {
   assert.equal(api.guardarFiltros(A, { ...filtros(), busqueda: 'ab '.repeat(40) }).ok, true, '120 caracteres');
 });
 
-test('2b. campus exige universidad; la correspondencia no se comprueba localmente', () => {
+test('2b. campus independiente de universidad; la correspondencia no se comprueba localmente', () => {
   const { api } = entorno();
-  rechaza(api.guardarFiltros(A, { ...filtros(), universidad: '' }), 'VALIDACION');
-  rechaza(api.guardarFiltros(A, { ...filtrosIniciales(), campus: CAMPUS }), 'VALIDACION');
-  rechaza(validarFiltros({ ...filtrosIniciales(), campus: CAMPUS }), 'VALIDACION');
+  // Corrección coordinada: estos filtros son válidos según el contrato REST.
+  for (const entrada of [{ ...filtros(), universidad: '' }, { ...filtrosIniciales(), campus: CAMPUS }]) {
+    assert.deepEqual(plano(validarFiltros(entrada).datos), entrada);
+    assert.deepEqual(plano(api.guardarFiltros(A, entrada).datos.contenido), entrada);
+    assert.deepEqual(plano(api.leerFiltros(A).datos.contenido), entrada);
+  }
   assert.equal(api.guardarFiltros(A, { ...filtrosIniciales(), universidad: UNI }).ok, true, 'universidad sin campus');
   assert.equal(api.guardarFiltros(A, { ...filtrosIniciales(), universidad: UNI, campus: CAMPUS }).ok, true, 'ambos');
   // Cualquier par de UUID válidos se acepta: la relación real depende del catálogo.
   assert.equal(validarFiltros({ ...filtrosIniciales(), universidad: B, campus: A }).ok, true);
 });
 
-test('3. guardar y recuperar preferencias: lista cerrada vacía', () => {
+test('3. guardar y recuperar preferencias: objeto vacío compatible con la lista cerrada', () => {
   const { api } = entorno();
   assert.deepEqual(plano(api.guardarPreferencias(A, {}).datos.contenido), {});
   assert.deepEqual(plano(api.leerPreferencias(A).datos), { version: 1, guardadoEn: ISO, contenido: {} });
-  // Solo se acepta `{}`; se rechazan campos no declarados y datos de autorización.
+  // `{}` sigue siendo válido; se rechazan campos no declarados y datos de autorización.
   rechaza(api.guardarPreferencias(A, { tema: 'oscuro' }), 'VALIDACION');
   rechaza(api.guardarPreferencias(A, { rol: 'administrador' }), 'DATO_NO_PERMITIDO');
   rechaza(api.guardarPreferencias(A, { vendedorActivado: true }), 'VALIDACION');
   rechaza(api.guardarPreferencias(A, null), 'VALIDACION');
+});
+
+test('2c. campus independiente no omite validación UUID ni admite campos extra', () => {
+  const { api, almacen } = entorno();
+  for (const campus of ['campus', '../campus', '00000000-0000-0000-0000-000000000000', CAMPUS.slice(0, -1), null, 1]) {
+    const entrada = { ...filtrosIniciales(), campus };
+    rechaza(validarFiltros(entrada), 'VALIDACION');
+    rechaza(api.guardarFiltros(A, entrada), 'VALIDACION');
+  }
+  for (const extra of [{ universidad: 'universidad' }, { universidad: null }, { desconocido: true }]) {
+    const entrada = { ...filtrosIniciales(), campus: CAMPUS, ...extra };
+    rechaza(validarFiltros(entrada), 'VALIDACION');
+    rechaza(api.guardarFiltros(A, entrada), 'VALIDACION');
+  }
+  assert.equal(almacen.valores.size, 0);
+  assert.ok(!almacen.operaciones.some(([op]) => op === 'setItem'));
+});
+
+test('3b. preferencias booleanas opcionales: copia normalizada y sobre versionado', () => {
+  const { api, almacen } = entorno();
+  const casos = [{}, { reducirMovimiento: true }, { reducirMovimiento: false },
+    { filtrosMovilAbiertos: true }, { filtrosMovilAbiertos: false },
+    ...[true, false].flatMap(reducirMovimiento => [true, false].map(filtrosMovilAbiertos => ({ reducirMovimiento, filtrosMovilAbiertos })))];
+  for (const entrada of casos) {
+    const validada = validarPreferencias(entrada);
+    assert.equal(validada.ok, true); assert.notEqual(validada.datos, entrada);
+    assert.deepEqual(plano(validada.datos), entrada);
+    const guardada = api.guardarPreferencias(A, entrada);
+    assert.equal(guardada.ok, true); assert.notEqual(guardada.datos.contenido, entrada);
+    assert.deepEqual(plano(guardada.datos), { version: 1, guardadoEn: ISO, contenido: entrada });
+    assert.deepEqual(JSON.parse(almacen.valores.get(clave('preferencias', A))),
+      { version: 1, tipo: 'preferencias', guardadoEn: ISO, datos: entrada });
+    assert.deepEqual(plano(api.leerPreferencias(A).datos.contenido), entrada);
+  }
+});
+
+test('3c. preferencias rechazan tipos no booleanos y propiedades desconocidas sin sobrescribir', () => {
+  const { api, almacen } = entorno();
+  const valida = { reducirMovimiento: true, filtrosMovilAbiertos: false };
+  api.guardarPreferencias(A, valida); const anterior = almacen.valores.get(clave('preferencias', A));
+  for (const campo of ['reducirMovimiento', 'filtrosMovilAbiertos']) {
+    for (const valor of [undefined, null, 0, 1, 'true', 'false', [], {}, new Boolean(true)]) {
+      const entrada = { ...valida, [campo]: valor };
+      rechaza(validarPreferencias(entrada), 'VALIDACION');
+      rechaza(api.guardarPreferencias(A, entrada), 'VALIDACION');
+    }
+  }
+  for (const campo of ['tema', 'modoOscuro', 'desconocido']) {
+    const entrada = { ...valida, [campo]: true };
+    rechaza(validarPreferencias(entrada), 'VALIDACION');
+    rechaza(api.guardarPreferencias(A, entrada), 'VALIDACION');
+  }
+  assert.equal(almacen.valores.get(clave('preferencias', A)), anterior);
+  assert.deepEqual(plano(api.leerPreferencias(A).datos.contenido), valida);
+});
+
+test('3d. preferencias: compatibilidad con {} anterior, persistencia entre módulos y aislamiento por usuario', async () => {
+  const { api, almacen } = entorno();
+  // Sobre de versión 1 guardado antes de incorporar las dos preferencias.
+  const anterior = sobre('preferencias', {}); almacen.valores.set(clave('preferencias', A), anterior);
+  const otroModulo = await import(`${URL_MODULO.href}?preferencias-pr53`);
+  const otra = otroModulo.crearAlmacenamientoLocal({ almacenamiento: almacen });
+  assert.deepEqual(plano(otra.leerPreferencias(A).datos), { version: 1, guardadoEn: ISO, contenido: {} });
+  assert.equal(almacen.valores.get(clave('preferencias', A)), anterior, 'la lectura no migra ni reescribe');
+  assert.equal(otra.leerPreferencias(B).datos, null);
+  const entrada = { reducirMovimiento: true, filtrosMovilAbiertos: false };
+  const esperada = { ...entrada }, paraB = { reducirMovimiento: false, filtrosMovilAbiertos: true };
+  assert.equal(api.guardarPreferencias(A, entrada).ok, true);
+  assert.equal(api.guardarPreferencias(B, paraB).ok, true);
+  entrada.reducirMovimiento = false;
+  const leida = otra.leerPreferencias(A); assert.deepEqual(plano(leida.datos.contenido), esperada);
+  leida.datos.contenido.filtrosMovilAbiertos = true;
+  assert.deepEqual(plano(api.leerPreferencias(A).datos.contenido), esperada);
+  almacen.operaciones.length = 0;
+  assert.deepEqual(plano(otra.leerPreferencias(B).datos.contenido), paraB);
+  assert.ok(almacen.operaciones.every(([, k]) => k === clave('preferencias', B)));
+  otra.eliminarPreferencias(A);
+  assert.deepEqual(plano(api.leerPreferencias(B).datos.contenido), paraB);
+});
+
+test('3e. preferencias: bloqueo recuperable conserva datos y errores normalizados', () => {
+  const { api, almacen } = entorno();
+  const anterior = { reducirMovimiento: true, filtrosMovilAbiertos: false };
+  api.guardarPreferencias(A, anterior); const crudo = almacen.valores.get(clave('preferencias', A));
+  almacen.fallos.getItem = errorNombrado('SecurityError', 18);
+  rechaza(api.leerPreferencias(A), 'ALMACENAMIENTO_NO_DISPONIBLE');
+  rechaza(api.guardarPreferencias(A, {}), 'ALMACENAMIENTO_NO_DISPONIBLE');
+  delete almacen.fallos.getItem;
+  assert.deepEqual(plano(api.leerPreferencias(A).datos.contenido), anterior);
+  almacen.fallos.setItem = errorNombrado('SecurityError', 18);
+  rechaza(api.guardarPreferencias(A, { filtrosMovilAbiertos: true }), 'ALMACENAMIENTO_NO_DISPONIBLE');
+  assert.equal(almacen.valores.get(clave('preferencias', A)), crudo);
+  delete almacen.fallos.setItem;
+  assert.equal(api.guardarPreferencias(A, { filtrosMovilAbiertos: true }).ok, true);
+  assert.deepEqual(plano(api.leerPreferencias(A).datos.contenido), { filtrosMovilAbiertos: true });
 });
 
 test('4. eliminar el borrador propio, también si no existe', () => {
