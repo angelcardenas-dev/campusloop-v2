@@ -29,6 +29,8 @@ export function montarAgente({ documento = globalThis.document,
   let viva = true, abierta = false, reconocimiento = null, locucion = null;
   let secuenciaVoz = 0, enviando = false;
   const historial = [], limpiezas = [];
+  const accionesMemoria = new Set();
+  let mensajeMemoria = null;
   const diagnosticoVoz = { intentos: 0, eventos: [] };
   function registrarVoz(evento, codigo) {
     // Solo tipos y códigos controlados: nunca audio, texto reconocido ni errores internos.
@@ -243,9 +245,44 @@ export function montarAgente({ documento = globalThis.document,
   }
   function borrarHistorial() {
     if (!viva) return;
+    limpiarMemoria();
     detenerVoz(); detenerLectura(); historial.length = 0; mensajes.replaceChildren();
     agregarMensaje('informacion', BIENVENIDA); informar('Historial visible borrado. No hay historial persistido por este componente.');
     if (abierta) texto.focus({ preventScroll: true });
+  }
+  // Puerto opcional D1.3A: recibir solo resúmenes deterministas del coordinador.
+  // textContent protege el DOM; no clasifica texto libre como público/persistible.
+  function limpiarMemoria() { mensajeMemoria?.remove(); mensajeMemoria = null; }
+  function presentarMemoria({ estado: tipo, resumen = '' } = {}) {
+    if (!viva) return false;
+    const textos = {
+      comprobando: 'Comprobando identidad y contexto permitido…',
+      recordado: 'Contexto recordado: ', preparado: 'Contexto permitido preparado: ',
+      conservado: 'Operación no completada. Contexto permitido en esta instancia: ',
+      'sin-contexto': 'No hay contexto de búsqueda para recordar.',
+      'sin-sesion': 'Sin sesión verificada: no se recupera memoria de una cuenta.',
+      error: 'No se pudo recuperar o guardar el contexto. Puedes seguir escribiendo.',
+      borrado: 'Contexto visible borrado. El almacenamiento solo se elimina si el adaptador está configurado.',
+      'error-borrado': 'Conversación visible borrada; no se pudo confirmar la eliminación del contexto guardado.',
+    };
+    if (!Object.hasOwn(textos, tipo) || typeof resumen !== 'string' || resumen.length > 1000
+      || (['recordado', 'preparado', 'conservado'].includes(tipo) && !resumen.trim())) return false;
+    const cercaDelFinal = mensajes.scrollHeight - mensajes.scrollTop - mensajes.clientHeight < 48;
+    limpiarMemoria(); mensajeMemoria = nodo('div', 'mensaje-info'); mensajeMemoria.dataset.memoria = tipo;
+    mensajeMemoria.append(nodo('span', 'sr', 'Memoria de contexto; no es una respuesta de inteligencia artificial. '),
+      nodo('p', 'contenido', textos[tipo] + (['recordado', 'preparado', 'conservado'].includes(tipo) ? resumen : '')));
+    mensajes.append(mensajeMemoria);
+    if (cercaDelFinal) mensajes.scrollTop = mensajes.scrollHeight;
+    return true;
+  }
+  function limpiarPorIdentidad() {
+    if (!viva) return;
+    borrarHistorial(); texto.value = ''; errorTexto(); ajustarTexto(); cerrar({ devolverFoco: abierta });
+  }
+  function notificarMemoria(accion) {
+    for (const callback of accionesMemoria) {
+      try { Promise.resolve(callback(accion)).catch(() => {}); } catch { /* No exponer errores del consumidor. */ }
+    }
   }
   function actualizarGeometria() {
     if (!viva) return;
@@ -272,6 +309,11 @@ export function montarAgente({ documento = globalThis.document,
     // Interfaz de memoria para D1.2: copia efímera, sin callbacks de guardado automático.
     // El futuro adaptador debe clasificar contexto permitido; no persistir este texto libre.
     obtenerHistorial: () => historial.map(item => ({ ...item })),
+    presentarMemoria, limpiarMemoria, limpiarPorIdentidad,
+    escucharAccionesMemoria(callback) {
+      if (!viva || typeof callback !== 'function') return () => {};
+      accionesMemoria.add(callback); return () => accionesMemoria.delete(callback);
+    },
     obtenerDiagnosticoVoz: () => ({
       apiDisponible: typeof Reconocimiento === 'function', botonHabilitado: viva && !micro.disabled,
       idiomaSolicitado: 'es-PE', intentos: diagnosticoVoz.intentos,
@@ -280,6 +322,7 @@ export function montarAgente({ documento = globalThis.document,
     desmontar() {
       if (!viva) return;
       const teniaFoco = raiz.contains(documento.activeElement);
+      notificarMemoria('desmontar'); accionesMemoria.clear(); limpiarMemoria();
       cerrar({ devolverFoco: false }); viva = false;
       for (const limpiar of limpiezas) limpiar();
       historial.length = 0; diagnosticoVoz.eventos.length = 0; diagnosticoVoz.intentos = 0;
@@ -303,7 +346,7 @@ export function montarAgente({ documento = globalThis.document,
     else if (!locucion) informar(texto.value.trim() ? 'Escribiendo · el mensaje será solo local' : LISTA);
   });
   escuchar(micro, 'click', iniciarVoz); escuchar(leer, 'click', () => locucion ? detenerLectura(true) : leerBienvenida());
-  escuchar(borrar, 'click', borrarHistorial);
+  escuchar(borrar, 'click', () => { borrarHistorial(); notificarMemoria('borrar'); });
   escuchar(documento, 'visibilitychange', () => { if (documento.hidden) { detenerVoz(); detenerLectura(); } });
   escuchar(ventana, 'resize', actualizarGeometria);
   if (ventana.visualViewport) {

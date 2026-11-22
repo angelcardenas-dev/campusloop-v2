@@ -34,7 +34,8 @@ test('D1.1 Chrome: widget real con dobles de voz, sin servicios ni almacenamient
   const pedidos = [], externos = [], errores = [];
   const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.jpg': 'image/jpeg', '.png': 'image/png' };
   const permitidos = new Set(['index.html', 'inicio.html', 'explorar.html', 'css/styles.css', 'css/agente.css',
-    'js/agente-ui.js', 'js/agente-montaje.js', 'js/catalogo.js', 'js/landing.js']);
+    'js/agente-ui.js', 'js/agente-montaje.js', 'js/catalogo.js', 'js/landing.js',
+    'js/agente-memoria.js', 'js/agente-memoria-coordinador.js']);
   const servidor = createServer(async (req, res) => {
     try {
       const ruta = decodeURIComponent(new URL(req.url, 'http://localhost').pathname).slice(1);
@@ -334,6 +335,76 @@ test('D1.1 Chrome: widget real con dobles de voz, sin servicios ni almacenamient
     const despues = await evaluar("({h:document.querySelector('.cl-agente-panel').clientHeight,y:document.querySelector('.cl-agente-composer').getBoundingClientRect().y,scroll:document.querySelector('.cl-agente-mensajes').scrollTop,izquierda:getComputedStyle(document.querySelector('.cl-agente-mensaje-info')).alignSelf,derecha:getComputedStyle(document.querySelector('.cl-agente-mensaje-usuario')).alignSelf})");
     assert.equal(despues.h, antes.h); assert.equal(despues.y, antes.y); assert.equal(despues.scroll, 0);
     assert.equal(despues.izquierda, 'flex-start'); assert.equal(despues.derecha, 'flex-end');
+  });
+  await t.test('D1.3A: presentación accesible y opcional, HTML inerte y sin alterar el borrador o foco', async () => {
+    await navegar(); await abrir(); await escribir('Borrador que se conserva');
+    assert.equal(await evaluar(`control.presentarMemoria({estado:'recordado',resumen:'<img src=x onerror="window.__xss=true">'})`), true);
+    assert.equal(await evaluar("!!document.querySelector('[data-memoria] img') || !!window.__xss"), false);
+    assert.match(await evaluar("document.querySelector('[data-memoria]').textContent"), /Contexto recordado:.*<img/);
+    assert.match(await evaluar("document.querySelector('[data-memoria] .cl-agente-sr').textContent"), /no es una respuesta/);
+    assert.equal(await evaluar("document.querySelector('.cl-agente-mensajes').getAttribute('aria-live')"), 'polite');
+    assert.equal(await evaluar("document.querySelector('.cl-agente-mensajes').getAttribute('aria-atomic')"), 'false');
+    assert.equal(await evaluar("document.activeElement.className"), 'cl-agente-texto');
+    assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), 'Borrador que se conserva');
+    assert.equal(await evaluar('control.obtenerHistorial().length'), 0);
+    assert.equal(await evaluar("document.querySelectorAll('[data-memoria] .cl-agente-leer').length"), 0);
+    await evaluar("control.presentarMemoria({estado:'comprobando'})");
+    assert.equal(await evaluar("document.querySelectorAll('[data-memoria]').length"), 1);
+    assert.equal(await evaluar("control.presentarMemoria({estado:'recordado',resumen:''})"), false);
+    await evaluar('control.limpiarMemoria()'); assert.equal(await evaluar("document.querySelectorAll('[data-memoria]').length"), 0);
+  });
+  await t.test('D1.3A: widget real y contexto recuperado entre instancias con puerto Map simulado', async () => {
+    await navegar();
+    await evaluar(`(async () => {window.cm=await import('/js/agente-memoria-coordinador.js');
+      window.fixture={id:'11111111-1111-4111-8111-111111111111',datos:new Map(),llamadas:[]};
+      window.componer=()=>cm.crearCoordinadorMemoria({widget:control,
+        obtenerIdentidad:()=>fixture.id?{id:fixture.id}:null,
+        producirContexto:()=>({tipo:'busqueda_catalogo',orden:'recientes',precioMaximoCentimos:10000}),
+        ahora:()=>Date.parse('2026-11-22T18:00:00Z'),politica:{maxBytes:24576,ttlMs:604800000},
+        almacenamiento:{
+          leer:async k=>{fixture.llamadas.push('leer');return {ok:true,datos:fixture.datos.get(k)??null};},
+          guardar:async(k,v)=>{fixture.llamadas.push('guardar');fixture.datos.set(k,v);return {ok:true,datos:null};},
+          eliminar:async k=>{fixture.llamadas.push('eliminar');fixture.datos.delete(k);return {ok:true,datos:null};}}});
+      window.coordinador=componer(); await coordinador.actualizar();
+      control.desmontar(); window.control=ui.montarAgente(); window.coordinador=componer();})()`);
+    await abrir(); await escribir('Puedo continuar escribiendo');
+    await evaluar('coordinador.restaurar()');
+    assert.match(await evaluar("document.querySelector('[data-memoria=recordado]').textContent"), /Contexto recordado:.*S\/ 100.00/);
+    assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), 'Puedo continuar escribiendo');
+    assert.equal(await evaluar('control.obtenerHistorial().length'), 0);
+    assert.equal(await evaluar('cm.crearCoordinadorMemoria({widget:control,obtenerIdentidad:()=>null})===coordinador'), true);
+    for (const [width, height] of [[390, 844], [1440, 900]]) {
+      await cdp('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+      await delay(60);
+      assert.equal(await evaluar(`(() => {const p=document.querySelector('.cl-agente-panel').getBoundingClientRect(),
+        c=document.querySelector('.cl-agente-composer').getBoundingClientRect();
+        return document.documentElement.scrollWidth<=innerWidth && p.x>=0 && p.right<=innerWidth
+          && p.top>=0 && p.bottom<=innerHeight && c.top>=p.top && c.bottom<=p.bottom;})()`), true);
+      const captura = await cdp('Page.captureScreenshot', { format: 'png' });
+      await writeFile(path.join(capturas, `d13a-contexto-${width}x${height}.png`), Buffer.from(captura.data, 'base64'));
+    }
+    await enviar(); assert.equal(await evaluar('control.obtenerHistorial().length'), 1);
+    assert.deepEqual(await evaluar('fixture.llamadas'), ['guardar', 'leer']);
+    assert.equal(await evaluar('JSON.stringify([...fixture.datos.values()]).includes("Puedo continuar")'), false);
+  });
+  await t.test('D1.3A: borrado del botón, logout y limpieza de dictado/TTS sin recuperación tardía', async () => {
+    await evaluar("fixture.datos.set('otra-funcion','intacto');document.querySelector('.cl-agente-borrar').click()");
+    await esperar("!!document.querySelector('[data-memoria=borrado]')");
+    assert.equal(await evaluar('fixture.datos.size'), 1); assert.equal(await evaluar('control.obtenerHistorial().length'), 0);
+    await evaluar('coordinador.actualizar()');
+    await evaluar("document.querySelector('.cl-agente-leer').click();document.querySelector('.cl-agente-micro').click()");
+    const abortos = await evaluar('__prueba.voces.at(-1).abortos');
+    await evaluar("fixture.id=null;coordinador.invalidarIdentidad()");
+    assert.equal(await evaluar('__prueba.voces.at(-1).abortos'), abortos + 1);
+    assert.ok(await evaluar('__prueba.cancelaciones') > 0);
+    assert.equal(await evaluar("document.querySelectorAll('[data-memoria]').length"), 0);
+    assert.equal(await evaluar('control.obtenerHistorial().length'), 0);
+    assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), '');
+    assert.equal(await evaluar('document.activeElement.className'), 'cl-agente-abrir');
+    await abrir(); await evaluar('coordinador.restaurar()');
+    assert.equal(await evaluar("!!document.querySelector('[data-memoria=sin-sesion]')"), true);
+    assert.equal(await evaluar('fixture.datos.size'), 2, 'La política de borrado en logout no se decide aquí');
+    await evaluar('control.desmontar()'); assert.equal(await evaluar("document.querySelectorAll('.cl-agente-raiz').length"), 0);
   });
   await t.test('Landing sin widget ni recursos del agente, incluso al restaurar página', async () => {
     await navegar('/index.html', false);
