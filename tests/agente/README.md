@@ -274,3 +274,254 @@ repitieron aquí con audio físico; síntesis y reconocimiento son capacidades d
 - Cliente/backend del nuevo agente, identidad y permisos por herramienta, cuotas,
   servicios reales, confirmación humana y extensión al inventario final de rutas.
 - Despliegue y pruebas con proveedor: no ejecutados ni habilitados por D1.1.
+
+## D1.2 — Preparación offline de contexto permitido (22/11/2026)
+
+Rama `feature/angel/agente-memoria`, base
+`c03528a1899f56255d7ccc824a95650a9a413e4a`. Archivos de esta entrega:
+`js/agente-memoria.js`, `tests/agente/memoria.test.mjs` y esta ampliación del README.
+No cambia D1.1 ni se importa el módulo desde las páginas o el montaje. No se añade
+al constructor Netlify: no hay consumidor público todavía. `js/localstorage.js`
+no existe en esta base; no se crea ni se imita su API.
+
+**Implementado y probado:** selección estructurada, validación, serialización,
+expiración, aislamiento y persistencia con un doble explícito. **Pendientes:**
+Storage compartido de Maricielo, Auth real, restauración visible tras navegación,
+política de retención/borrado y productor real de contexto. **AG-03 no completado.**
+
+### Fronteras y esquema propuesto
+
+Se conserva solamente el último contexto de búsqueda, no una lista de mensajes.
+`obtenerHistorial()` de D1.1 no es una fuente para persistir: contiene texto libre.
+El método `actualizar()` no recibe un cuerpo del modelo/usuario; consulta un
+productor confiable inyectado por el compositor de la aplicación. Ese productor
+deberá proyectar decisiones públicas validadas independientemente, no reenviar JSON
+del modelo ni basarse en `esPublico: true`. La forma válida no demuestra por sí sola
+el origen de un dato; no hay productor productivo conectado en esta entrega.
+
+Propuesta de sobre interno (valores ilustrativos, no cuentas/catálogos reales):
+
+```js
+{
+  version: 1,
+  usuarioId: '<UUID del proveedor de identidad>',
+  actualizadoEn: '<ISO UTC canónica generada por reloj inyectado>',
+  contexto: {
+    tipo: 'busqueda_catalogo',
+    categorias: [],
+    estados: [],
+    condiciones: [],
+    precioMinimoCentimos: null,
+    precioMaximoCentimos: 10000,
+    orden: 'recientes'
+  }
+}
+```
+
+| Campo de contexto | Lista permitida y utilidad |
+|---|---|
+| `tipo` | Obligatorio, exactamente `busqueda_catalogo`; continuidad de intención. |
+| `orden` | Obligatorio: `recientes`, `precio-menor`, `precio-mayor`. |
+| `categorias` | UUID únicos presentes en el manifiesto inyectado `categoriasPermitidas`; recordar selección pública. Sin manifiesto no se acepta ninguna categoría. |
+| `estados` | Selección pública: `disponible`, `reservado`, `vendido`; no afirma una reserva propia. |
+| `condiciones` | `nuevo`, `como_nuevo`, `buen_estado`, `usado`. |
+| `precioMinimoCentimos`, `precioMaximoCentimos` | Enteros seguros no negativos o null, mínimo ≤ máximo, PEN; recordar presupuesto. |
+
+Las listas omitidas se normalizan a `[]`, precios omitidos a null. No se coaccionan
+tipos; null no vale para listas. Se rechazan duplicados y se ordenan las listas para
+una salida determinista. Hay una guardia estructural de 600 entradas antes de
+recorrer listas, relacionada con el presupuesto provisional de bytes, no un nuevo
+catálogo ni un límite de turnos aprobado. `usuarioId` es un vínculo técnico mínimo
+para rechazar sobres copiados a otra clave; no es un perfil, credencial o autorización.
+
+Los códigos y reglas proceden del contrato del catálogo, sin modificarlo. Este
+esquema es una proyección de memoria, **no** `adaptarFiltros` ni el DTO de artículos.
+No pasarle el objeto completo de filtros: `busqueda`, universidad/campus, nombres,
+artículos, imágenes y demás campos no incluidos se rechazan, no se omiten a escondidas.
+El cero es válido como filtro según el contrato; no decide si se publican artículos
+gratuitos ni cambia SQL.
+
+Se deniegan por defecto correo, teléfono, contraseña, tokens, texto de usuario/modelo,
+mensajes de negocio, reservas privadas, instrucciones, roles/permisos, prompts,
+resultados de herramientas y confirmaciones de publicación. También getters,
+símbolos y propiedades extra/heredadas en los registros. No se usa una regex de PII
+como autorización. Los ejemplos negativos prueban el rechazo de esas formas, **no**
+una detección universal de PII. Un productor mal conectado podría codificar datos
+indebidos incluso en un número: su revisión independiente sigue siendo necesaria.
+
+### API del dominio, todavía interna/propuesta
+
+| Export | Resultado |
+|---|---|
+| `validarContextoPermitido(contexto, {categoriasPermitidas})` | `{ok, datos: contextoNormalizado, error}`; no autentica ni certifica procedencia. |
+| `crearClaveMemoria(usuarioId)` | `{ok, datos: clave, error}`; UUID canónico y prefijo propio fijo. |
+| `resumirContexto(contexto, opciones)` | `{ok, datos: textoDeterminista, error}`; solo vocabulario cerrado, sin HTML ni resultados inventados. |
+| `crearMemoriaAgente(configuracion)` | Instancia con los métodos siguientes; no abre Storage ni Auth por sí misma. |
+| `POLITICA_PROVISIONAL_MEMORIA` | Configuración ilustrativa explícita: 24 KiB y 7 días; no se aplica por defecto. |
+
+Configuración inyectada:
+
+```js
+crearMemoriaAgente({
+  almacenamiento: null,         // Puerto de prueba; futuro adaptador compartido.
+  obtenerIdentidad,             // ({signal}) => Promise<{id: UUID} | null>
+  producirContexto,             // ({signal}) => Promise<contextoPermitido>
+  categoriasPermitidas: [],     // UUID de catálogo confiable; no del prompt.
+  politica: null,               // Sin política explícita no se lee/escribe el puerto.
+  ahora: Date.now               // Reloj reemplazable en pruebas.
+});
+```
+
+Los proveedores pueden ser síncronos o asíncronos. El de identidad futuro debe
+proyectar exclusivamente `{id}` desde el servicio Auth oficial y devolver null para
+sesión ausente/anónima. No pasar sesión, correo, JWT, URL o prompt. El módulo valida
+el UUID y revalida el proveedor antes de publicar resultados; no demuestra una sesión
+real mediante un UUID. No importa Auth ni crea clientes o suscripciones.
+
+Métodos de instancia:
+
+- `actualizar()`: obtiene y valida contexto del productor; guarda solo con actor,
+  puerto y política explícitos. Éxito `{ok:true, datos:{contexto, persistido}, error:null}`.
+- `recuperar()`: lee únicamente la clave del actor actual, valida versión, propietario,
+  forma, fecha, TTL y bytes. No renueva la caducidad ni ejecuta búsquedas.
+- `borrar()`: vacía RAM y elimina exclusivamente la clave propia si procede; nunca
+  `clear()` ni claves del SDK/otra cuenta. Si falla Storage no anuncia borrado exitoso.
+- `obtenerContexto()`: copia defensiva síncrona o null; descarta lo expirado o fechas
+  imposibles por retroceso del reloj. No es una prueba actualizada de identidad.
+- `invalidarIdentidad()`: síncrono, borra contexto/actor efímeros y cancela esperas.
+  No decide borrar automáticamente datos persistidos al cerrar sesión.
+- `desmontar()`: invalida y cierra la instancia; resultados tardíos no reaparecen.
+
+Los tres métodos asíncronos siempre devuelven `{ok, datos, error}`. Ante fallo,
+`datos:null` y error seguro con código/mensaje: `CONTEXTO_INVALIDO`,
+`IDENTIDAD_INVALIDA`, `CONFIGURACION`, `TAMANO`, `FORMATO`, `VERSION`, `EXPIRADO`,
+`ALMACENAMIENTO`, `CUOTA` o `CANCELADA`. No se devuelve la excepción original.
+Si falla un guardado, el nuevo contexto permitido puede continuar en RAM mediante
+`obtenerContexto()`; ningún método recibe o altera el borrador del textarea de D1.1.
+
+### Puerto mínimo propuesto para coordinar con Maricielo
+
+Estas son operaciones internas del puerto, **no exports confirmados** de su módulo:
+
+```js
+leer(clave, {signal})                 // {ok:true, datos: string | null, error:null}
+guardar(clave, json, {signal})        // {ok:true, datos:null, error:null}
+eliminar(clave, {signal})             // {ok:true, datos:null, error:null}
+// Fallo: {ok:false, datos:null, error:{codigo:'CUOTA' | otroCodigoSeguro}}
+```
+
+El dominio valida el contenido y genera su JSON; no administra claves genéricas,
+sesiones, borradores ni preferencias. El futuro adaptador debe mapear la API que
+Maricielo realmente entregue a este puerto o acordar ajustes antes de integrarlo.
+También se normalizan excepciones del puerto, incluida `QuotaExceededError`.
+
+El adaptador debería respetar `signal` y finalizar sus operaciones. El dominio
+rechaza pronto la espera cancelada y descarta respuestas obsoletas. Conserva un
+trabajo físico activo y, como máximo, el pendiente más reciente para impedir que
+una escritura antigua termine sobre una nueva de la misma instancia. Si el puerto
+ignora abort, no se puede deshacer su escritura ya iniciada; escribe solo su clave
+original, nunca la del nuevo actor. Si además no finaliza, la siguiente operación
+física debe esperar: no se promete cancelación física ni transacciones. No hay
+bloqueo entre pestañas/instancias ni defensa contra quien controle el JavaScript.
+
+### Retención, privacidad e integración pendientes
+
+Clave provisional: `campusloop_tb4_v1_agente_historial_<usuarioId>`. TTL y bytes se
+configuran explícitamente y pueden reducirse en pruebas, con topes provisionales de
+7 días y 24 KiB. Se mide UTF-8, se rechaza JSON excesivo antes de parsear, versiones
+distintas de 1, propiedades extra, fechas no canónicas/futuras y edad ≥ TTL. Corrupto
+o expirado se invalida sin restaurarlo ni sobrescribirlo; puede eliminarse mediante
+`borrar()`. No se implementan migraciones silenciosas de versiones.
+
+Solo un contexto reemplazable: sin crecimiento de historial. La propuesta histórica
+de 20 turnos no se declara ratificada ni se implementa como 20 mensajes persistidos.
+Un anónimo conserva solo RAM y no crea una clave de invitado ni recupera la cuenta
+anterior. La separación por UUID/sobre no cifra ni protege ante XSS, manipulación
+del navegador, otro script o un usuario con acceso al mismo perfil. Revalidar contra
+servicios/RLS antes de actuar; el resumen es dato conversacional, nunca una orden,
+una autorización o prueba de disponibilidad.
+
+Futura conexión: acordar retención/consentimiento y puerto con Maricielo; productor
+de contexto permitido y manifiesto real con los responsables del catálogo; puente
+de identidad basado en las siete funciones Auth. El evento de cambio de cuenta/
+logout deberá llamar inmediatamente a `invalidarIdentidad()` antes de renderizar
+otro actor, y programar la recuperación fuera del callback del SDK. No se crean
+suscripciones en esta entrega. Sin esa conexión, el módulo no puede detectar un
+logout externo entre dos llamadas. Ratificar también cuándo eliminar la clave propia:
+la invalidación por sí sola no borra datos persistidos.
+
+Después podrá prepararse una interfaz explícita del widget para el contexto; nunca
+conectar `obtenerHistorial()` directamente al almacenamiento. Actualmente no hay
+restauración automática ni visible en Inicio/Explorar y no se publica el módulo en
+`dist/`. El manifiesto/proveedor de pruebas usa solo UUID sintéticos, sin afirmar
+que existan usuarios, categorías o registros en Supabase.
+
+### Verificación D1.2
+
+```powershell
+node --test tests/agente/memoria.test.mjs
+node --check js/agente-memoria.js
+node --check tests/agente/memoria.test.mjs
+git diff --check
+```
+
+La primera entrega de memoria cubrió los 41 escenarios solicitados (40/41 agrupados
+en una prueba de importación con trampas de red/Storage global), más endurecimiento
+y carreras de identidad/almacenamiento: resultado histórico **49 correctas,
+0 fallidas, 0 omitidas**.
+Son 49 pruebas distintas de las 49 históricas de Chrome D1.1, que no se repiten aquí.
+La prueba 29 guarda un presupuesto de 10000 céntimos en el Map simulado, crea otra
+instancia y recupera el resumen «Estábamos buscando artículos con presupuesto máximo
+de S/ 100.00 ordenados por los más recientes. Debemos volver a consultar el catálogo.»
+Esto demuestra continuidad entre instancias del doble; no persistencia real en un
+navegador, navegación, Auth, catálogos o cumplimiento de AG-03. No se ejecutan suites
+ajenas, Chrome, builds ni llamadas a proveedores en D1.2.
+
+### Corrección final de continuidad D1.2 — 22/11/2026
+
+El inicio de cada operación cancelaba la anterior mediante `invalidarIdentidad()`;
+eso también borraba el último contexto válido aunque no hubiera cambiado la cuenta.
+Se separan `cancelarOperacion()` y `limpiarContexto()`. La invalidación explícita
+combina ambas; `iniciar()` solo cancela operaciones anteriores.
+
+Una actualización puede conservar el contexto previo, con su fecha original,
+únicamente si el proveedor vuelve a verificar la misma cuenta y el contexto no ha
+caducado. Mientras se resuelve la identidad inicial, el contexto previo no se expone.
+La marca interna de identidad confirmada permite conservar ese candidato sin
+exponerlo, incluso ante dos actualizaciones consecutivas; se descarta si la cuenta
+no coincide o no puede verificarse.
+Ante contexto nuevo inválido o error de productor se revalida otra vez identidad y
+caducidad antes de conservarlo. El error sigue devolviendo `datos:null`: el contexto
+anterior permitido se consulta mediante `obtenerContexto()`. No se guarda la entrada
+rechazada, no se modifica `actualizadoEn` ni se renueva el TTL. Si no existía contexto
+válido, no se crea uno para ocultar el fallo.
+
+Identidad desconocida, inválida, no verificable o distinta descarta el contexto previo.
+Logout con invalidación explícita, desmontaje y borrado limpian RAM inmediatamente.
+Secuencias y señales impiden que una espera obsoleta restaure o invalide datos de una
+operación nueva; se comprueba la vigencia después de las esperas de revalidación.
+No se añaden colas: se conserva el único trabajo físico activo y el pendiente más
+reciente. Un fallo de persistencia puede seguir dejando el contexto nuevo permitido
+en RAM, tras revalidar la misma identidad y su caducidad.
+
+Se conservan sin cambios las 49 pruebas anteriores y se añaden diez:
+
+| Caso adicional | Comprobación offline |
+|---|---|
+| Continuidad 01 | Contexto válido seguido de actualización inválida: conserva RAM para la misma cuenta. |
+| Continuidad 02 | Rechazo sin escribir ni persistir contenido inválido. |
+| Continuidad 03 | Fecha original y vencimiento exacto del TTL sin renovación por el fallo. |
+| Continuidad 04 | Caducidad antes o durante la operación: no restaura contexto expirado. |
+| Continuidad 05 | Cambio A → B, logout sin evento, ID inválido o proveedor fallido: no conserva A, al inicio o durante el productor. |
+| Continuidad 06 | Logout con invalidación durante una operación: limpieza inmediata y respuesta tardía descartada. |
+| Continuidad 07 | Desmontaje durante una operación: no reaparece contexto anterior ni nuevo. |
+| Continuidad 08 | Borrado después del fallo: elimina RAM y únicamente la clave propia. |
+| Continuidad 09 | Excepción síncrona/asíncrona del productor sanitizada, con o sin contexto previo. |
+| Continuidad 10 | Actualizaciones consecutivas y respuestas tardías de identidad, productor o revalidación: no pierden, sustituyen ni invalidan indebidamente el contexto vigente. |
+
+Resultado de esta corrección: **59 correctas (49 anteriores + 10 nuevas), 0 fallidas,
+0 omitidas**. Identidades, reloj y puerto son dobles sintéticos. No se ejecutan
+Chrome, Netlify ni suites de otros módulos. No hay persistencia productiva ni puente
+Auth conectado: la integración con Maricielo y los eventos reales de identidad,
+la restauración visible y la ratificación de retención/borrado siguen pendientes.
+**AG-03 no se declara completado.**
