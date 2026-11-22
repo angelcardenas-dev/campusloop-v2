@@ -681,3 +681,139 @@ Solo el servidor del arnés admite los dos módulos de memoria para probarlos.
 No se requiere un build: no cambian dependencias publicadas. En D1.3B habrá que
 autorizar las entradas `js/agente-memoria.js` y `js/agente-memoria-coordinador.js`
 en `RECURSOS` antes de importar el coordinador desde una página publicada.
+
+## D1.3B — contexto con Web Storage nativo; activación productiva pendiente
+
+Esta sección actualiza el estado descrito en los cortes históricos D1.1–D1.3A.
+Se conserva el esquema permitido D1.2: intención de búsqueda, categorías de un
+manifiesto confiable, estados/condiciones de catálogo, precios en céntimos y orden.
+No se persisten mensajes, transcripciones, resultados completos ni texto libre.
+
+### Extensión compartida para revisión de Maricielo
+
+`crearAlmacenamientoLocal({ memoriaAgente: { politica, categoriasPermitidas }, ... })`
+añade tres métodos específicos, conservando borradores, nueve filtros y preferencias:
+
+- `leerContextoAgente(usuarioId)` devuelve `{ ok, datos: jsonONull, error }`.
+- `guardarContextoAgente(usuarioId, documentoJSON)` devuelve éxito con `datos:null`
+  solo si el documento D1.2 es válido y `setItem` terminó sin error.
+- `eliminarContextoAgente(usuarioId)` elimina únicamente la clave propia.
+
+La clave sigue siendo `campusloop_tb4_v1_agente_historial_<UUID>`. No se añade una
+categoría genérica ni se reutiliza filtros; no hay `clear()` ni recorrido de claves.
+La escritura exige política explícita; la lectura entrega JSON crudo al dominio,
+que rechaza propietario ajeno, corrupción, versión, campos y fechas inválidos.
+`validarDocumentoMemoria()` extrae el mismo validador puro usado por D1.2: el módulo
+compartido importa ese dominio, sin interpretar otro esquema ni envolver el JSON.
+No cambia la fecha ni renueva el TTL al leer. Se reutilizan resolución de Storage
+y errores normalizados del módulo de Maricielo. Esta ampliación requiere su revisión.
+
+### Adaptador, identidad y ciclo de página
+
+`crearAdaptadorStorageAgente({ almacenamiento, obtenerActor })` expone el puerto
+`leer(clave,{signal})`, `guardar(clave,json,{signal})`, `eliminar(clave,{signal})`.
+Solo acepta la clave canónica del actor previamente verificado; comprueba señal
+y actor antes/después del acceso síncrono. Traduce cuota a `CUOTA` y los demás
+fallos a `ALMACENAMIENTO`, sin mensajes privados ni éxito falso.
+
+`conectarMemoriaAgente({ widget, autorizada, politica, producirContexto,
+categoriasPermitidas, ahora, almacenamiento, auth })` compone los módulos.
+`almacenamiento` y `auth` son inyecciones controladas para pruebas; si se omiten,
+se preparan el Storage compartido y las dos funciones oficiales de `auth.js`.
+Solo se proyecta `{id}` de `obtenerUsuarioActual()`; nunca sesión, correo ni JWT.
+`restaurar()`, `actualizar()`, `borrar()`, `invalidarIdentidad()` y `desmontar()`
+son su interfaz. No recibe contexto desde mensajes ni desde `obtenerHistorial()`.
+
+El consentimiento en «Privacidad y voz» es accesible, inicialmente desmarcado y
+efímero: debe renovarse en cada página/recarga. No se inventa una tercera preferencia
+persistente junto a `reducirMovimiento`/`filtrosMovilAbiertos`. Revocar cancela y
+retira contexto de RAM sin perder el borrador ni decidir borrado persistente.
+El borrado explícito elimina solo la clave de la cuenta, y comunica si falla.
+
+Logout/cambio/error de identidad limpian inmediatamente contexto, borrador privado,
+voz y TTS. Cada IO vuelve a verificar la identidad; un aviso del SDK no autentica.
+`INITIAL_SESSION`/`SIGNED_IN`/`TOKEN_REFRESHED` de la misma cuenta ya verificada
+conservan contexto, consentimiento y borrador, sin renovar TTL. El primer
+`INITIAL_SESSION` válido, sin consentimiento ni identidad anterior, no limpia el
+chat efímero. Esta excepción no se aplica tras haber usado una identidad anterior.
+Logout, cuenta diferente, estados incompatibles y avisos no verificables invalidan
+y exigen nueva elección; no se eliminan automáticamente claves persistentes.
+Los datos del aviso nunca asignan actor; cada IO vuelve a consultar Auth.
+Se cancelan respuestas
+obsoletas y suscripciones al desmontar. Hay una conexión por widget y un montaje
+por documento, incluyendo `pagehide`/`pageshow` y remontaje manual.
+
+`agente-montaje.js` prepara el puente en Inicio/Explorar, pero **autorizada=false**
+por defecto. Sin habilitación, configuración pública, política y productor no
+se inicia Auth ni se accede a Storage. El puente habilitado prepara una suscripción
+Auth; sin consentimiento no consulta identidad ni lee/escribe contexto. La configuración real sigue vacía y no hay
+productor confiable conectado: el catálogo permanece en modo pendiente.
+El checkbox publicado queda deshabilitado y el chat, dictado y TTS siguen funcionando.
+La Landing no se modifica ni carga el agente. No hay consultas de catálogo al restaurar.
+
+### Verificación D1.3B
+
+```powershell
+node --experimental-vm-modules --test tests/localstorage/localstorage.test.mjs tests/agente/memoria.test.mjs tests/agente/coordinador.test.mjs tests/agente/persistencia.test.mjs
+node --test tests/agente/navegador.test.mjs
+node --check js/agente-memoria-conexion.js
+node --check js/agente-storage-adaptador.js
+node scripts/preparar-netlify.mjs
+git diff --check
+```
+
+El arnés Chrome conserva las regresiones DOM/CSS/teclado y dobles de voz D1.1/D1.3A.
+Sus nuevas pruebas habilitan explícitamente Storage nativo en un perfil temporal,
+con identidad **sintética inyectada**, política provisional y productor sintético.
+Se comprueba `localStorage instanceof Storage` y su prototipo nativo: no es un Map.
+El recorrido guarda S/100 en Inicio, navega a Explorar, recupera tras elección,
+recarga y vuelve a recuperar; después borra y recarga sin reaparición.
+No se persiste el consentimiento ni el borrador. Se verifican cuentas A/B, logout,
+foco, cancelación de voz, ciclo de página, suscripción única y borrado selectivo.
+El servidor y CDP bloquean red externa; no se usan cuentas ni credenciales reales.
+Los fallos de Storage, JSON/TTL/versión, Auth y concurrencia se provocan mediante
+dobles en Node. Eso no acredita autenticación real, cuota física ni micrófono físico.
+
+Ejecución histórica anterior a la corrección Auth: **152 pruebas Node correctas** (59 dominio, 19 coordinador,
+31 conexión/adaptador y 43 almacenamiento compartido, incluidas las 38 regresiones),
+sin fallos ni omisiones. **59 comprobaciones Chrome correctas** (58 subpruebas y
+contenedor), sin fallos ni omisiones; Chrome 157.0.8103.79 y Node 24.15.0.
+Se conserva evidencia temporal fuera del repositorio. Sintaxis: 12 archivos válidos.
+Build local: **64 archivos, 14 HTML y 379 referencias locales correctas**.
+
+Se añaden explícitamente a Netlify cinco recursos requeridos por las importaciones:
+`agente-memoria.js`, `agente-memoria-coordinador.js`, `agente-memoria-conexion.js`,
+`agente-storage-adaptador.js` y `localstorage.js`. El build sigue sin desplegarse.
+
+**AG-03 sigue pendiente.** Lo acreditado es persistencia selectiva nativa con
+identidad sintética y continuidad temática, no memoria íntegra de conversación.
+Faltan configuración/identidad real autorizada, productor confiable del catálogo,
+revisión de Maricielo, ratificación de consentimiento, retención y borrado en logout,
+y autorización para activar recuperación productiva. Versión 1, máximo 24 KiB y
+7 días son límites técnicos provisionales. La preferencia persistente de consentimiento
+requiere un contrato posterior; no se ha modificado el SPEC ni los contratos.
+La separación de claves no es una frontera de autorización: quien controla el
+navegador puede inspeccionar o modificar Web Storage. Ningún dato recordado acredita
+identidad, permisos, disponibilidad de artículos ni autoriza acciones del servidor.
+
+### Corrección focalizada de eventos Auth
+
+Se reprodujeron antes de corregir tres fallos en las nuevas pruebas: pérdida del
+borrador por `INITIAL_SESSION` sin consentimiento, revocación innecesaria por
+`SIGNED_IN` coincidente y conservación indebida ante un estado Auth incompatible.
+No se relajaron las expectativas anteriores. Se añadieron diez pruebas Node para
+los ocho casos solicitados, revalidación antes de IO y rechazo de la excepción
+inicial cuando ya hubo una identidad anterior. Los callbacks antiguos se ignoran al desmontar.
+Un aviso ilegible/incompleto o de error deniega recuperación, sin exponer excepciones.
+
+Resultado de esta corrección: **162 pruebas Node correctas** (59 memoria, 19
+coordinador, 41 persistencia/adaptador y 43 Storage compartido), ninguna fallida u
+omitida. **60 comprobaciones Chrome correctas** (59 subpruebas y contenedor),
+ninguna fallida u omitida. Se añade un caso con DOM real para borrador, foco y
+checkbox ante los avisos Auth, con identidad inyectada; no acredita Supabase real.
+Las pruebas de dictado/TTS siguen usando dobles explícitos.
+
+No se repite el build en este ajuste: no cambia el grafo de importaciones ni su
+inventario. El resultado de 64 archivos/14 HTML/379 referencias anterior es
+histórico; `dist/` no se ha regenerado con esta corrección. La memoria productiva
+sigue deshabilitada y AG-03 pendiente de las dependencias ya documentadas.

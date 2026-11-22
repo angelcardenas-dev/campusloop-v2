@@ -205,5 +205,6 @@ test('importación y ciclo del coordinador no acceden a red ni Web Storage globa
     assert.doesNotMatch(fuente, /\bfetch\s*\(|\b(?:localStorage|sessionStorage)\s*[.(]|innerHTML/);
   }
   const montaje = await readFile(new URL('../../js/agente-montaje.js', import.meta.url), 'utf8');
-  assert.doesNotMatch(montaje, /agente-memoria/);
+  assert.match(montaje, /conectarMemoriaAgente/); // D1.3B prepara el puente, desactivado por defecto.
+  assert.doesNotMatch(montaje, /autorizada:\s*true|localStorage|obtenerUsuarioActual\s*\(/);
 });

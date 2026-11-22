@@ -1,6 +1,6 @@
 import { crearMemoriaAgente, crearClaveMemoria, resumirContexto } from './agente-memoria.js';
 
-/* D1.3A: composición explícita de puertos de prueba. No montar desde las páginas.
+/* D1.3A/B: composición explícita de puertos; el puente controla su habilitación.
    La identidad mínima debe proceder de Auth, nunca del chat ni de una URL. */
 const coordinadores = new WeakMap();
 const fallo = codigo => ({ ok: false, datos: null, error: { codigo,
@@ -72,10 +72,12 @@ export function crearCoordinadorMemoria({ widget, obtenerIdentidad, almacenamien
       resumen: resumen.datos });
     return resultado;
   }
-  function desmontar() {
+  function desmontar({ limpiarWidget = true } = {}) {
     if (!activa) return;
     activa = false; secuencia++; memoria.desmontar(); actor = null; identidadConocida = false;
-    cancelarEscucha(); widget.limpiarPorIdentidad(); coordinadores.delete(widget);
+    cancelarEscucha();
+    if (limpiarWidget) widget.limpiarPorIdentidad(); else widget.limpiarMemoria();
+    coordinadores.delete(widget);
   }
   const control = { restaurar: () => operar('recuperar'), actualizar: () => operar('actualizar'),
     borrar: () => operar('borrar'), invalidarIdentidad, desmontar };
