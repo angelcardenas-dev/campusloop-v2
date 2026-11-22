@@ -82,9 +82,12 @@ const CAMPOS_FILTROS = Object.freeze(['busqueda', 'categorias', 'universidad', '
 const ORDENES = Object.freeze(['recientes', 'precio-menor', 'precio-mayor']);
 const ESTADOS = Object.freeze(['disponible', 'reservado', 'vendido']);
 const CONDICIONES = Object.freeze(['nuevo', 'como_nuevo', 'buen_estado', 'usado']);
-// Preferencias admitidas: ninguna; solo se acepta `{}`. Cada campo se declara
-// como nombre → función que valida su valor.
-const CAMPOS_PREFERENCIAS = Object.freeze({});
+// Preferencias opcionales acordadas; preparadas para futuros consumidores de UI.
+// Cada campo se declara como nombre → función que valida su valor.
+const CAMPOS_PREFERENCIAS = Object.freeze({
+  reducirMovimiento: valor => typeof valor === 'boolean',
+  filtrosMovilAbiertos: valor => typeof valor === 'boolean',
+});
 const CAMPOS_SOBRE = Object.freeze(['version', 'tipo', 'guardadoEn', 'datos']);
 
 // Defensa en profundidad: estos patrones no garantizan ausencia de datos privados.
@@ -246,9 +249,8 @@ export function validarFiltros(entrada) {
     for (const campo of ['universidad', 'campus']) {
       if (entrada[campo] !== '' && !esUuid(entrada[campo])) return fallo('VALIDACION');
     }
-    // Un campus pertenece a una universidad: no se admite campus sin universidad.
-    // La correspondencia entre ambos identificadores depende del catálogo remoto.
-    if (entrada.campus !== '' && entrada.universidad === '') return fallo('VALIDACION');
+    // El contrato REST admite campus como filtro independiente de universidad.
+    // La correspondencia entre identificadores depende del catálogo confiable.
     const minimo = entrada.precioMinimoCentimos, maximo = entrada.precioMaximoCentimos;
     if ([minimo, maximo].some(precio => precio !== null && !enteroNoNegativo(precio))
       || (minimo !== null && maximo !== null && minimo > maximo)) return fallo('VALIDACION');
