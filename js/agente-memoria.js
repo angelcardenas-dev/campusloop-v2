@@ -72,6 +72,36 @@ export function crearClaveMemoria(usuarioId) {
     ? bien('campusloop_tb4_v1_agente_historial_' + usuarioId.toLowerCase()) : mal('IDENTIDAD_INVALIDA');
 }
 
+// Validador único del documento persistido, compartido con la extensión Storage.
+// Sin IO y sin política implícita: el llamador debe aportar los límites provisionales.
+export function validarDocumentoMemoria(texto, usuarioId, { categoriasPermitidas = [], politica = null, ahora = Date.now } = {}) {
+  try {
+    const categorias = catalogoSeguro(categoriasPermitidas);
+    if (!categorias || !registro(politica, ['maxBytes', 'ttlMs'], ['maxBytes', 'ttlMs'])
+      || !Number.isSafeInteger(politica.maxBytes) || politica.maxBytes < 1 || politica.maxBytes > 24576
+      || !Number.isSafeInteger(politica.ttlMs) || politica.ttlMs < 1 || politica.ttlMs > 7 * 86400000) return mal('CONFIGURACION');
+    if (!crearClaveMemoria(usuarioId).ok) return mal('IDENTIDAD_INVALIDA');
+    const instante = ahora();
+    if (!Number.isSafeInteger(instante) || !Number.isFinite(new Date(instante).getTime())) return mal('CONFIGURACION');
+    const d = interpretarDocumento(texto, usuarioId.toLowerCase(), instante, categorias, politica);
+    return bien(d);
+  } catch (e) { return mal(typeof e === 'string' && Object.hasOwn(MENSAJES, e) ? e : 'FORMATO'); }
+}
+
+function interpretarDocumento(texto, id, instante, categorias, limites) {
+  if (typeof texto !== 'string') throw 'FORMATO';
+  if (texto.length > limites.maxBytes || bytes(texto) > limites.maxBytes) throw 'TAMANO';
+  let d; try { d = JSON.parse(texto); } catch { throw 'FORMATO'; }
+  if (!registro(d, ['version', 'usuarioId', 'actualizadoEn', 'contexto'], ['version', 'usuarioId', 'actualizadoEn', 'contexto'])) throw 'FORMATO';
+  if (d.version !== 1) throw 'VERSION';
+  if (d.usuarioId !== id) throw 'IDENTIDAD_INVALIDA';
+  const ms = typeof d.actualizadoEn === 'string' ? Date.parse(d.actualizadoEn) : NaN;
+  if (!Number.isSafeInteger(ms) || new Date(ms).toISOString() !== d.actualizadoEn || ms > instante) throw 'FORMATO';
+  if (instante - ms >= limites.ttlMs) throw 'EXPIRADO';
+  const c = validar(d.contexto, categorias); if (!c.ok) throw 'FORMATO';
+  return { contexto: c.datos, fecha: ms };
+}
+
 export function resumirContexto(contexto, opciones) {
   const resultado = validarContextoPermitido(contexto, opciones);
   if (!resultado.ok) return resultado;
@@ -178,17 +208,7 @@ export function crearMemoriaAgente({ almacenamiento = null, obtenerIdentidad, pr
     });
   }
   function leerDocumento(texto, id, instante) {
-    if (typeof texto !== 'string') throw 'FORMATO';
-    if (texto.length > limites.maxBytes || bytes(texto) > limites.maxBytes) throw 'TAMANO';
-    let d; try { d = JSON.parse(texto); } catch { throw 'FORMATO'; }
-    if (!registro(d, ['version', 'usuarioId', 'actualizadoEn', 'contexto'], ['version', 'usuarioId', 'actualizadoEn', 'contexto'])) throw 'FORMATO';
-    if (d.version !== 1) throw 'VERSION';
-    if (d.usuarioId !== id) throw 'IDENTIDAD_INVALIDA';
-    const ms = typeof d.actualizadoEn === 'string' ? Date.parse(d.actualizadoEn) : NaN;
-    if (!Number.isSafeInteger(ms) || new Date(ms).toISOString() !== d.actualizadoEn || ms > instante) throw 'FORMATO';
-    if (instante - ms >= limites.ttlMs) throw 'EXPIRADO';
-    const c = validar(d.contexto, categorias); if (!c.ok) throw 'FORMATO';
-    return { contexto: c.datos, fecha: ms };
+    return interpretarDocumento(texto, id, instante, categorias, limites);
   }
   async function ejecutar(tipo) {
     if (!activa) return mal('CANCELADA');

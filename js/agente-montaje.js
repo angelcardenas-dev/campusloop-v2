@@ -1,22 +1,35 @@
 import { montarAgente, desmontarAgente } from './agente-ui.js';
+import { conectarMemoriaAgente } from './agente-memoria-conexion.js';
 
 /* Datos: una conexión de ciclo de página por Window, incluso si se reinicia. */
 const conexiones = new WeakMap();
 
 /* Funciones */
-export function iniciarAgente(documento = globalThis.document) {
+export function iniciarAgente(documento = globalThis.document, opciones = {}) {
   const ventana = documento?.defaultView;
   if (!ventana || !documento.body) throw new TypeError('Se requiere una página cargada.');
-  if (conexiones.has(ventana)) { montarAgente({ documento }); return conexiones.get(ventana); }
-  const alOcultar = () => desmontarAgente(documento);
-  const alMostrar = () => montarAgente({ documento });
-  const desconectar = () => {
-    ventana.removeEventListener('pagehide', alOcultar); ventana.removeEventListener('pageshow', alMostrar);
-    desmontarAgente(documento); conexiones.delete(ventana);
+  if (conexiones.has(ventana)) {
+    const anterior = conexiones.get(ventana); anterior.mostrar(); return anterior.desconectar;
+  }
+  let memoria = null, widgetAnterior = null, activa = true;
+  const alOcultar = () => { memoria?.desmontar(); memoria = null; desmontarAgente(documento); };
+  const alMostrar = () => {
+    const widget = montarAgente({ documento });
+    if (widget !== widgetAnterior) { memoria?.desmontar(); memoria = null; widgetAnterior = widget; }
+    if (!memoria) {
+      memoria = conectarMemoriaAgente({ ...opciones.memoria, widget });
+      opciones.alMontar?.(widget, memoria);
+    }
   };
-  conexiones.set(ventana, desconectar);
+  const desconectar = () => {
+    if (!activa) return;
+    activa = false;
+    ventana.removeEventListener('pagehide', alOcultar); ventana.removeEventListener('pageshow', alMostrar);
+    alOcultar(); conexiones.delete(ventana);
+  };
+  conexiones.set(ventana, { mostrar: alMostrar, desconectar });
   ventana.addEventListener('pagehide', alOcultar); ventana.addEventListener('pageshow', alMostrar);
-  montarAgente({ documento }); return desconectar;
+  alMostrar(); return desconectar;
 }
 
 /* Eventos: módulos ES diferidos; no suscripciones Auth ni llamadas de red. */

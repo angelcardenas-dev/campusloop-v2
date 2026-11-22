@@ -1,6 +1,7 @@
 /* Persistencia local de CampusLoop (SPEC_TB4 §6.5).
    Categorías: borrador de publicación, última selección de filtros y preferencias
-   de interfaz. Sin DOM, red, SDK, Auth, sesiones ni memoria del agente global.
+   de interfaz. Extensión D1.3B de contexto estructurado del agente, para revisión
+   de Maricielo. Sin DOM, red, SDK, Auth ni historial completo de conversaciones.
 
    Identidad: cada operación recibe el `usuarioId` obtenido del servicio oficial
    `js/auth.js` (`obtenerUsuarioActual()` → `datos.id`, o `obtenerEstadoAuth()` →
@@ -53,6 +54,9 @@
    como ALMACENAMIENTO_NO_DISPONIBLE, CUOTA_EXCEDIDA, ERROR_LECTURA, ERROR_ESCRITURA
    o ERROR_ELIMINACION. El formulario conserva sus datos en pantalla en todos los
    casos; el módulo nunca borra otros datos para recuperarse. */
+
+// La interpretación del contexto pertenece exclusivamente al dominio D1.2.
+import { crearClaveMemoria, validarDocumentoMemoria } from './agente-memoria.js';
 
 /* Datos */
 export const VERSION_FORMATO = 1;
@@ -348,11 +352,14 @@ export function crearAlmacenamientoLocal(opciones = {}) {
   let inyectado = false;
   let almacenamientoInyectado;
   let ahora = Date.now;
+  let opcionesAgente = null;
   try {
     const config = opciones !== null && typeof opciones === 'object' ? opciones : {};
     inyectado = Object.hasOwn(config, 'almacenamiento') && config.almacenamiento !== undefined;
     almacenamientoInyectado = inyectado ? config.almacenamiento : undefined;
     if (Object.hasOwn(config, 'ahora') && config.ahora !== undefined) ahora = config.ahora;
+    if (config.memoriaAgente) opcionesAgente = { politica: config.memoriaAgente.politica && { ...config.memoriaAgente.politica },
+      categoriasPermitidas: [...(config.memoriaAgente.categoriasPermitidas ?? [])] };
   } catch {
     configuracionValida = false;
   }
@@ -431,6 +438,38 @@ export function crearAlmacenamientoLocal(opciones = {}) {
     return exito(null);
   }
 
+  // API específica, nunca admite claves arbitrarias ni usa la categoría filtros.
+  // Documento JSON crudo D1.2: no se envuelve ni se modifica fecha/versión/TTL.
+  function destinoAgente(usuarioId) {
+    if (!configuracionValida) return { error: fallo('CONFIGURACION') };
+    const k = crearClaveMemoria(usuarioId);
+    if (!k.ok) return { error: fallo('IDENTIDAD_INVALIDA') };
+    const almacen = resolverAlmacenamiento();
+    return almacen ? { clave: k.datos, almacen } : { error: fallo('ALMACENAMIENTO_NO_DISPONIBLE') };
+  }
+  function operarAgente(tipo, usuarioId, documento) {
+    const destino = destinoAgente(usuarioId);
+    if (destino.error) return destino.error;
+    if (tipo === 'leer') {
+      const lectura = leerCrudo(destino.almacen, destino.clave);
+      return lectura.error ?? exito(lectura.crudo);
+    }
+    if (tipo === 'guardar') {
+      if (!opcionesAgente) return fallo('CONFIGURACION');
+      const validacion = validarDocumentoMemoria(documento, usuarioId, { ...opcionesAgente, ahora });
+      if (!validacion.ok) return fallo(validacion.error.codigo === 'TAMANO' ? 'TAMANO_EXCEDIDO'
+        : validacion.error.codigo === 'CONFIGURACION' ? 'CONFIGURACION' : 'VALIDACION');
+    }
+    try {
+      if (tipo === 'guardar') destino.almacen.setItem(destino.clave, documento);
+      else destino.almacen.removeItem(destino.clave);
+      return exito(null);
+    } catch (error) {
+      return fallo(esBloqueo(error) ? 'ALMACENAMIENTO_NO_DISPONIBLE' : tipo === 'eliminar' ? 'ERROR_ELIMINACION'
+        : esCuota(error) ? 'CUOTA_EXCEDIDA' : 'ERROR_ESCRITURA');
+    }
+  }
+
   return Object.freeze({
     // Detecta almacenamiento ausente o bloqueado al acceder. No escribe claves de
     // prueba: la cuota o un bloqueo solo de escritura se informan al guardar.
@@ -449,5 +488,8 @@ export function crearAlmacenamientoLocal(opciones = {}) {
     guardarPreferencias: protegida((usuarioId, preferencias) => guardar('preferencias', usuarioId, preferencias), 'ERROR_ESCRITURA'),
     leerPreferencias: protegida(usuarioId => leer('preferencias', usuarioId), 'ERROR_LECTURA'),
     eliminarPreferencias: protegida(usuarioId => eliminar('preferencias', usuarioId), 'ERROR_ELIMINACION'),
+    leerContextoAgente: protegida(usuarioId => operarAgente('leer', usuarioId), 'ERROR_LECTURA'),
+    guardarContextoAgente: protegida((usuarioId, documento) => operarAgente('guardar', usuarioId, documento), 'ERROR_ESCRITURA'),
+    eliminarContextoAgente: protegida(usuarioId => operarAgente('eliminar', usuarioId), 'ERROR_ELIMINACION'),
   });
 }

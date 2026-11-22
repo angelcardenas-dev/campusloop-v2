@@ -14,7 +14,13 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const dobles = `
 window.__prueba={voces:[],lecturas:[],cancelaciones:0,red:0,storage:0};
 window.fetch=()=>{__prueba.red++;throw new Error('Red de aplicación prohibida');};
-for(const nombre of ['localStorage','sessionStorage']) Object.defineProperty(window,nombre,{configurable:true,get(){__prueba.storage++;throw new Error('Persistencia prohibida');}});
+for(const nombre of ['localStorage','sessionStorage']) {
+  const nativo=Object.getOwnPropertyDescriptor(window,nombre);
+  Object.defineProperty(window,nombre,{configurable:true,get(){
+    if(nombre==='localStorage' && window.__permitirStorageReal===true)return nativo.get.call(window);
+    __prueba.storage++;throw new Error('Persistencia prohibida');
+  }});
+}
 window.SpeechRecognition=class {
   constructor(){__prueba.voces.push(this);this.inicios=0;this.abortos=0;}
   start(){this.inicios++;this.onstart?.();} abort(){this.abortos++;}
@@ -25,7 +31,7 @@ Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{
   getVoices(){return [{lang:'en-US'},{lang:'es-PE',name:'Voz sintética de prueba'}];}
 }});`;
 
-test('D1.1 Chrome: widget real con dobles de voz, sin servicios ni almacenamiento', {
+test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad sintética', {
   skip: !existsSync(chrome) && 'Chrome no instalado; no se descarga', timeout: 120000,
 }, async t => {
   const temporal = await mkdtemp(path.join(tmpdir(), 'campusloop-agente-'));
@@ -35,7 +41,8 @@ test('D1.1 Chrome: widget real con dobles de voz, sin servicios ni almacenamient
   const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.jpg': 'image/jpeg', '.png': 'image/png' };
   const permitidos = new Set(['index.html', 'inicio.html', 'explorar.html', 'css/styles.css', 'css/agente.css',
     'js/agente-ui.js', 'js/agente-montaje.js', 'js/catalogo.js', 'js/landing.js',
-    'js/agente-memoria.js', 'js/agente-memoria-coordinador.js']);
+    'js/agente-memoria.js', 'js/agente-memoria-coordinador.js', 'js/agente-memoria-conexion.js',
+    'js/agente-storage-adaptador.js', 'js/localstorage.js', 'js/auth.js', 'js/config-publica.js', 'js/supabase-cliente.js']);
   const servidor = createServer(async (req, res) => {
     try {
       const ruta = decodeURIComponent(new URL(req.url, 'http://localhost').pathname).slice(1);
@@ -460,7 +467,7 @@ test('D1.1 Chrome: widget real con dobles de voz, sin servicios ni almacenamient
           await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 });
           await escribir('Quiero encontrar libros de cálculo.'); await enviar();
           assert.equal(await evaluar("document.querySelectorAll('.cl-agente-mensaje-usuario').length"), 1);
-          assert.equal(await evaluar("document.querySelectorAll('.cl-agente-mensaje-info').length"), 1);
+          assert.equal(await evaluar("document.querySelectorAll('.cl-agente-mensaje-info:not([data-memoria])').length"), 1);
           assert.match(await evaluar("document.querySelector('.cl-agente-estado').textContent"), /Integración pendiente/);
           await guardar('conversacion-local');
           await evaluar("document.querySelector('.cl-agente-borrar').click()");
@@ -476,9 +483,143 @@ test('D1.1 Chrome: widget real con dobles de voz, sin servicios ni almacenamient
       });
     }
   }
+  // Única habilitación de persistencia: arnés aislado, identidad ficticia y elección por página.
+  const prepararPersistencia = async (id = '11111111-1111-4111-8111-111111111111') => {
+    await evaluar(`(async()=>{
+      window.__permitirStorageReal=true;
+      const m=await import('/js/agente-montaje.js');m.iniciarAgente()();
+      window.identidadPrueba=${JSON.stringify(id)};window.notificarAuth=null;window.suscripcionesPrueba=0;
+      window.cancelacionesAuthPrueba=0;
+      m.iniciarAgente(document,{memoria:{autorizada:true,politica:{maxBytes:24576,ttlMs:604800000},
+        producirContexto:()=>({tipo:'busqueda_catalogo',orden:'recientes',precioMaximoCentimos:10000}),
+        auth:{obtenerUsuarioActual:async()=>({ok:true,datos:identidadPrueba?{id:identidadPrueba}:null,error:null}),
+          escucharCambiosAuth:cb=>{suscripcionesPrueba++;notificarAuth=cb;return ()=>{cancelacionesAuthPrueba++;notificarAuth=null;};}}},
+        alMontar:(w,c)=>{window.widgetPersistente=w;window.conexionPersistente=c;}});
+    })()`);
+    await abrir(); await evaluar("document.querySelector('.cl-agente-informacion').open=true");
+  };
+  const consentirMemoria = async () => {
+    assert.equal(await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').checked"), false);
+    await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').click()");
+    await esperar("!!document.querySelector('[data-memoria=sin-contexto],[data-memoria=recordado],[data-memoria=sin-sesion]')");
+    await evaluar("document.querySelector('.cl-agente-informacion').open=false");
+  };
+  const claveReal = 'campusloop_tb4_v1_agente_historial_11111111-1111-4111-8111-111111111111';
+  await t.test('D1.3B Auth: aviso inicial y confirmaciones de la misma cuenta conservan borrador, foco y consentimiento', async () => {
+    await navegar('/inicio.html'); await prepararPersistencia();
+    await escribir('Borrador efímero sin enviar');
+    await evaluar(`document.querySelector('.cl-agente-texto').focus();
+      notificarAuth({evento:'INITIAL_SESSION',estado:'AUTENTICADO',usuario:{id:identidadPrueba}})`);
+    assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), 'Borrador efímero sin enviar');
+    assert.equal(await evaluar('document.activeElement.className'), 'cl-agente-texto');
+    assert.equal(await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').checked"), false);
+    assert.equal(await evaluar("!!document.querySelector('[data-memoria=sin-consentimiento]')"), true);
+    await consentirMemoria(); await evaluar('conexionPersistente.actualizar()');
+    const json = await evaluar(`localStorage.getItem('${claveReal}')`);
+    for (const evento of ['INITIAL_SESSION', 'SIGNED_IN', 'TOKEN_REFRESHED']) {
+      await evaluar(`document.querySelector('.cl-agente-texto').focus();
+        notificarAuth({evento:${JSON.stringify(evento)},estado:'AUTENTICADO',usuario:{id:identidadPrueba}})`);
+      assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), 'Borrador efímero sin enviar');
+      assert.equal(await evaluar('document.activeElement.className'), 'cl-agente-texto');
+      assert.equal(await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').checked"), true);
+      assert.equal(await evaluar("!!document.querySelector('[data-memoria=preparado]')"), true);
+      assert.equal(await evaluar(`localStorage.getItem('${claveReal}')`), json, 'sin renovación por eventos');
+    }
+    assert.equal((await evaluar('conexionPersistente.restaurar()')).ok, true);
+    assert.equal((await evaluar('conexionPersistente.borrar()')).ok, true);
+  });
+  await t.test('D1.3B: consentimiento accesible, Web Storage nativo y guardado sin chat ni credenciales', async () => {
+    await navegar('/inicio.html');
+    assert.equal(await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled"), true);
+    assert.equal(await evaluar('__prueba.storage'), 0);
+    await prepararPersistencia();
+    await evaluar(`localStorage.removeItem('${claveReal}');localStorage.setItem('campusloop_prueba_ajena','intacto')`);
+    assert.equal(await evaluar('localStorage instanceof Storage && Object.getPrototypeOf(localStorage)===Storage.prototype'), true);
+    assert.equal(await evaluar("document.querySelector('input[type=checkbox][aria-label*=contexto]').disabled"), false);
+    // Teclado real: el checkbox etiquetado acepta Space y no secuestra el foco del composer.
+    await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').focus()");
+    await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+    await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+    await esperar("!!document.querySelector('[data-memoria=sin-contexto]')");
+    await evaluar("document.querySelector('.cl-agente-informacion').open=false");
+    await escribir('Borrador local que nunca se persiste');
+    const r = await evaluar('conexionPersistente.actualizar()'); assert.equal(r.datos.persistido, true);
+    assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), 'Borrador local que nunca se persiste');
+    const json = await evaluar(`localStorage.getItem('${claveReal}')`);
+    assert.deepEqual(Object.keys(JSON.parse(json)), ['version', 'usuarioId', 'actualizadoEn', 'contexto']);
+    assert.equal(JSON.parse(json).contexto.precioMaximoCentimos, 10000);
+    assert.doesNotMatch(json, /Borrador|token|correo|historial|password/);
+    assert.equal(await evaluar('suscripcionesPrueba'), 1);
+  });
+  await t.test('D1.3B: navegación Inicio → Explorar recupera contexto nativo tras nueva elección', async () => {
+    await navegar('/explorar.html');
+    assert.equal(await evaluar("!!document.querySelector('[data-memoria=recordado]')"), false);
+    await prepararPersistencia(); await consentirMemoria();
+    assert.match(await evaluar("document.querySelector('[data-memoria=recordado]').textContent"), /Contexto recordado:.*S\/ 100.00/);
+    assert.equal(await evaluar('widgetPersistente.obtenerHistorial().length'), 0);
+    await escribir('Sigo escribiendo'); await evaluar('conexionPersistente.restaurar()');
+    assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), 'Sigo escribiendo');
+    for (const [width, height] of [[390, 844], [1440, 900]]) {
+      await cdp('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+      await delay(60);
+      assert.equal(await evaluar(`(()=>{const p=document.querySelector('.cl-agente-panel').getBoundingClientRect(),
+        c=document.querySelector('.cl-agente-composer').getBoundingClientRect();return document.documentElement.scrollWidth<=innerWidth
+        &&p.x>=0&&p.right<=innerWidth&&p.y>=0&&c.bottom<=p.bottom;})()`), true);
+      const s = await cdp('Page.captureScreenshot', { format: 'png' });
+      await writeFile(path.join(capturas, `d13b-contexto-${width}x${height}.png`), Buffer.from(s.data, 'base64'));
+    }
+  });
+  await t.test('D1.3B: recarga conserva contexto; no conserva consentimiento ni texto libre', async () => {
+    await cdp('Page.reload'); await esperar("document.readyState==='complete' && !!document.querySelector('.cl-agente-raiz')");
+    await prepararPersistencia(); await consentirMemoria();
+    assert.equal(await evaluar("!!document.querySelector('[data-memoria=recordado]')"), true);
+    assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), '');
+    assert.equal(await evaluar("localStorage.getItem('campusloop_prueba_ajena')"), 'intacto');
+  });
+  await t.test('D1.3B: cuenta B no restaura A; logout cancela voz, lectura y contexto visible', async () => {
+    await evaluar("identidadPrueba='22222222-2222-4222-8222-222222222222';notificarAuth({evento:'SIGNED_IN'})");
+    assert.equal(await evaluar("!!document.querySelector('[data-memoria=recordado]')"), false);
+    await abrir(); await evaluar("document.querySelector('.cl-agente-informacion').open=true"); await consentirMemoria();
+    assert.equal(await evaluar("!!document.querySelector('[data-memoria=sin-contexto]')"), true);
+    await evaluar("document.querySelector('.cl-agente-leer').click();document.querySelector('.cl-agente-micro').click()");
+    const antes = await evaluar('__prueba.voces.at(-1).abortos');
+    await evaluar("identidadPrueba=null;notificarAuth({evento:'SIGNED_OUT'})");
+    assert.equal(await evaluar('__prueba.voces.at(-1).abortos'), antes + 1);
+    assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), '');
+    assert.equal(await evaluar('document.activeElement.className'), 'cl-agente-abrir');
+    assert.equal(await evaluar(`localStorage.getItem('${claveReal}')!==null`), true, 'Logout no decide borrado persistente');
+  });
+  await t.test('D1.3B: pagehide/pageshow retira suscripción, montaje único y requiere elección nueva', async () => {
+    await evaluar("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))");
+    assert.equal(await evaluar("document.querySelectorAll('.cl-agente-raiz').length"), 1);
+    assert.equal(await evaluar('suscripcionesPrueba-cancelacionesAuthPrueba'), 1);
+    assert.equal(await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').checked"), false);
+    await evaluar("(async()=>{widgetPersistente.desmontar();const m=await import('/js/agente-montaje.js');m.iniciarAgente();m.iniciarAgente();})()");
+    assert.equal(await evaluar("document.querySelectorAll('.cl-agente-raiz').length"), 1);
+    assert.equal(await evaluar('suscripcionesPrueba-cancelacionesAuthPrueba'), 1);
+    assert.equal(await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled"), false);
+  });
+  await t.test('D1.3B: borrado nativo selectivo y recarga sin reaparición', async () => {
+    await navegar('/explorar.html'); await prepararPersistencia(); await consentirMemoria();
+    assert.equal(await evaluar("!!document.querySelector('[data-memoria=recordado]')"), true);
+    await evaluar("document.querySelector('.cl-agente-borrar').click()"); await esperar("!!document.querySelector('[data-memoria=borrado]')");
+    assert.equal(await evaluar(`localStorage.getItem('${claveReal}')`), null);
+    assert.equal(await evaluar("localStorage.getItem('campusloop_prueba_ajena')"), 'intacto');
+    await cdp('Page.reload'); await esperar("document.readyState==='complete' && !!document.querySelector('.cl-agente-raiz')");
+    await prepararPersistencia(); await consentirMemoria();
+    assert.equal(await evaluar("!!document.querySelector('[data-memoria=sin-contexto]')"), true);
+    await evaluar("localStorage.removeItem('campusloop_prueba_ajena')");
+  });
+  await t.test('D1.3B: limpieza antigua idempotente no desmonta una conexión nueva', async () => {
+    assert.equal(await evaluar(`(async()=>{const m=await import('/js/agente-montaje.js');
+      const antigua=m.iniciarAgente();antigua();const nueva=m.iniciarAgente();antigua();
+      const cantidad=document.querySelectorAll('.cl-agente-raiz').length;nueva();nueva();
+      return cantidad===1&&!document.querySelector('.cl-agente-raiz');})()`), true);
+  });
   await t.test('20 red externa y errores de consola ausentes', () => {
     assert.deepEqual(externos, []); assert.deepEqual(errores, []);
-    assert.equal(pedidos.some(p => /supabase|api\/|asistente|auth\.js/.test(p)), false);
+    assert.equal(pedidos.some(p => /api\/|asistente/.test(p)), false);
+    assert.equal(pedidos.includes('js/auth.js'), true, 'Módulo oficial estático; sin SDK ni solicitudes Auth');
   });
   await writeFile(path.join(capturas, 'geometria.json'), JSON.stringify(geometria, null, 2));
   await writeFile(path.join(capturas, 'estilos.json'), JSON.stringify(estilos, null, 2));

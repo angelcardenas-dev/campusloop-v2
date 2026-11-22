@@ -304,8 +304,8 @@ test('4b. eliminar filtros y preferencias propios, sin tocar otras claves', () =
 test('API pública: operaciones expuestas sin duplicados', () => {
   const api = crearAlmacenamientoLocal({ almacenamiento: new StorageSimulado() });
   assert.deepEqual(Object.keys(api).sort(), ['comprobarDisponibilidad', 'eliminarBorrador', 'eliminarFiltros',
-    'eliminarPreferencias', 'guardarBorrador', 'guardarFiltros', 'guardarPreferencias', 'leerBorrador',
-    'leerFiltros', 'leerPreferencias']);
+    'eliminarContextoAgente', 'eliminarPreferencias', 'guardarBorrador', 'guardarContextoAgente', 'guardarFiltros',
+    'guardarPreferencias', 'leerBorrador', 'leerContextoAgente', 'leerFiltros', 'leerPreferencias'].sort());
   assert.equal(Object.isFrozen(api), true);
 });
 
@@ -583,7 +583,7 @@ test('15. sin limpieza global ni recorrido de claves ajenas', () => {
   // localStorage, el de resolución del almacenamiento por defecto.
   assert.doesNotMatch(codigo, /\.clear\s*\(|\.key\s*\(/);
   assert.deepEqual(codigo.match(/\w*\.?localStorage\b[^\n]*/g), ['globalThis.localStorage;']);
-  assert.doesNotMatch(fuente, /agente_historial/, 'no implementa memoria del agente');
+  rechaza(crearClave('agente_historial', A), 'CONFIGURACION'); // Sin categoría genérica nueva.
 });
 
 test('16. rechaza imágenes, archivos y datos binarios', () => {
@@ -714,7 +714,7 @@ test('fábrica: getters y proxies hostiles devuelven CONFIGURACION sin lanzar', 
   rechaza(crearAlmacenamientoLocal({ almacenamiento: almacenHostil }).leerBorrador(A), 'ALMACENAMIENTO_NO_DISPONIBLE');
 });
 
-// Carga del módulo en un contexto aislado: sin imports, red ni globals del navegador.
+// Única dependencia permitida: validador puro D1.2, sin red ni globals del navegador.
 async function cargarAislado({ localStorageBloqueado = false } = {}) {
   const control = { red: 0 };
   const prohibido = () => { control.red++; throw new Error('Red prohibida'); };
@@ -726,7 +726,11 @@ async function cargarAislado({ localStorageBloqueado = false } = {}) {
   const contexto = vm.createContext(globales);
   const modulo = new SourceTextModule(fuente, { context: contexto,
     importModuleDynamically() { control.red++; throw new Error('Importación prohibida'); } });
-  await modulo.link(() => { throw new Error('Dependencia no permitida'); });
+  const dominio = new SourceTextModule(await readFile(new URL('../../js/agente-memoria.js', import.meta.url), 'utf8'), { context: contexto });
+  await modulo.link(nombre => {
+    if (nombre === './agente-memoria.js') return dominio;
+    throw new Error('Dependencia no permitida');
+  });
   await modulo.evaluate();
   return { api: modulo.namespace, contexto, control };
 }
@@ -750,6 +754,78 @@ test('18. sin dependencias de red: ciclo completo en contexto aislado', { skip: 
 });
 
 test('18b. sin dependencias de red: análisis estático del código', () => {
-  assert.doesNotMatch(codigo, /^\s*import\s|\bimport\s*\(|\brequire\s*\(|fetch\s*\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon/m);
+  assert.deepEqual([...codigo.matchAll(/^import .* from '(.+)';/gm)].map(m => m[1]), ['./agente-memoria.js']);
+  assert.doesNotMatch(codigo, /\bimport\s*\(|\brequire\s*\(|fetch\s*\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon/m);
   assert.doesNotMatch(codigo, /supabase|\bdocument\.|\bwindow\./i);
+});
+
+// D1.3B: extensión específica; el documento y su política pertenecen a D1.2.
+const claveAgente = id => `campusloop_tb4_v1_agente_historial_${id}`;
+const documentoAgente = (extra = {}) => JSON.stringify({ version: 1, usuarioId: A, actualizadoEn: ISO,
+  contexto: { tipo: 'busqueda_catalogo', orden: 'recientes', precioMaximoCentimos: 10000 }, ...extra });
+function entornoAgente() {
+  const almacen = new StorageSimulado();
+  const opciones = { almacenamiento: almacen, ahora: () => INSTANTE,
+    memoriaAgente: { politica: { maxBytes: 24576, ttlMs: 604800000 }, categoriasPermitidas: [] } };
+  return { almacen, opciones, api: crearAlmacenamientoLocal(opciones) };
+}
+
+test('agente: JSON D1.2 exacto, sin segundo sobre ni renovación de fecha', () => {
+  const { api, almacen, opciones } = entornoAgente(), json = documentoAgente();
+  assert.equal(almacen.operaciones.length, 0);
+  assert.equal(api.guardarContextoAgente(A, json).ok, true);
+  assert.equal(almacen.valores.get(claveAgente(A)), json);
+  assert.equal(crearAlmacenamientoLocal(opciones).leerContextoAgente(A).datos, json);
+  assert.equal(api.leerContextoAgente(B).datos, null);
+  assert.equal(api.leerFiltros(A).datos, null);
+});
+
+test('agente: política explícita, UUID válido y ninguna categoría genérica', () => {
+  const { api, almacen } = entornoAgente();
+  rechaza(api.guardarContextoAgente('invalido', documentoAgente()), 'IDENTIDAD_INVALIDA');
+  rechaza(api.leerContextoAgente(null), 'IDENTIDAD_INVALIDA');
+  rechaza(api.eliminarContextoAgente('invalido'), 'IDENTIDAD_INVALIDA');
+  assert.equal(almacen.operaciones.length, 0);
+  rechaza(crearAlmacenamientoLocal({ almacenamiento: almacen }).guardarContextoAgente(A, documentoAgente()), 'CONFIGURACION');
+  rechaza(crearClave('agente_historial', A), 'CONFIGURACION');
+  assert.equal(almacen.valores.size, 0);
+});
+
+test('agente: rechazo de documento privado, manipulado, ajeno, vencido y versión incompatible', () => {
+  const { api, almacen } = entornoAgente();
+  const contextos = ['correo', 'telefono', 'password', 'jwt', 'reservas', 'mensajes', 'cuenta', 'audio', 'busqueda', 'esPublico'];
+  for (const campo of contextos) rechaza(api.guardarContextoAgente(A, documentoAgente({ contexto:
+    { tipo: 'busqueda_catalogo', orden: 'recientes', [campo]: 'dato sintético rechazado' } })), 'VALIDACION');
+  for (const json of ['{', documentoAgente({ usuarioId: B }), documentoAgente({ version: 2 }),
+    documentoAgente({ actualizadoEn: '2026-11-15T18:00:00.000Z' }), documentoAgente({ token: 'rechazado' })]) {
+    rechaza(api.guardarContextoAgente(A, json), 'VALIDACION');
+  }
+  rechaza(api.guardarContextoAgente(A, ' '.repeat(24577)), 'TAMANO_EXCEDIDO');
+  assert.equal(almacen.valores.size, 0);
+  assert.equal(almacen.operaciones.some(([op]) => op === 'setItem'), false);
+});
+
+test('agente: errores de cuota, escritura, lectura, bloqueo y eliminación normalizados', () => {
+  const { api, almacen } = entornoAgente();
+  almacen.fallos.setItem = errorNombrado('QuotaExceededError', 22);
+  rechaza(api.guardarContextoAgente(A, documentoAgente()), 'CUOTA_EXCEDIDA');
+  almacen.fallos.setItem = new Error('no exponer');
+  rechaza(api.guardarContextoAgente(A, documentoAgente()), 'ERROR_ESCRITURA');
+  almacen.fallos.getItem = new Error('no exponer'); rechaza(api.leerContextoAgente(A), 'ERROR_LECTURA');
+  almacen.fallos.removeItem = new Error('no exponer'); rechaza(api.eliminarContextoAgente(A), 'ERROR_ELIMINACION');
+  rechaza(crearAlmacenamientoLocal({ almacenamiento: null }).leerContextoAgente(A), 'ALMACENAMIENTO_NO_DISPONIBLE');
+  almacen.fallos.getItem = errorNombrado('SecurityError', 18);
+  rechaza(api.leerContextoAgente(A), 'ALMACENAMIENTO_NO_DISPONIBLE');
+});
+
+test('agente: eliminación selectiva conserva cuenta B, SDK y funciones anteriores', () => {
+  const { api, almacen } = entornoAgente();
+  api.guardarContextoAgente(A, documentoAgente());
+  api.guardarContextoAgente(B, documentoAgente({ usuarioId: B }));
+  api.guardarPreferencias(A, { reducirMovimiento: true, filtrosMovilAbiertos: false });
+  almacen.valores.set('sb-proyecto-auth-token', 'sentinela sintética, no sesión');
+  const anterior = new Map(almacen.valores); anterior.delete(claveAgente(A));
+  assert.equal(api.eliminarContextoAgente(A).ok, true);
+  assert.deepEqual(almacen.valores, anterior);
+  assert.equal(almacen.operaciones.some(([op]) => op === 'clear'), false);
 });
