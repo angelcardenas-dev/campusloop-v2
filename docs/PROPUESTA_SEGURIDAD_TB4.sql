@@ -77,7 +77,18 @@ GRANT SELECT (id, campus_id, nombre, referencia_publica) ON public.lugares_publi
 GRANT SELECT (id, vendedor_id, titulo, descripcion, categoria_id, condicion, precio_centimos, moneda,
               campus_id, imagen_bucket, imagen_ruta, imagen_url, imagen_formato, imagen_bytes,
               imagen_ancho, imagen_alto, estado, eliminado_en, creado_en, actualizado_en, version)
-ON public.articulos TO anon, authenticated;
+ON public.articulos TO authenticated;
+
+-- El REVOKE previo incluye PUBLIC y ACL de columna. Comprobar también herencia
+-- después del GRANT: anon no debe recuperar SELECT por membresías inesperadas.
+DO $revision$
+BEGIN
+    IF has_table_privilege('anon', 'public.articulos', 'SELECT')
+       OR has_any_column_privilege('anon', 'public.articulos', 'SELECT') THEN
+        RAISE EXCEPTION 'Conciliar SELECT efectivo de anon sobre articulos antes de continuar';
+    END IF;
+END;
+$revision$;
 
 CREATE POLICY universidades_lectura_activa ON public.universidades
     FOR SELECT TO anon, authenticated USING (activa);
@@ -92,8 +103,19 @@ CREATE POLICY lugares_lectura_activa ON public.lugares_publicos
         activo AND (campus_id IS NULL OR EXISTS (SELECT 1 FROM public.campus c WHERE c.id = lugares_publicos.campus_id))
     );
 CREATE POLICY articulos_lectura_catalogo ON public.articulos
-    FOR SELECT TO anon, authenticated USING (
-        eliminado_en IS NULL AND estado IN ('disponible', 'reservado', 'vendido')
+    FOR SELECT TO authenticated USING (
+        (SELECT auth.uid()) IS NOT NULL
+        AND ((SELECT auth.jwt() -> 'is_anonymous') = 'false'::jsonb) IS TRUE
+        AND eliminado_en IS NULL AND estado IN ('disponible', 'reservado', 'vendido')
+    );
+-- Nueva guarda propuesta: las políticas permisivas se combinan por OR.
+-- Esta condición restrictiva sigue siendo obligatoria para authenticated.
+-- Exigir el booleano JSON false rechaza true, null, ausencia, cadenas y otros
+-- tipos; nunca se toma user_metadata como autoridad ni se exige ser vendedor.
+CREATE POLICY articulos_lectura_sesion_registrada ON public.articulos
+    AS RESTRICTIVE FOR SELECT TO authenticated USING (
+        (SELECT auth.uid()) IS NOT NULL
+        AND ((SELECT auth.jwt() -> 'is_anonymous') = 'false'::jsonb) IS TRUE
     );
 
 GRANT SELECT (id, nombre_visible, campus_id, vendedor_activado, creado_en, actualizado_en, version)
