@@ -817,3 +817,39 @@ No se repite el build en este ajuste: no cambia el grafo de importaciones ni su
 inventario. El resultado de 64 archivos/14 HTML/379 referencias anterior es
 histórico; `dist/` no se ha regenerado con esta corrección. La memoria productiva
 sigue deshabilitada y AG-03 pendiente de las dependencias ya documentadas.
+
+## D1.3C — Productor propuesto y ciclo de vida
+
+`crearProductorContextoCatalogo({ obtenerSeleccion, categoriasPermitidas })` entrega
+una función asíncrona compatible con el puerto `producirContexto({ signal })` de
+D1.2. La fuente inyectada debe proporcionar exclusivamente la proyección estructurada
+ya validada por el catálogo. Se reutiliza `validarContextoPermitido`, con copia de
+la lista autorizada de categorías, y se rechazan campos adicionales, datos privados,
+valores fuera de contrato y resultados posteriores a una cancelación. El error no
+incluye los datos de entrada. El módulo no lee chat, red ni Storage y no se monta
+en producción. Los UUID sintéticos de pruebas no son categorías de producción.
+
+`validarFiltros` del controlador es privado y las opciones reales no están integradas;
+no hay todavía un puerto que acredite selección y categorías de una fuente confiable.
+Un puente futuro, coordinado con los responsables, deberá proyectar únicamente
+`tipo`, categorías verificadas, estados, condiciones, precios en céntimos y orden;
+excluirá búsqueda libre, universidad y campus hasta que exista política aprobada.
+La lista de categorías tendrá que provenir de un catálogo autorizado, no del modelo,
+del chat ni de un manifiesto inventado. Un UUID válido no demuestra procedencia.
+El nuevo módulo aún no es recurso Netlify ni se importa en las páginas.
+
+El control de conexión desmontado ignora `invalidarIdentidad()`; las conexiones
+vigentes siguen invalidando RAM y operaciones en logout y cambios de cuenta.
+Las pruebas usan dobles de Auth y Storage; no prueban identidad Supabase real.
+
+**Propuesta de política, pendiente de coordinación:** versión 1; máximo provisional
+de 24 KiB y siete días; consentimiento explícito, actualmente efímero; persistencia
+solo del contexto estructurado permitido; borrado manual selectivo. Logout y cambio
+de cuenta limpian RAM y cancelan operaciones; la eliminación persistente en logout
+requiere decisión separada. JSON corrupto o versión incompatible se rechazan; cuota
+o Storage bloqueado degradan con error sin afirmar éxito ni perder el borrador.
+La política de persistencia del consentimiento y su comunicación necesitan revisión.
+
+AG-03 continúa pendiente: falta productor conectado y verificado, identidad real,
+consentimiento y retención aprobados, activación autorizada y pruebas reales entre
+páginas. La continuidad temática con dobles no es memoria del hilo completo.
