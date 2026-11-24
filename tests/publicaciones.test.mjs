@@ -26,13 +26,13 @@ class Elemento {
   setAttribute(k, v) { this.attrs.set(k, String(v)); }
   getAttribute(k) { return this.attrs.get(k) ?? null; }
   removeAttribute(k) { this.attrs.delete(k); }
-  addEventListener(k, fn) { this.listeners.set(k, fn); }
-  removeEventListener(k) { this.listeners.delete(k); }
+  addEventListener(k, fn) { if (!this.listeners.has(k)) this.listeners.set(k, new Set()); this.listeners.get(k).add(fn); }
+  removeEventListener(k, fn) { const grupo = this.listeners.get(k); grupo?.delete(fn); if (!grupo?.size) this.listeners.delete(k); }
   focus() { this.focused = true; }
-  click() { return this.listeners.get('click')?.({ preventDefault() {} }); }
+  click() { return Promise.all(Array.from(this.listeners.get('click') ?? [], fn => fn({ preventDefault() {} }))); }
 }
 
-function cargar({ servicios = {}, titulo = 'Calculadora', descripcion = 'En buen estado.', prepararPublicacion, montar = false } = {}) {
+function cargar({ servicios = {}, titulo = 'Calculadora', descripcion = 'En buen estado.', prepararPublicacion, origenStorage = 'https://campus.example.invalid', montar = false } = {}) {
   const ids = ['btn-publicar', 'input-titulo', 'input-descripcion', 'mensaje-formulario', 'error-titulo', 'error-descripcion',
     'btn-generar-ia', 'ia-propuesta', 'ia-titulo-sugerido', 'ia-desc-sugerido', 'btn-aceptar-ia', 'btn-descartar-ia',
     'error-ia-titulo', 'error-ia-descripcion'];
@@ -54,7 +54,7 @@ function cargar({ servicios = {}, titulo = 'Calculadora', descripcion = 'En buen
     ...datos, categoriaId: 'e7cff5f1-1df8-406e-bfa8-49daef23ab33', campusId: 'a7af2d30-5802-4ab1-a207-87da7c54a598',
     condicion: 'buen_estado', precioCentimos: 2500, moneda: 'PEN', imagen: articulo.imagen,
   } }) : undefined);
-  const controlador = window.CampusLoopPublicaciones.crearControladorPublicaciones({ documento: document, servicios, prepararPublicacion: preparar });
+  const controlador = window.CampusLoopPublicaciones.crearControladorPublicaciones({ documento: document, servicios, origenStorage, prepararPublicacion: preparar });
   if (montar) ready();
   return { controlador: window.campusLoopPublicaciones ?? controlador, e: id => elementos.get(id), window };
 }
@@ -87,7 +87,7 @@ test('limita título/descripción a los máximos del formulario', async () => {
   assert.equal(e('input-descripcion').getAttribute('aria-invalid'), 'true');
 });
 
-test('crea vía dependencia inyectada y confirma solo respuesta válida', async () => {
+test('valida la respuesta de la dependencia inyectada e identifica la prueba', async () => {
   let recibido;
   const { e } = cargar({ servicios: { crearPublicacion: async (dto, opciones) => {
     recibido = { dto, opciones };
@@ -99,7 +99,7 @@ test('crea vía dependencia inyectada y confirma solo respuesta válida', async 
   assert.equal(recibido.dto.moneda, 'PEN');
   assert.ok(recibido.dto.categoriaId && recibido.dto.campusId);
   assert.ok(recibido.opciones.signal instanceof AbortSignal);
-  assert.match(e('mensaje-formulario').textContent, /confirmada por el servicio/);
+  assert.match(e('mensaje-formulario').textContent, /Respuesta válida del servicio de prueba/);
   assert.equal(e('btn-publicar').disabled, false);
 });
 
@@ -151,7 +151,7 @@ test('desmontar invalida respuesta tardía y aborta señal', async () => {
   assert.equal(signal.aborted, true);
   resolver(respuesta(articulo));
   await pendiente;
-  assert.equal(e('mensaje-formulario').textContent, 'Enviando la publicación…');
+  assert.equal(e('mensaje-formulario').textContent, '');
 });
 
 test('no inventa identificación y valida campos permitidos del artículo', () => {
@@ -194,4 +194,117 @@ test('restaura los mensajes/ARIA aprobados para IA y limpia listeners al desmont
   assert.equal(e('input-titulo').listeners.size, 0);
   assert.equal(e('btn-generar-ia').listeners.size, 0);
   assert.equal(e('btn-aceptar-ia').listeners.size, 0);
+});
+
+for (const [caso, cambiar] of Object.entries({
+  dominio: i => ({ url: i.url.replace('campus.', 'otro.') }),
+  bucket: i => ({ url: i.url.replace('/articulos/', '/otro/') }),
+  foto: i => ({ url: i.url.replace('foto.webp', 'otra.webp') }),
+  endpoint: i => ({ url: i.url.replace('/public/', '/sign/') }),
+  prefijo: i => ({ url: i.url.replace('/storage/', '/otro/storage/') }),
+  segmentos: i => ({ url: i.url.replace('/storage/', '/otro/../storage/') }),
+  escape: i => ({ url: i.url.replace('/foto.', '/%66oto.') }),
+  consulta: i => ({ url: i.url + '?' }),
+  fragmento: i => ({ url: i.url + '#' }),
+  credenciales: i => ({ url: i.url.replace('https://', 'https://a@') }),
+  uuid: i => ({ ruta: i.ruta.replace(articulo.vendedorId, '-'.repeat(36)), url: i.url.replace(articulo.vendedorId, '-'.repeat(36)) }),
+  propietario: i => ({ ruta: i.ruta.replace(articulo.vendedorId, ID), url: i.url.replace(articulo.vendedorId, ID) }),
+  formato: () => ({ formato: 'image/png' }),
+})) test('rechaza fotografía con ' + caso, () => {
+  const { controlador } = cargar();
+  assert.equal(controlador.validarArticulo({ ...articulo, imagen: { ...articulo.imagen, ...cambiar(articulo.imagen) } }), false);
+});
+
+test('origen ausente impide escribir', async () => {
+  let llamadas = 0;
+  const { e } = cargar({ origenStorage: '', servicios: { crearPublicacion() { llamadas++; } } });
+  await e('btn-publicar').click();
+  assert.equal(llamadas, 0);
+});
+
+test('preparador solo expone mensajes controlados', async () => {
+  const { e } = cargar({ servicios: { crearPublicacion: assert.fail }, prepararPublicacion: () => ({
+    ok: false, datos: null, error: { codigo: 'NO_AUTORIZADO', mensaje: 'interno' },
+  }) });
+  await e('btn-publicar').click();
+  assert.match(e('mensaje-formulario').textContent, /No tienes permiso/);
+});
+
+test('respuesta contradictoria no confirma', async () => {
+  const { e } = cargar({ servicios: { crearPublicacion: () => ({ ...respuesta(articulo), error: {} }) } });
+  await e('btn-publicar').click();
+  assert.match(e('mensaje-formulario').textContent, /no pudimos validar/);
+});
+
+test('edición durante envío conserva el nuevo texto y separa la respuesta', async () => {
+  let resolver;
+  const { e, controlador } = cargar({ montar: true, servicios: { crearPublicacion: () => new Promise(r => { resolver = r; }) } });
+  await e('btn-generar-ia').click();
+  const pendiente = e('btn-publicar').click();
+  e('input-titulo').value = 'Edición manual';
+  for (const id of ['btn-aceptar-ia', 'btn-descartar-ia', 'btn-generar-ia']) await e(id).click();
+  assert.equal(controlador.aplicarBorradorValidado({ titulo: 'Otro', descripcion: 'Texto' }), false);
+  assert.match(e('mensaje-formulario').textContent, /Enviando/);
+  resolver(respuesta(articulo));
+  await pendiente;
+  assert.equal(e('input-titulo').value, 'Edición manual');
+  assert.match(e('mensaje-formulario').textContent, /envío anterior/);
+});
+
+test('montaje único, desmontaje pendiente y nuevo montaje', async () => {
+  let resolver;
+  const { e, window, controlador } = cargar({ servicios: { crearPublicacion: () => new Promise(r => { resolver = r; }) } });
+  const montar = () => window.CampusLoopPublicaciones.crearControladorPublicaciones({ documento: window.document });
+  assert.equal(montar(), controlador);
+  const boton = e('btn-publicar');
+  boton.textContent = 'Publicar';
+  boton.setAttribute('aria-busy', 'false');
+  const pendiente = boton.click();
+  controlador.desmontar();
+  assert.equal(boton.textContent, 'Publicar');
+  assert.equal(boton.getAttribute('aria-busy'), 'false');
+  const nuevo = montar();
+  await boton.click();
+  resolver(respuesta(articulo));
+  await pendiente;
+  assert.match(e('mensaje-formulario').textContent, /Integración pendiente/);
+  assert.equal(boton.listeners.get('click').size, 1);
+  assert.equal(controlador.aplicarBorradorValidado({ titulo: 'Viejo', descripcion: 'Texto' }), false);
+  nuevo.desmontar();
+});
+
+test('borrador rechaza propiedades adicionales', () => {
+  const { controlador } = cargar();
+  assert.equal(controlador.aplicarBorradorValidado({ titulo: 'Texto', descripcion: 'Texto', id: ID }), false);
+});
+
+test('descartar conserva originales y aceptar aplica edición con foco', async () => {
+  const { e } = cargar({ montar: true });
+  await e('btn-generar-ia').click();
+  e('ia-titulo-sugerido').value = 'Descartado';
+  await e('btn-descartar-ia').click();
+  assert.equal(e('input-titulo').value, 'Calculadora');
+  assert.equal(e('btn-generar-ia').focused, true);
+  await e('btn-generar-ia').click();
+  e('ia-titulo-sugerido').value = 'Editado';
+  await e('btn-aceptar-ia').click();
+  assert.equal(e('input-titulo').value, 'Editado');
+  assert.equal(e('input-titulo').focused, true);
+});
+
+test('borrador inválido o demasiado largo conserva ambos campos', () => {
+  const { controlador, e } = cargar();
+  for (const dato of [null, [], { titulo: 'a'.repeat(101), descripcion: 'b' }, { titulo: 'a', descripcion: 'b'.repeat(1001) }]) {
+    assert.equal(controlador.aplicarBorradorValidado(dato), false);
+  }
+  assert.equal(e('input-titulo').value, 'Calculadora');
+});
+
+test('código desconocido del preparador conserva los datos y oculta detalles', async () => {
+  const { e } = cargar({ servicios: { crearPublicacion: assert.fail }, prepararPublicacion: () => ({
+    ok: false, datos: null, error: { codigo: 'OTRO', mensaje: 'detalle privado' },
+  }) });
+  await e('btn-publicar').click();
+  assert.match(e('mensaje-formulario').textContent, /No se pudo completar/);
+  assert.equal(e('input-descripcion').value, 'En buen estado.');
 });

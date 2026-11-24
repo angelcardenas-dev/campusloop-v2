@@ -30,12 +30,16 @@
     } });
     const resultadoSeguro = error => fallo(error && Object.hasOwn(MENSAJES, error.codigo) ? error.codigo : "SERVIDOR");
 
-    function validarImagen(imagen) {
+    const controles = new WeakMap();
+
+    function validarImagen(imagen, origen, propietario) {
         if (!imagen || typeof imagen !== "object" || Array.isArray(imagen)
             || imagen.proveedor !== "supabase" || typeof imagen.bucket !== "string"
             || !/^[a-z0-9][a-z0-9_-]{0,99}$/.test(imagen.bucket)
             || typeof imagen.ruta !== "string" || imagen.ruta.length > 500
-            || !/^[0-9a-f-]{36}\/[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|webp)$/i.test(imagen.ruta)
+            || !UUID.test(imagen.ruta.split('/')[0])
+            || (propietario && imagen.ruta.split('/')[0] !== propietario.toLowerCase())
+            || !/^[0-9a-f-]{36}\/[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|webp)$/.test(imagen.ruta)
             || typeof imagen.url !== "string" || imagen.url.length > 2048
             || !Object.hasOwn(FORMATOS_IMAGEN, imagen.formato)
             || !FORMATOS_IMAGEN[imagen.formato].test(imagen.ruta)
@@ -43,16 +47,15 @@
             || !Number.isSafeInteger(imagen.ancho) || imagen.ancho <= 0
             || !Number.isSafeInteger(imagen.alto) || imagen.alto <= 0) return false;
         try {
-            const url = new URL(imagen.url);
-            return url.protocol === "https:" && !url.username && !url.password
-                && !url.search && !url.hash && url.hostname.includes(".")
-                && url.pathname.endsWith(`/storage/v1/object/public/${imagen.bucket}/${imagen.ruta}`);
+            const base = new URL(origen);
+            return base.protocol === "https:" && base.origin === origen
+                && imagen.url === `${origen}/storage/v1/object/public/${imagen.bucket}/${imagen.ruta}`;
         } catch { return false; }
     }
 
     // DTO mínimo de escritura. No acepta identidad/estado suministrados por UI;
     // el servicio autorizado deriva el vendedor y asigna el estado inicial.
-    function validarDtoPublicacion(dto) {
+    function validarDtoPublicacion(dto, origenStorage) {
         const claves = ["titulo", "descripcion", "categoriaId", "condicion", "precioCentimos", "moneda", "campusId", "imagen"];
         if (!dto || typeof dto !== "object" || Array.isArray(dto)
             || Object.keys(dto).length !== claves.length || !claves.every(clave => Object.hasOwn(dto, clave))) return false;
@@ -62,10 +65,10 @@
             && typeof dto.campusId === "string" && UUID.test(dto.campusId)
             && typeof dto.condicion === "string" && CONDICIONES.has(dto.condicion)
             && Number.isSafeInteger(dto.precioCentimos) && dto.precioCentimos > 0
-            && dto.moneda === "PEN" && validarImagen(dto.imagen);
+            && dto.moneda === "PEN" && validarImagen(dto.imagen, origenStorage);
     }
 
-    function validarArticulo(dto) {
+    function validarArticulo(dto, origenStorage) {
         if (!dto || typeof dto !== "object" || Array.isArray(dto)) return false;
         return typeof dto.id === "string" && UUID.test(dto.id)
             && typeof dto.vendedorId === "string" && UUID.test(dto.vendedorId)
@@ -75,13 +78,13 @@
             && typeof dto.descripcion === "string" && dto.descripcion.trim().length > 0 && dto.descripcion.length <= 1000
             && Number.isSafeInteger(dto.precioCentimos) && dto.precioCentimos > 0 && dto.moneda === "PEN"
             && CONDICIONES.has(dto.condicion) && ESTADOS.has(dto.estado)
-            && dto.estado === "disponible" && validarImagen(dto.imagen)
+            && dto.estado === "disponible" && validarImagen(dto.imagen, origenStorage, dto.vendedorId)
             && typeof dto.creadoEn === "string" && Number.isFinite(Date.parse(dto.creadoEn))
             && typeof dto.actualizadoEn === "string" && Number.isFinite(Date.parse(dto.actualizadoEn))
             && Number.isSafeInteger(dto.version) && dto.version > 0;
     }
 
-    function crearControladorPublicaciones({ documento = global.document, servicios = {}, prepararPublicacion } = {}) {
+    function crearControladorPublicaciones({ documento = global.document, servicios = {}, prepararPublicacion, origenStorage } = {}) {
         let desmontado = false;
         let enCurso = false;
         let generacion = 0;
@@ -93,6 +96,8 @@
         const mensaje = documento?.getElementById("mensaje-formulario");
         if (!btn || !titulo || !descripcion || !mensaje) return { desmontar() {} };
 
+        if (controles.has(btn)) return controles.get(btn);
+        let restaurarBoton = null;
         const campos = new Map([
             [titulo, { error: documento.getElementById("error-titulo"), vacio: "Por favor, ingresa un título para tu artículo." }],
             [descripcion, { error: documento.getElementById("error-descripcion"), vacio: "Por favor, ingresa una descripción para tu artículo." }],
@@ -146,7 +151,8 @@
         }
         const dtoFormulario = () => ({ titulo: titulo.value.trim(), descripcion: descripcion.value.trim() });
         const respuestaValida = r => r && typeof r === "object" && typeof r.ok === "boolean"
-            && Object.hasOwn(r, "datos") && Object.hasOwn(r, "error");
+            && Object.hasOwn(r, "datos") && Object.hasOwn(r, "error")
+            && (r.ok ? r.error === null : r.datos === null && typeof r.error?.codigo === "string");
 
         async function publicar(evento) {
             evento.preventDefault();
@@ -156,19 +162,35 @@
                 mostrarMensaje("Integración pendiente: falta conectar el servicio autorizado de publicaciones.", "integracion_pendiente");
                 return;
             }
+            const entrada = dtoFormulario();
             let preparado;
-            try { preparado = prepararPublicacion(dtoFormulario()); }
+            try { preparado = prepararPublicacion(entrada); }
             catch { preparado = null; }
-            if (!preparado || preparado.ok !== true || !validarDtoPublicacion(preparado.datos)) {
-                const campo = preparado?.campo && documento.getElementById(preparado.campo);
-                mostrarMensaje(preparado?.error?.mensaje || MENSAJES_VALIDACION_DTO, "error");
-                campo?.focus();
+            if (!preparado || preparado.ok !== true || (preparado.error !== undefined && preparado.error !== null)
+                || !validarDtoPublicacion(preparado.datos, origenStorage)
+                || preparado.datos.titulo !== entrada.titulo || preparado.datos.descripcion !== entrada.descripcion) {
+                // Códigos provisionales del controlador. Nunca mostrar mensajes del preparador.
+                const rechazado = respuestaValida(preparado) && !preparado.ok;
+                mostrarMensaje(rechazado ? resultadoSeguro(preparado.error).error.mensaje : MENSAJES_VALIDACION_DTO, "error");
+                if (rechazado) {
+                    const campo = [...campos.keys()].find(c => c.id === preparado.campo);
+                    campo?.focus();
+                }
                 return;
             }
             enCurso = true;
             const operacion = ++generacion;
             abortador = new AbortController();
             const textoBoton = btn.textContent;
+            const disabledAnterior = btn.disabled;
+            const busyAnterior = btn.getAttribute("aria-busy");
+            restaurarBoton = () => {
+                btn.textContent = textoBoton;
+                btn.disabled = disabledAnterior;
+                if (busyAnterior === null) btn.removeAttribute("aria-busy");
+                else btn.setAttribute("aria-busy", busyAnterior);
+                restaurarBoton = null;
+            };
             btn.disabled = true;
             btn.setAttribute("aria-busy", "true");
             btn.textContent = "Procesando…";
@@ -178,18 +200,23 @@
                 if (desmontado || operacion !== generacion) return;
                 if (!respuestaValida(r)) { mostrarMensaje(MENSAJES.RESPUESTA_INVALIDA, "error"); return; }
                 if (!r.ok) { mostrarMensaje(resultadoSeguro(r.error).error.mensaje, "error"); return; }
-                if (!validarArticulo(r.datos)) { mostrarMensaje(MENSAJES.RESPUESTA_INVALIDA, "error"); return; }
-                mostrarMensaje("Publicación confirmada por el servicio.", "info");
+                if (!validarArticulo(r.datos, origenStorage)) { mostrarMensaje(MENSAJES.RESPUESTA_INVALIDA, "error"); return; }
+                const actual = dtoFormulario();
+                mostrarMensaje(actual.titulo === entrada.titulo && actual.descripcion === entrada.descripcion
+                    ? "Respuesta válida del servicio de prueba. Revisa los datos antes de continuar."
+                    : "La respuesta corresponde al envío anterior. Tus cambios siguen en el formulario.", "info");
             } catch (error) {
-                if (desmontado || operacion !== generacion || error?.name === "AbortError") return;
+                if (desmontado || operacion !== generacion) return;
+                if (error?.name === "AbortError") {
+                    mostrarMensaje("Se interrumpió la espera. Tus datos siguen en el formulario.");
+                    return;
+                }
                 mostrarMensaje(resultadoSeguro(error).error.mensaje, "error");
             } finally {
                 if (!desmontado && operacion === generacion) {
                     enCurso = false;
                     abortador = null;
-                    btn.disabled = false;
-                    btn.removeAttribute("aria-busy");
-                    btn.textContent = textoBoton;
+                    restaurarBoton();
                 }
             }
         }
@@ -204,7 +231,8 @@
         });
 
         const aplicarBorradorValidado = borrador => {
-            if (desmontado || !borrador || typeof borrador !== "object"
+            if (desmontado || enCurso || !borrador || typeof borrador !== "object" || Array.isArray(borrador)
+                || Object.keys(borrador).length !== 2 || !Object.hasOwn(borrador, "titulo") || !Object.hasOwn(borrador, "descripcion")
                 || typeof borrador.titulo !== "string" || typeof borrador.descripcion !== "string"
                 || !borrador.titulo.trim() || borrador.titulo.length > 100
                 || !borrador.descripcion.trim() || borrador.descripcion.length > 1000) return false;
@@ -217,12 +245,13 @@
             return true;
         };
 
-        return {
+        limpiezas.push(montarInterfazIA(documento, validarFormulario, () => enCurso || desmontado));
+        const control = {
             publicar,
             aplicarBorradorValidado,
-            validarFormulario,
-            validarArticulo,
-            validarDtoPublicacion,
+            validarFormulario: () => !desmontado && !enCurso && validarFormulario(),
+            validarArticulo: dto => validarArticulo(dto, origenStorage),
+            validarDtoPublicacion: dto => validarDtoPublicacion(dto, origenStorage),
             desmontar() {
                 if (desmontado) return;
                 desmontado = true;
@@ -231,17 +260,22 @@
                 for (const limpiar of limpiezas.splice(0)) limpiar();
                 enCurso = false;
                 abortador = null;
-                btn.disabled = false;
-                btn.removeAttribute("aria-busy");
+                if (restaurarBoton) {
+                    mensaje.textContent = "";
+                    restaurarBoton();
+                }
+                controles.delete(btn);
             },
         };
+        controles.set(btn, control);
+        return control;
     }
 
     const MENSAJES_VALIDACION_DTO = "Completa una categoría, campus, precio y fotografía válidos antes de publicar.";
 
     // Conserva los mensajes, foco y ARIA aprobados en PR #40. Este panel sigue
     // siendo una demostración local hasta su sustitución coordinada.
-    function montarInterfazIA(documento, validarFormulario) {
+    function montarInterfazIA(documento, validarFormulario, bloqueada) {
         const titulo = documento.getElementById("input-titulo");
         const descripcion = documento.getElementById("input-descripcion");
         const boton = documento.getElementById("btn-generar-ia");
@@ -257,7 +291,11 @@
             [propuestaTitulo, { error: documento.getElementById("error-ia-titulo"), vacio: "El título de la sugerencia está vacío. Edítalo o descarta la propuesta." }],
             [propuestaDescripcion, { error: documento.getElementById("error-ia-descripcion"), vacio: "La descripción de la sugerencia está vacía. Edítala o descarta la propuesta." }],
         ]);
-        const on = (elemento, tipo, fn) => { elemento.addEventListener(tipo, fn); limpiar.push(() => elemento.removeEventListener(tipo, fn)); };
+        const on = (elemento, tipo, fn) => {
+            const listener = () => { if (!bloqueada()) fn(); };
+            elemento.addEventListener(tipo, listener);
+            limpiar.push(() => elemento.removeEventListener(tipo, listener));
+        };
         const actualizar = (campo, texto = "") => {
             const error = configs.get(campo).error;
             const invalido = texto !== "";
@@ -329,9 +367,6 @@
     global.CampusLoopPublicaciones = Object.freeze({ crearControladorPublicaciones, validarArticulo, validarDtoPublicacion });
     if (global.document) global.document.addEventListener("DOMContentLoaded", () => {
         const controlador = crearControladorPublicaciones({});
-        const desmontarIA = montarInterfazIA(global.document, controlador.validarFormulario);
-        const desmontar = controlador.desmontar;
-        controlador.desmontar = () => { desmontar(); desmontarIA(); };
         global.campusLoopPublicaciones = controlador;
     }, { once: true });
 })(typeof window === "undefined" ? globalThis : window);
