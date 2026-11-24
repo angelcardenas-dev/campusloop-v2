@@ -959,8 +959,10 @@ Los puertos `consultarMisReservas(id, { signal })` y
 `consultarEstadoVendedor(id, { signal })` son **propuestas internas de inyección**,
 no exports aprobados de Bernabé. Sin ellos, la herramienta correspondiente
 responde `INTEGRACION_PENDIENTE`. Reservas se proyecta únicamente a ID/estado
-para entrega directa al titular; no se envía al modelo ni a la memoria. El
-borrador devuelve solo título/descripción editables para revisión humana y no
+para presentación directa al titular; `destino: titular` solo clasifica la
+salida y no es una frontera de seguridad. D3 debe impedir que datos privados de
+reservas lleguen al contexto del proveedor NVIDIA. El borrador devuelve solo
+título/descripción editables para revisión humana y no
 llama al controlador de Matías. Cuenta, estado vendedor como consulta separada,
 publicaciones propias y recomendaciones quedan registradas pero deshabilitadas
 hasta contar con servicios, privacidad y contratos efectivos. Intercambios y

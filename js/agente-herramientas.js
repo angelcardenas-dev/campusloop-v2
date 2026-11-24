@@ -76,9 +76,11 @@ export function validarArgumentosHerramienta(nombre, argumentos, {
 export function crearOrquestadorHerramientas({ obtenerIdentidad, servicios = {}, categoriasPermitidas = [],
   universidadesPermitidas = [], campusPermitidos = [], timeoutMs = 15000,
 } = {}) {
+  const timeoutValido = Number.isSafeInteger(timeoutMs) && timeoutMs >= 1 && timeoutMs <= 60000;
   let activo = true, turno = 0, operacion = null;
   async function ejecutar(nombre, argumentos) {
     if (!activo) return fallo('CANCELADA');
+    if (!timeoutValido) return fallo('ARGUMENTOS_INVALIDOS');
     operacion?.abort();
     const actual = ++turno, control = new AbortController(); operacion = control;
     const vigente = () => activo && actual === turno && !control.signal.aborted;

@@ -4,6 +4,8 @@ import { HERRAMIENTAS_AGENTE, validarArgumentosHerramienta, crearOrquestadorHerr
 
 const A = '11111111-1111-4111-8111-111111111111';
 const B = '22222222-2222-4222-8222-222222222222';
+const C = 'abcdefab-cdef-4abc-8def-abcdefabcdef';
+const C_UPPER = C.toUpperCase();
 const filtros = () => ({ busqueda: '', categorias: [], universidad: '', campus: '', estados: [],
   condiciones: ['usado'], precioMinimoCentimos: null, precioMaximoCentimos: 10000, orden: 'recientes' });
 const bien = datos => ({ ok: true, datos, error: null });
@@ -124,18 +126,48 @@ test('respuestas incompatibles, errores privados y servicios que lanzan no filtr
     ok: true, datos: { id: A }, error: { codigo: 'NO_AUTORIZADO' },
   }), servicios: { consultarCatalogo: async () => bien([]) } });
   assert.equal((await contradictoria.ejecutar('buscar_articulos', filtros())).error.codigo, 'NO_AUTORIZADO');
+  for (const salida of [
+    { ok: true, datos: [], error: { codigo: 'NO_AUTORIZADO' } },
+    { ok: false, datos: [], error: { codigo: 'SERVICIO' } },
+    { ok: true, datos: [], error: null, extra: true },
+    { ok: true, datos: null, error: null },
+  ]) {
+    for (const [nombre, servicio, argumentos] of [
+      ['buscar_articulos', 'consultarCatalogo', filtros()],
+      ['consultar_mis_reservas', 'consultarMisReservas', {}],
+      ['preparar_borrador_publicacion', 'consultarEstadoVendedor', { titulo: 'Libro', descripcion: 'Usado' }],
+    ]) {
+      const o = crearOrquestadorHerramientas({ obtenerIdentidad: identidad, servicios: { [servicio]: async () => salida } });
+      const resultado = await o.ejecutar(nombre, argumentos);
+      assert.equal(resultado.ok, false);
+      assert.equal(resultado.error.codigo, 'RESPUESTA_INVALIDA');
+    }
+  }
+  for (const valor of [0, -1, 1.5, 60001, NaN, '15']) {
+    const o = crearOrquestadorHerramientas({ timeoutMs: valor, obtenerIdentidad: identidad });
+    assert.equal((await o.ejecutar('buscar_articulos', filtros())).error.codigo, 'ARGUMENTOS_INVALIDOS');
+  }
   for (const datos of [Object.assign(Array(2), { 0: { id: A, titulo: 'A', precioCentimos: 1, moneda: 'PEN', estado: 'disponible' } }),
-    [null], [undefined], [{ id: A, titulo: 'A', precioCentimos: 1, moneda: 'PEN', estado: 'disponible' },
-      { id: A.toUpperCase(), titulo: 'A', precioCentimos: 1, moneda: 'PEN', estado: 'disponible' }]]) {
+    [null], [undefined], [{ id: C, titulo: 'A', precioCentimos: 1, moneda: 'PEN', estado: 'disponible' },
+      { id: C_UPPER, titulo: 'A', precioCentimos: 1, moneda: 'PEN', estado: 'disponible' }],
+    ]) {
     const o = crearOrquestadorHerramientas({ obtenerIdentidad: identidad, servicios: { consultarCatalogo: async () => bien(datos) } });
     assert.equal((await o.ejecutar('buscar_articulos', filtros())).error.codigo, 'RESPUESTA_INVALIDA');
   }
-  for (const datos of [new Array(2), [null], [undefined], [{ id: A, estado: 'pendiente' },
-    { id: A.toUpperCase(), estado: 'cancelada' }]]) {
+  const distintos = crearOrquestadorHerramientas({ obtenerIdentidad: identidad, servicios: { consultarCatalogo: async () => bien([
+    { id: C, titulo: 'A', precioCentimos: 1, moneda: 'PEN', estado: 'disponible' },
+    { id: B, titulo: 'B', precioCentimos: 2, moneda: 'PEN', estado: 'vendido' },
+  ]) } });
+  assert.equal((await distintos.ejecutar('buscar_articulos', filtros())).datos.articulos.length, 2);
+  for (const datos of [new Array(2), [null], [undefined], [{ id: C, estado: 'pendiente' },
+    { id: C_UPPER, estado: 'cancelada' }]]) {
     const o = crearOrquestadorHerramientas({ obtenerIdentidad: identidad,
       servicios: { consultarMisReservas: async () => bien(datos) } });
     assert.equal((await o.ejecutar('consultar_mis_reservas', {})).error.codigo, 'RESPUESTA_INVALIDA');
   }
+  const reservasDistintas = crearOrquestadorHerramientas({ obtenerIdentidad: identidad,
+    servicios: { consultarMisReservas: async () => bien([{ id: C, estado: 'pendiente' }, { id: B, estado: 'cancelada' }]) } });
+  assert.equal((await reservasDistintas.ejecutar('consultar_mis_reservas', {})).datos.reservas.length, 2);
 });
 test('esperas de Auth y servicios nunca bloqueantes se cancelan y vencen', async () => {
   const never = () => new Promise(() => {});
@@ -144,6 +176,9 @@ test('esperas de Auth y servicios nunca bloqueantes se cancelan y vencen', async
   const service = crearOrquestadorHerramientas({ obtenerIdentidad: identidad,
     servicios: { consultarCatalogo: never }, timeoutMs: 15 });
   assert.equal((await service.ejecutar('buscar_articulos', filtros())).error.codigo, 'TIEMPO_AGOTADO');
+  const tardia = crearOrquestadorHerramientas({ obtenerIdentidad: identidad,
+    servicios: { consultarCatalogo: () => new Promise((_, reject) => setTimeout(() => reject(new Error('privado')), 30)) }, timeoutMs: 5 });
+  assert.equal((await tardia.ejecutar('buscar_articulos', filtros())).error.codigo, 'TIEMPO_AGOTADO');
   const authFinal = crearOrquestadorHerramientas({ obtenerIdentidad: (() => { let n = 0; return () => ++n === 1 ? identidad() : never(); })(),
     servicios: { consultarCatalogo: async () => bien([]) }, timeoutMs: 15 });
   assert.equal((await authFinal.ejecutar('buscar_articulos', filtros())).error.codigo, 'TIEMPO_AGOTADO');
@@ -153,6 +188,13 @@ test('esperas de Auth y servicios nunca bloqueantes se cancelan y vencen', async
   const nueva = reemplazo.ejecutar('buscar_articulos', filtros());
   assert.equal((await vieja).error.codigo, 'CANCELADA');
   d.resolver(bien([])); assert.equal((await nueva).ok, true);
+  for (const metodo of ['invalidarIdentidad', 'desmontar']) {
+    const tardia = crearOrquestadorHerramientas({ obtenerIdentidad: identidad,
+      servicios: { consultarCatalogo: () => new Promise((_, reject) => setTimeout(() => reject(new Error('secreto')), 20)) }, timeoutMs: 1000 });
+    const pendiente = tardia.ejecutar('buscar_articulos', filtros());
+    await new Promise(r => setImmediate(r)); tardia[metodo]();
+    assert.equal((await pendiente).error.codigo, 'CANCELADA');
+  }
 });
 test('cancelación, desmontaje y cambio de cuenta descartan resultados tardíos', async () => {
   const d = diferida(); let actor = A;
