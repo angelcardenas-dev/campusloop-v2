@@ -305,7 +305,8 @@ test('API pública: operaciones expuestas sin duplicados', () => {
   const api = crearAlmacenamientoLocal({ almacenamiento: new StorageSimulado() });
   assert.deepEqual(Object.keys(api).sort(), ['comprobarDisponibilidad', 'eliminarBorrador', 'eliminarFiltros',
     'eliminarContextoAgente', 'eliminarPreferencias', 'guardarBorrador', 'guardarContextoAgente', 'guardarFiltros',
-    'guardarPreferencias', 'leerBorrador', 'leerContextoAgente', 'leerFiltros', 'leerPreferencias'].sort());
+    'guardarPreferencias', 'leerBorrador', 'leerContextoAgente', 'leerFiltros', 'leerPreferencias',
+    'leerMarcaContextoAgente', 'inicializarMarcaContextoAgente', 'avanzarMarcaContextoAgente'].sort());
   assert.equal(Object.isFrozen(api), true);
 });
 
@@ -828,4 +829,41 @@ test('agente: eliminación selectiva conserva cuenta B, SDK y funciones anterior
   assert.equal(api.eliminarContextoAgente(A).ok, true);
   assert.deepEqual(almacen.valores, anterior);
   assert.equal(almacen.operaciones.some(([op]) => op === 'clear'), false);
+});
+
+test('agente: logout puede eliminar su clave sin configurar una política de escritura', () => {
+  const { api, almacen } = entorno();
+  almacen.valores.set(claveAgente(A), documentoAgente());
+  almacen.valores.set(claveAgente(B), documentoAgente({ usuarioId: B }));
+  const resultado = api.eliminarContextoAgente(A);
+  assert.equal(resultado.ok, true);
+  assert.equal(almacen.valores.has(claveAgente(A)), false);
+  assert.equal(almacen.valores.has(claveAgente(B)), true);
+});
+
+test('agente: marca por cuenta es única, acotada y revoca aunque no haya contexto', () => {
+  const { api, almacen } = entornoAgente();
+  const inicial = api.inicializarMarcaContextoAgente(A);
+  assert.equal(inicial.ok, true);
+  assert.equal(inicial.datos.version, 1);
+  assert.ok(Number.isSafeInteger(inicial.datos.consentimiento) && inicial.datos.consentimiento > 0);
+  assert.equal(inicial.datos.operacion, inicial.datos.consentimiento);
+  assert.deepEqual(plano(api.leerMarcaContextoAgente(A).datos), plano(inicial.datos));
+  const revocada = api.avanzarMarcaContextoAgente(A, { consentimiento: true, operacion: true }, true);
+  assert.equal(revocada.datos.consentimiento, inicial.datos.consentimiento + 1);
+  assert.equal(revocada.datos.operacion, inicial.datos.operacion + 1);
+  assert.equal(revocada.datos.revocacionPendiente, false, 'el borrado confirmado libera la marca');
+  assert.equal(almacen.valores.has(claveAgente(A)), false);
+  assert.equal(api.leerMarcaContextoAgente(B).error.codigo, 'MARCA_AUSENTE');
+  assert.equal([...almacen.valores.keys()].filter(k => k.includes('_generacion_')).length, 1);
+});
+
+test('agente: corrupción o falla al escribir marca se deniega', () => {
+  const { api, almacen } = entornoAgente();
+  const k = 'campusloop_tb4_v1_agente_generacion_' + A;
+  almacen.valores.set(k, '{');
+  rechaza(api.leerMarcaContextoAgente(A), 'MARCA_INVALIDA');
+  rechaza(api.avanzarMarcaContextoAgente(A, { consentimiento: true }, true), 'MARCA_INVALIDA');
+  almacen.valores.delete(k); almacen.fallos.setItem = new Error('interno');
+  rechaza(api.inicializarMarcaContextoAgente(A), 'ERROR_ESCRITURA');
 });

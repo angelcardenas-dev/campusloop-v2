@@ -84,17 +84,17 @@
 .cl-agente-leer svg { width: 16px; height: 16px; }
 .cl-agente-leer[aria-pressed="true"] { background: var(--surface); }
 .cl-agente-pie { flex-shrink: 0; padding: 0 12px 12px; border-top: 1px solid var(--border); background: var(--surface); }
-.cl-agente-utilidades { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 38px; }
+.cl-agente-utilidades { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 38px; }
 .cl-agente-informacion { font-size: 11px; line-height: 17px; }
 .cl-agente-resumen { cursor: pointer; padding: 8px 2px; color: var(--muted); list-style-position: inside; }
 .cl-agente-detalles {
-  position: absolute; z-index: 1; left: 0; right: 0; bottom: calc(100% + 6px);
-  /* Reservar cabecera y composer; el detalle se desplaza sin mover el panel. */
-  max-height: min(160px, calc(var(--cl-agente-panel-alto) - 220px));
-  overflow-y: auto; overscroll-behavior: contain; padding: 12px;
-  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-soft);
+  max-height: min(112px, calc(var(--cl-agente-panel-alto) - 220px));
+  overflow-y: auto; overscroll-behavior: contain; padding: 8px;
+  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--page);
 }
-.cl-agente-aviso { margin: 0; font-size: 12px; line-height: 18px; }
+.cl-agente-informacion[open] { flex: 1; min-width: 0; }
+.cl-agente-informacion[open] .cl-agente-resumen { padding-bottom: 2px; }
+.cl-agente-aviso { margin: 0; font-size: 11px; line-height: 15px; }
 .cl-agente-aviso + .cl-agente-aviso { margin-top: 8px; }
 .cl-agente-borrar svg { width: 16px; height: 16px; }
 .cl-agente-formulario { margin: 0; display: grid; gap: 6px; }
@@ -126,5 +126,6 @@
   .cl-agente-cabecera { padding: 8px 12px; }
   .cl-agente-mensajes { padding: 10px 12px; gap: 10px; }
   .cl-agente-pie { padding-bottom: 8px; }
+  .cl-agente-detalles { max-height: 64px; }
   .cl-agente-texto { max-height: 66px; }
 }

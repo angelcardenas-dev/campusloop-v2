@@ -1,6 +1,7 @@
 /* ANGEL / D1.2. Dominio offline: sin SDK, DOM, red ni almacenamiento global.
-   Puertos, clave y retención provisionales; no montar en producción todavía. */
+   Límites V1 ratificados; la activación productiva sigue deshabilitada. */
 export const POLITICA_PROVISIONAL_MEMORIA = Object.freeze({ maxBytes: 24 * 1024, ttlMs: 7 * 86400000 });
+export const CLAVE_CONSENTIMIENTO_MEMORIA = 'campusloop_tb4_v1_agente_consentimiento';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ORDENES = ['recientes', 'precio-menor', 'precio-mayor'];
 const ESTADOS = ['disponible', 'reservado', 'vendido'];
@@ -196,7 +197,7 @@ export function crearMemoriaAgente({ almacenamiento = null, obtenerIdentidad, pr
       throw e?.name === 'QuotaExceededError' ? 'CUOTA' : 'ALMACENAMIENTO';
     }
     comprobar(op);
-    if (r?.ok !== true) throw r?.error?.codigo === 'CUOTA' ? 'CUOTA' : 'ALMACENAMIENTO';
+    if (r?.ok !== true) throw ['CUOTA', 'CANCELADA'].includes(r?.error?.codigo) ? r.error.codigo : 'ALMACENAMIENTO';
     return r.datos;
   }
   function despachar(tarea) {

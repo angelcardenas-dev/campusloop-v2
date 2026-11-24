@@ -17,7 +17,7 @@ window.fetch=()=>{__prueba.red++;throw new Error('Red de aplicación prohibida')
 for(const nombre of ['localStorage','sessionStorage']) {
   const nativo=Object.getOwnPropertyDescriptor(window,nombre);
   Object.defineProperty(window,nombre,{configurable:true,get(){
-    if(nombre==='localStorage' && window.__permitirStorageReal===true)return nativo.get.call(window);
+    if(window.__permitirStorageReal===true)return nativo.get.call(window);
     __prueba.storage++;throw new Error('Persistencia prohibida');
   }});
 }
@@ -40,9 +40,9 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
   const pedidos = [], externos = [], errores = [];
   const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.jpg': 'image/jpeg', '.png': 'image/png' };
   const permitidos = new Set(['index.html', 'inicio.html', 'explorar.html', 'css/styles.css', 'css/agente.css',
-    'js/agente-ui.js', 'js/agente-montaje.js', 'js/catalogo.js', 'js/landing.js',
+    'js/agente-ui.js', 'js/agente-montaje.js', 'js/agente-contexto-catalogo.js', 'js/catalogo.js', 'js/landing.js',
     'js/agente-memoria.js', 'js/agente-memoria-coordinador.js', 'js/agente-memoria-conexion.js',
-    'js/agente-storage-adaptador.js', 'js/localstorage.js', 'js/auth.js', 'js/config-publica.js', 'js/supabase-cliente.js']);
+    'js/agente-storage-adaptador.js', 'js/agente-memoria-lock.js', 'js/localstorage.js', 'js/auth.js', 'js/config-publica.js', 'js/supabase-cliente.js']);
   const servidor = createServer(async (req, res) => {
     try {
       const ruta = decodeURIComponent(new URL(req.url, 'http://localhost').pathname).slice(1);
@@ -50,6 +50,40 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
       if (ruta === 'favicon.ico') { res.writeHead(204).end(); return; }
       if (ruta === '__agente__/prueba.html') {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(`<!doctype html><html lang="es"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/css/styles.css"><link rel="stylesheet" href="/css/agente.css"></head><body><a href="#prueba" id="afuera">Contenido de prueba</a><script type="module">window.ui=await import('/js/agente-ui.js');window.control=ui.montarAgente();</script></body></html>`); return;
+      }
+      if (ruta === '__agente__/dos-pestanas.html') {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(`<!doctype html><html lang="es"><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/css/styles.css"><link rel="stylesheet" href="/css/agente.css"></head><body><script type="module">
+          window.__permitirStorageReal=true;
+          const {montarAgente}=await import('/js/agente-ui.js');
+          const {conectarMemoriaAgente}=await import('/js/agente-memoria-conexion.js');
+          const id=new URLSearchParams(location.search).get('cuenta')==='B'?'22222222-2222-4222-8222-222222222222':'11111111-1111-4111-8111-111111111111';
+          const sesion=id.startsWith('1')?'33333333-3333-4333-8333-333333333333':'44444444-4444-4444-8444-444444444444';
+          const query=new URLSearchParams(location.search);
+          if(query.has('fresh'))sessionStorage.removeItem('campusloop_tb4_v1_agente_consentimiento');
+          if(query.has('reset'))for(const user of ['11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222']){
+            localStorage.removeItem('campusloop_tb4_v1_agente_historial_'+user);
+            localStorage.removeItem('campusloop_tb4_v1_agente_generacion_'+user);
+          }
+          history.replaceState(null,'',location.pathname+'?cuenta='+(id.startsWith('1')?'A':'B'));
+          window.__storageEvents=[];window.addEventListener('storage',e=>__storageEvents.push(e.key));
+          window.__widget=montarAgente();window.__pending=false;window.__resolvePending=null;
+          window.__auth={obtenerUsuarioActual:async()=>({ok:true,datos:{id,sesionId:sesion},error:null}),escucharCambiosAuth:()=>()=>{}};
+          window.__connection=conectarMemoriaAgente({widget:__widget,autorizada:true,
+            politica:{maxBytes:24576,ttlMs:604800000},obtenerStorageSesion:()=>sessionStorage,
+            producirContexto:()=>__pending?new Promise(resolve=>{__resolvePending=resolve;window.__producerStarted=true;}):
+              ({tipo:'busqueda_catalogo',orden:'recientes',precioMaximoCentimos:10000}),auth:__auth});
+          window.__consentir=()=>{const c=document.querySelector('.cl-agente-detalles input[type=checkbox]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));};
+          window.__revocar=()=>{const c=document.querySelector('.cl-agente-detalles input[type=checkbox]');c.checked=false;c.dispatchEvent(new Event('change',{bubbles:true}));};
+          window.__state=()=>({ready:true,checked:document.querySelector('.cl-agente-detalles input[type=checkbox]').checked,
+            disabled:document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled,
+            memory:document.querySelector('[data-memoria]')?.dataset.memoria??null,
+            text:document.querySelector('[data-memoria]')?.textContent??'',draft:document.querySelector('.cl-agente-texto').value});
+          window.__update=()=>__connection.actualizar();window.__ready=true;
+          window.__holdAccountLock=userId=>{window.__lockStarted=false;window.__lockDone=navigator.locks.request(
+            'campusloop:agente:memoria:v1:'+userId,{mode:'exclusive'},()=>new Promise(resolve=>{
+              window.__lockStarted=true;window.__releaseAccountLock=resolve;
+            }));};
+        </script></body></html>`); return;
       }
       const destino = path.resolve(root, ruta);
       if (!destino.startsWith(root + path.sep) || (!permitidos.has(ruta) && !/^assets\/[\w/.-]+$/.test(ruta))) { res.writeHead(404).end(); return; }
@@ -70,7 +104,7 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
   function cdp(method, params = {}) {
     return new Promise((resolve, reject) => {
       const id = ++siguiente;
-      const timer = setTimeout(() => { pendientes.delete(id); reject(new Error(`CDP: ${method}`)); }, 8000);
+      const timer = setTimeout(() => { pendientes.delete(id); reject(new Error(`CDP: ${method}${params.expression ? ' (' + params.expression.slice(0, 180) + ')' : ''}`)); }, 8000);
       pendientes.set(id, { resolve: r => { clearTimeout(timer); resolve(r); }, reject: e => { clearTimeout(timer); reject(e); } });
       socket.send(JSON.stringify({ id, method, params }));
     });
@@ -107,8 +141,8 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
   await cdp('DOM.enable'); await cdp('CSS.enable');
   await cdp('Fetch.enable', { patterns: [{ urlPattern: '*' }] });
   await cdp('Page.addScriptToEvaluateOnNewDocument', { source: dobles });
-  const evaluar = async expression => {
-    const r = await cdp('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
+  const evaluar = async (expression, userGesture = false) => {
+    const r = await cdp('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true, userGesture });
     if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text);
     return r.result.value;
   };
@@ -118,7 +152,7 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
   };
   const navegar = async (ruta = '/__agente__/prueba.html', conWidget = true) => {
     await cdp('Page.navigate', { url: origen + ruta });
-    await esperar(`location.pathname===${JSON.stringify(ruta)} && document.readyState==='complete' && ${conWidget ? '!!' : '!'}document.querySelector('.cl-agente-raiz')`);
+    await esperar(`location.pathname+location.search===${JSON.stringify(ruta)} && document.readyState==='complete' && ${conWidget ? '!!' : '!'}document.querySelector('.cl-agente-raiz')`);
     await evaluar('document.fonts.ready');
   };
   const abrir = () => evaluar("if(document.querySelector('.cl-agente-panel').hidden)document.querySelector('.cl-agente-abrir').click()");
@@ -483,23 +517,23 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
       });
     }
   }
-  // Única habilitación de persistencia: arnés aislado, identidad ficticia y elección por página.
-  const prepararPersistencia = async (id = '11111111-1111-4111-8111-111111111111') => {
+  // Única habilitación de persistencia: arnés aislado, identidad ficticia y consentimiento por sesión.
+  const prepararPersistencia = async (id = '11111111-1111-4111-8111-111111111111', usarCatalogo = false) => {
     await evaluar(`(async()=>{
       window.__permitirStorageReal=true;
       const m=await import('/js/agente-montaje.js');m.iniciarAgente()();
-      window.identidadPrueba=${JSON.stringify(id)};window.notificarAuth=null;window.suscripcionesPrueba=0;
+      window.sesionPrueba='33333333-3333-4333-8333-333333333333';window.identidadPrueba=${JSON.stringify(id)};window.notificarAuth=null;window.suscripcionesPrueba=0;
       window.cancelacionesAuthPrueba=0;
       m.iniciarAgente(document,{memoria:{autorizada:true,politica:{maxBytes:24576,ttlMs:604800000},
-        producirContexto:()=>({tipo:'busqueda_catalogo',orden:'recientes',precioMaximoCentimos:10000}),
-        auth:{obtenerUsuarioActual:async()=>({ok:true,datos:identidadPrueba?{id:identidadPrueba}:null,error:null}),
+        ...(${usarCatalogo} ? {} : {producirContexto:()=>({tipo:'busqueda_catalogo',orden:'recientes',precioMaximoCentimos:10000})}),
+        auth:{obtenerUsuarioActual:async()=>({ok:true,datos:identidadPrueba?{id:identidadPrueba,sesionId:sesionPrueba}:null,error:null}),
           escucharCambiosAuth:cb=>{suscripcionesPrueba++;notificarAuth=cb;return ()=>{cancelacionesAuthPrueba++;notificarAuth=null;};}}},
         alMontar:(w,c)=>{window.widgetPersistente=w;window.conexionPersistente=c;}});
     })()`);
     await abrir(); await evaluar("document.querySelector('.cl-agente-informacion').open=true");
+    await esperar("!document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled");
   };
   const consentirMemoria = async () => {
-    assert.equal(await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').checked"), false);
     await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').click()");
     await esperar("!!document.querySelector('[data-memoria=sin-contexto],[data-memoria=recordado],[data-memoria=sin-sesion]')");
     await evaluar("document.querySelector('.cl-agente-informacion').open=false");
@@ -527,6 +561,7 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
     }
     assert.equal((await evaluar('conexionPersistente.restaurar()')).ok, true);
     assert.equal((await evaluar('conexionPersistente.borrar()')).ok, true);
+    await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').click()");
   });
   await t.test('D1.3B: consentimiento accesible, Web Storage nativo y guardado sin chat ni credenciales', async () => {
     await navegar('/inicio.html');
@@ -551,10 +586,10 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
     assert.doesNotMatch(json, /Borrador|token|correo|historial|password/);
     assert.equal(await evaluar('suscripcionesPrueba'), 1);
   });
-  await t.test('D1.3B: navegación Inicio → Explorar recupera contexto nativo tras nueva elección', async () => {
+  await t.test('D1.3D: navegación Inicio → Explorar recupera contexto con el consentimiento de la sesión', async () => {
     await navegar('/explorar.html');
     assert.equal(await evaluar("!!document.querySelector('[data-memoria=recordado]')"), false);
-    await prepararPersistencia(); await consentirMemoria();
+    await prepararPersistencia(undefined, true); await esperar("!!document.querySelector('[data-memoria=recordado]')");
     assert.match(await evaluar("document.querySelector('[data-memoria=recordado]').textContent"), /Contexto recordado:.*S\/ 100.00/);
     assert.equal(await evaluar('widgetPersistente.obtenerHistorial().length'), 0);
     await escribir('Sigo escribiendo'); await evaluar('conexionPersistente.restaurar()');
@@ -569,25 +604,67 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
       await writeFile(path.join(capturas, `d13b-contexto-${width}x${height}.png`), Buffer.from(s.data, 'base64'));
     }
   });
-  await t.test('D1.3B: recarga conserva contexto; no conserva consentimiento ni texto libre', async () => {
+  await t.test('D1.3D: privacidad compacta deja visibles contexto y composer en tres geometrías', async () => {
+    await navegar('/explorar.html'); await prepararPersistencia(undefined, true);
+    await esperar("!!document.querySelector('[data-memoria=recordado]')");
+    const aviso = await evaluar("document.querySelector('#cl-agente-aviso').textContent");
+    assert.match(aviso, /Mensajes escritos o dictados: temporales/);
+    assert.match(aviso, /solo se guarda con consentimiento/);
+    assert.match(aviso, /IA no conectada/);
+    for (const [width, height] of [[390, 844], [1440, 900], [390, 420]]) {
+      await cdp('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+      await delay(80);
+      if (height === 420) await evaluar("document.querySelector('.cl-agente-mensajes').scrollTop=document.querySelector('.cl-agente-mensajes').scrollHeight");
+      const g = await evaluar(`(() => {const q=s=>document.querySelector(s).getBoundingClientRect();
+        const p=q('.cl-agente-panel'),h=q('.cl-agente-mensajes'),d=q('.cl-agente-detalles'),
+          c=q('.cl-agente-composer'),m=q('[data-memoria=recordado]');
+        return {panel:p.y>=0&&p.right<=innerWidth,detalle:d.top>=h.bottom-1,
+          composer:c.top>=d.bottom-1&&c.bottom<=p.bottom,
+          contexto:m.bottom>h.top&&m.top<h.bottom,ancho:document.documentElement.scrollWidth<=innerWidth,
+          consentimiento:!document.querySelector('.cl-agente-detalles input').disabled};})()`);
+      const s = await cdp('Page.captureScreenshot', { format: 'png' });
+      await writeFile(path.join(capturas, `d13d-privacidad-${width}x${height}.png`), Buffer.from(s.data, 'base64'));
+      assert.deepEqual(g, { panel: true, detalle: true, composer: true, contexto: true, ancho: true, consentimiento: true }, `${width}x${height}`);
+    }
+    await evaluar("document.querySelector('.cl-agente-informacion').open=false");
+  });
+  await t.test('D1.3D: aplicar filtros reales de UI proyecta solo contexto estructurado', async () => {
+    await evaluar("document.querySelector('#explore-search').value='privado@example.invalid';document.querySelector('#explore-max-price').value='59,50';document.querySelector('#explore-apply').click()");
+    await esperar("!!document.querySelector('[data-memoria=preparado]')");
+    const json = await evaluar(`localStorage.getItem('${claveReal}')`);
+    assert.equal(JSON.parse(json).contexto.precioMaximoCentimos, 5950);
+    assert.doesNotMatch(json, /privado|busqueda":|universidad|campus":/);
+    for (const ruta of ['/inicio.html', '/explorar.html']) {
+      await navegar(ruta); await prepararPersistencia(undefined, true);
+      await esperar("!!document.querySelector('[data-memoria=recordado]')");
+      assert.match(await evaluar("document.querySelector('[data-memoria=recordado]').textContent"), /59.50/);
+      assert.equal(await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').checked"), true);
+    }
+  });
+  await t.test('D1.3D: recarga restaura filtro de Explorar sin un segundo consentimiento', async () => {
     await cdp('Page.reload'); await esperar("document.readyState==='complete' && !!document.querySelector('.cl-agente-raiz')");
-    await prepararPersistencia(); await consentirMemoria();
-    assert.equal(await evaluar("!!document.querySelector('[data-memoria=recordado]')"), true);
+    await prepararPersistencia(); await esperar("!!document.querySelector('[data-memoria=recordado]')");
+    assert.match(await evaluar("document.querySelector('[data-memoria=recordado]').textContent"), /59.50/);
     assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), '');
     assert.equal(await evaluar("localStorage.getItem('campusloop_prueba_ajena')"), 'intacto');
   });
   await t.test('D1.3B: cuenta B no restaura A; logout cancela voz, lectura y contexto visible', async () => {
-    await evaluar("identidadPrueba='22222222-2222-4222-8222-222222222222';notificarAuth({evento:'SIGNED_IN'})");
+    await evaluar("identidadPrueba='22222222-2222-4222-8222-222222222222';notificarAuth({evento:'SIGNED_IN',usuario:{id:identidadPrueba}})");
     assert.equal(await evaluar("!!document.querySelector('[data-memoria=recordado]')"), false);
-    await abrir(); await evaluar("document.querySelector('.cl-agente-informacion').open=true"); await consentirMemoria();
+    await abrir(); await evaluar("document.querySelector('.cl-agente-informacion').open=true"); await esperar("!document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled"); await consentirMemoria();
     assert.equal(await evaluar("!!document.querySelector('[data-memoria=sin-contexto]')"), true);
+    const claveB = 'campusloop_tb4_v1_agente_historial_22222222-2222-4222-8222-222222222222';
+    assert.equal((await evaluar('conexionPersistente.actualizar()')).datos.persistido, true);
+    assert.ok(await evaluar(`localStorage.getItem('${claveB}')`));
     await evaluar("document.querySelector('.cl-agente-leer').click();document.querySelector('.cl-agente-micro').click()");
     const antes = await evaluar('__prueba.voces.at(-1).abortos');
     await evaluar("identidadPrueba=null;notificarAuth({evento:'SIGNED_OUT'})");
     assert.equal(await evaluar('__prueba.voces.at(-1).abortos'), antes + 1);
     assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), '');
     assert.equal(await evaluar('document.activeElement.className'), 'cl-agente-abrir');
-    assert.equal(await evaluar(`localStorage.getItem('${claveReal}')!==null`), true, 'Logout no decide borrado persistente');
+    assert.equal(await evaluar(`localStorage.getItem('${claveReal}')!==null`), true, 'El logout de B conserva el contexto de A');
+    assert.equal(await evaluar(`localStorage.getItem('${claveB}')`), null);
+    assert.equal(await evaluar("sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')"), null);
   });
   await t.test('D1.3B: pagehide/pageshow retira suscripción, montaje único y requiere elección nueva', async () => {
     await evaluar("window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))");
@@ -597,7 +674,8 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
     await evaluar("(async()=>{widgetPersistente.desmontar();const m=await import('/js/agente-montaje.js');m.iniciarAgente();m.iniciarAgente();})()");
     assert.equal(await evaluar("document.querySelectorAll('.cl-agente-raiz').length"), 1);
     assert.equal(await evaluar('suscripcionesPrueba-cancelacionesAuthPrueba'), 1);
-    assert.equal(await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled"), false);
+    await esperar("!!document.querySelector('[data-memoria=sin-sesion]')");
+    assert.equal(await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled"), true);
   });
   await t.test('D1.3B: borrado nativo selectivo y recarga sin reaparición', async () => {
     await navegar('/explorar.html'); await prepararPersistencia(); await consentirMemoria();
@@ -606,15 +684,174 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
     assert.equal(await evaluar(`localStorage.getItem('${claveReal}')`), null);
     assert.equal(await evaluar("localStorage.getItem('campusloop_prueba_ajena')"), 'intacto');
     await cdp('Page.reload'); await esperar("document.readyState==='complete' && !!document.querySelector('.cl-agente-raiz')");
-    await prepararPersistencia(); await consentirMemoria();
-    assert.equal(await evaluar("!!document.querySelector('[data-memoria=sin-contexto]')"), true);
+    await prepararPersistencia(); await esperar("!!document.querySelector('[data-memoria=sin-contexto]')");
     await evaluar("localStorage.removeItem('campusloop_prueba_ajena')");
+  });
+  await t.test('D1.3D: Storage nativo corrupto o caducado y fallo de escritura conservan el borrador', async () => {
+    await escribir('Borrador efímero');
+    await evaluar('conexionPersistente.actualizar()');
+    const json = JSON.parse(await evaluar(`localStorage.getItem('${claveReal}')`));
+    for (const documento of ['{', JSON.stringify({ ...json, actualizadoEn: '2000-01-01T00:00:00.000Z' })]) {
+      await evaluar(`localStorage.setItem('${claveReal}', ${JSON.stringify(documento)})`);
+      assert.equal((await evaluar('conexionPersistente.restaurar()')).ok, false);
+      assert.equal(await evaluar("!!document.querySelector('[data-memoria=recordado]')"), false);
+    }
+    const r = await evaluar(`(async()=>{const original=Storage.prototype.setItem;
+      try { Storage.prototype.setItem=()=>{throw new DOMException('','QuotaExceededError')};return await conexionPersistente.actualizar(); }
+      finally { Storage.prototype.setItem=original; }})()`);
+    assert.equal(r.ok, false);
+    assert.equal(await evaluar("document.querySelector('.cl-agente-texto').value"), 'Borrador efímero');
+    const marcaRevocacion = 'campusloop_tb4_v1_agente_generacion_11111111-1111-4111-8111-111111111111';
+    const generacionAntesDeRevocar = await evaluar(`JSON.parse(localStorage.getItem('${marcaRevocacion}')).consentimiento`);
+    await evaluar("document.querySelector('.cl-agente-detalles input[type=checkbox]').click()");
+    await esperar(`JSON.parse(localStorage.getItem('${marcaRevocacion}')).consentimiento===${generacionAntesDeRevocar + 1} && localStorage.getItem('${claveReal}')===null`);
+    assert.equal(await evaluar(`localStorage.getItem('${claveReal}')`), null);
+    assert.equal(await evaluar("sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')"), null);
+  });
+  await t.test('D1.3D: una sesión nueva de la misma cuenta requiere nuevo consentimiento', async () => {
+    await consentirMemoria();
+    assert.equal((await evaluar('conexionPersistente.actualizar()')).ok, true);
+    await evaluar("sesionPrueba='44444444-4444-4444-8444-444444444444';notificarAuth({evento:'SIGNED_IN',usuario:{id:identidadPrueba}})");
+    await esperar("!document.querySelector('.cl-agente-detalles input[type=checkbox]').checked && !!document.querySelector('[data-memoria=sin-consentimiento]')");
+    assert.equal(await evaluar("sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')"), null);
+    assert.equal((await evaluar('conexionPersistente.actualizar()')).ok, false);
   });
   await t.test('D1.3B: limpieza antigua idempotente no desmonta una conexión nueva', async () => {
     assert.equal(await evaluar(`(async()=>{const m=await import('/js/agente-montaje.js');
       const antigua=m.iniciarAgente();antigua();const nueva=m.iniciarAgente();antigua();
       const cantidad=document.querySelectorAll('.cl-agente-raiz').length;nueva();nueva();
       return cantidad===1&&!document.querySelector('.cl-agente-raiz');})()`), true);
+  });
+  await t.test('D1.3D: revocación real con dos pestañas Chrome y Web Locks', async () => {
+    const idA = '11111111-1111-4111-8111-111111111111';
+    const idB = '22222222-2222-4222-8222-222222222222';
+    const claveA = `campusloop_tb4_v1_agente_historial_${idA}`;
+    const marcaA = `campusloop_tb4_v1_agente_generacion_${idA}`;
+    const claveB = `campusloop_tb4_v1_agente_historial_${idB}`;
+    await cdp('Page.navigate', { url: origen + '/__agente__/dos-pestanas.html?fresh=1&reset=1' });
+    // La ruta elimina fresh/reset de la URL para que una recarga posterior no
+    // borre artificialmente el consentimiento de sessionStorage.
+    await esperar("location.pathname==='/__agente__/dos-pestanas.html' && document.readyState==='complete' && window.__ready===true");
+    await evaluar("__widget.abrir();document.querySelector('.cl-agente-informacion').open=true");
+    await esperar("!document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled");
+    assert.equal(await evaluar("navigator.locks&&typeof navigator.locks.request==='function'"), true);
+    assert.equal(await evaluar(`localStorage.getItem('${claveA}')`), null);
+    await evaluar(`window.__tabB=window.open(${JSON.stringify(origen + '/__agente__/dos-pestanas.html?cuenta=A&fresh=1')},'campusloop-tab-b');!!window.__tabB`, true);
+    assert.equal(await evaluar('!!window.__tabB'), true, 'Chrome creó una segunda pestaña real');
+    await esperar("window.__tabB.__ready===true && !window.__tabB.document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled");
+    await evaluar("window.__tabB.__widget.abrir();window.__tabB.document.querySelector('.cl-agente-informacion').open=true");
+    const paginas = await (await fetch(`http://127.0.0.1:${puerto}/json/list`)).json();
+    assert.ok(paginas.filter(p => p.type === 'page' && p.url.startsWith(origen + '/__agente__/dos-pestanas.html')).length >= 2,
+      'dos targets de página Chrome distintos comparten el origen');
+    // Reproduce el defecto nativo anterior: quitar una clave inexistente no envía
+    // storage al otro documento, así que ese evento no sirve para revocar.
+    await evaluar(`localStorage.removeItem('${claveA}')`); await delay(150);
+    assert.deepEqual(await evaluar('window.__tabB.__storageEvents'), [], 'removeItem inexistente no notificó a la otra pestaña');
+
+    await evaluar('__consentir();window.__tabB.__consentir()');
+    await esperar("!!document.querySelector('[data-memoria=sin-contexto]')");
+    await esperar("!!window.__tabB.document.querySelector('[data-memoria=sin-contexto]')");
+    const antes = await evaluar(`JSON.parse(localStorage.getItem('${marcaA}')).consentimiento`);
+    assert.equal(await evaluar(`localStorage.getItem('${claveA}')`), null, 'todavía no hay contexto guardado');
+    await evaluar("window.__tabB.__pending=true;window.__tabB.__pendingResult=window.__tabB.__update();true");
+    await evaluar("window.__tabB.__pendingResult.then(r=>window.__tabB.__pendingValue={ok:r.ok,codigo:r.error?.codigo??null},()=>window.__tabB.__pendingValue={ok:false,codigo:'rechazada'});true");
+    await esperar('window.__tabB.__producerStarted===true');
+    await evaluar(`window.__tabB.__holdAccountLock('${idA}');true`);
+    await esperar('window.__tabB.__lockStarted===true');
+    await evaluar('__revocar()');
+    await esperar(`window.__tabB.navigator.locks.query().then(q=>q.pending.some(l=>l.name==='campusloop:agente:memoria:v1:${idA}'))`);
+    await evaluar(`window.__tabB.__resolvePending({tipo:'busqueda_catalogo',orden:'recientes',precioMaximoCentimos:10000});window.__tabB.__pending=false;true`);
+    await delay(100);
+    assert.equal(await evaluar(`localStorage.getItem('${claveA}')`), null,
+      'la escritura de B no atraviesa el lock retenido mientras la revocación está en cola');
+    await evaluar('window.__tabB.__releaseAccountLock();true');
+    await esperar(`JSON.parse(localStorage.getItem('${marcaA}')).consentimiento===${antes + 1}`);
+    await esperar("window.__tabB.__state().checked===false && !window.__tabB.document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled");
+    await esperar('window.__tabB.__pendingValue!==undefined');
+    assert.equal(await evaluar('window.__tabB.__pendingValue.ok'), false, 'el productor obsoleto termina como cancelado');
+    assert.equal(await evaluar(`localStorage.getItem('${claveA}')`), null,
+      'la respuesta tardía no recreó contexto tras completar la revocación');
+    assert.equal(await evaluar('window.__tabB.__state().checked'), false);
+
+    await evaluar('window.__tabB.__consentir()');
+    await esperar('window.__tabB.__state().checked===true');
+    await esperar("!!window.__tabB.sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')");
+    await delay(80); // La verificación Auth y la restauración inicial ocurren fuera del handler de click.
+    await evaluar('window.__tabB.__connection.actualizar().then(r=>{window.__tabB.__actualizarOk=r.ok;window.__tabB.__actualizarCodigo=r.error?.codigo??null},()=>{window.__tabB.__actualizarOk=false;window.__tabB.__actualizarCodigo="rechazada"});true');
+    await esperar('window.__tabB.__actualizarOk!==undefined');
+    assert.equal(await evaluar('window.__tabB.__actualizarOk'), true,
+      'actualización tras nuevo consentimiento: ' + await evaluar('window.__tabB.__actualizarCodigo'));
+    assert.ok(await evaluar(`localStorage.getItem('${claveA}')`), 'una nueva elección explícita habilita la generación vigente');
+
+    // Borrar conversación en B incrementa la generación operativa, conserva el
+    // consentimiento y cancela una actualización pendiente en A antes de permitir
+    // una selección nueva. La escritura vieja se resuelve tarde y no reaparece.
+    await evaluar('__consentir()');
+    await esperar("!!sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')"); await delay(80);
+    const consentimientoAntesDelBorrado = await evaluar(`JSON.parse(localStorage.getItem('${marcaA}')).consentimiento`);
+    const operacionAntesDelBorrado = await evaluar(`JSON.parse(localStorage.getItem('${marcaA}')).operacion`);
+    await evaluar("window.__pending=true;window.__pendingResult=window.__update();window.__pendingResult.then(r=>window.__pendingValue={ok:r.ok,codigo:r.error?.codigo??null},()=>window.__pendingValue={ok:false,codigo:'rechazada'});true");
+    await esperar('window.__producerStarted===true');
+    await evaluar("window.__tabB.document.querySelector('.cl-agente-borrar').click();true");
+    await esperar(`JSON.parse(localStorage.getItem('${marcaA}')).operacion===${operacionAntesDelBorrado + 1} && localStorage.getItem('${claveA}')===null`);
+    assert.equal(await evaluar(`JSON.parse(localStorage.getItem('${marcaA}')).consentimiento`), consentimientoAntesDelBorrado);
+    assert.equal(await evaluar("window.__tabB.document.querySelector('.cl-agente-detalles input[type=checkbox]').checked"), true,
+      'el borrado manual conserva el consentimiento de B');
+    assert.ok(await evaluar("window.__tabB.sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')"));
+    await esperar("window.__state().memory==='sin-contexto'");
+    await evaluar(`window.__resolvePending({tipo:'busqueda_catalogo',orden:'recientes',precioMaximoCentimos:10000});window.__pending=false;true`);
+    await esperar('window.__pendingValue!==undefined');
+    assert.equal(await evaluar('window.__pendingValue.ok'), false, 'respuesta anterior al borrado manual cancelada');
+    assert.equal(await evaluar(`localStorage.getItem('${claveA}')`), null);
+    await evaluar('__update().then(r=>window.__actualizarOk=r.ok,()=>window.__actualizarOk=false);true');
+    await esperar('window.__actualizarOk===true');
+    assert.ok(await evaluar(`localStorage.getItem('${claveA}')`), 'una selección posterior al borrado puede guardarse con consentimiento vigente');
+
+    await evaluar(`window.__tabC=window.open(${JSON.stringify(origen + '/__agente__/dos-pestanas.html?cuenta=B&fresh=1')},'campusloop-tab-c');!!window.__tabC`, true);
+    assert.equal(await evaluar('!!window.__tabC'), true);
+    await esperar("window.__tabC.__ready===true && !window.__tabC.document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled");
+    await evaluar("window.__tabC.__widget.abrir();window.__tabC.document.querySelector('.cl-agente-informacion').open=true;window.__tabC.__consentir()");
+    await esperar("!!window.__tabC.document.querySelector('[data-memoria=sin-contexto]')");
+    await evaluar('window.__tabC.__connection.actualizar().then(r=>window.__tabC.__actualizarOk=r.ok,()=>window.__tabC.__actualizarOk=false);true');
+    await esperar('window.__tabC.__actualizarOk===true');
+    const jsonB = await evaluar(`localStorage.getItem('${claveB}')`); assert.ok(jsonB);
+    await evaluar('__consentir()');
+    await esperar("!!sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')");
+    await delay(80);
+    await evaluar('__update().then(r=>window.__actualizarOk=r.ok,()=>window.__actualizarOk=false);true');
+    await esperar('window.__actualizarOk===true');
+    await evaluar('window.__tabB.__connection.desmontar();true');
+    const eleccionSuspendida = await evaluar("window.__tabB.sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')");
+    assert.ok(eleccionSuspendida, 'la pestaña suspendida conserva su consentimiento antiguo sin recibir storage');
+    await evaluar('__revocar()');
+    await esperar(`JSON.parse(localStorage.getItem('${marcaA}')).consentimiento>${antes + 1}`);
+    assert.equal(await evaluar(`localStorage.getItem('${claveA}')`), null);
+    assert.equal(await evaluar(`localStorage.getItem('${claveB}')`), jsonB, 'revocar A conserva el documento de B');
+    assert.equal(await evaluar("window.__tabB.sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')"), eleccionSuspendida,
+      'sin listener, el consentimiento viejo permanece hasta la revalidación real');
+
+    const origenRecarga = await evaluar('window.__tabB.performance.timeOrigin');
+    await evaluar('setTimeout(()=>window.__tabB.location.reload(),0);true');
+    await esperar(`window.__tabB.performance.timeOrigin!==${origenRecarga} && window.__tabB.__ready===true && !window.__tabB.document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled`);
+    await esperar("window.__tabB.document.querySelector('.cl-agente-detalles input[type=checkbox]').checked===false && window.__tabB.sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')===null && window.__tabB.__state().memory==='sin-consentimiento'");
+    assert.equal(await evaluar("window.__tabB.document.querySelector('.cl-agente-detalles input[type=checkbox]').checked"), false);
+    assert.equal(await evaluar("window.__tabB.sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')"), null,
+      'el montaje recuperado elimina la elección invalidada antes de restaurar');
+    assert.equal(await evaluar(`window.__tabB.localStorage.getItem('${claveA}')`), null);
+    // El código MARCA_AUSENTE debe permitir recuperar la elección explícita,
+    // incluso cuando desaparece la marca con un documento todavía guardado.
+    await evaluar('window.__tabB.__consentir()');
+    await esperar("window.__tabB.__state().checked===true"); await delay(80);
+    await evaluar('window.__tabB.__connection.actualizar().then(r=>window.__tabB.__marcaUpdate=r.ok);true');
+    await esperar('window.__tabB.__marcaUpdate===true');
+    await evaluar(`localStorage.removeItem('${marcaA}')`);
+    await esperar("window.__tabB.__state().checked===false && window.__tabB.__state().memory==='sin-consentimiento' && !window.__tabB.document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled");
+    await evaluar('window.__tabB.__consentir()');
+    await esperar("window.__tabB.__state().checked===true && window.__tabB.__state().memory==='sin-contexto'");
+    assert.equal(await evaluar(`localStorage.getItem('${claveA}')`), null, 'marca nueva no revive documento huérfano');
+    await evaluar('window.__tabB.__connection.actualizar().then(r=>window.__tabB.__nuevaMarcaUpdate=r.ok);true');
+    await esperar('window.__tabB.__nuevaMarcaUpdate===true');
+    await evaluar('window.__tabB.close();window.__tabC.close()');
   });
   await t.test('20 red externa y errores de consola ausentes', () => {
     assert.deepEqual(externos, []); assert.deepEqual(errores, []);

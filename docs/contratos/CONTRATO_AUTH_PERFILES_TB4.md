@@ -48,7 +48,9 @@
 
 ## 4. Interfaz pública obligatoria `js/auth.js`
 
-Exportar exactamente estas siete funciones de uso compartido:
+La interfaz original de siete funciones de uso compartido se conserva. La extensión
+opcional de memoria descrita en §5.1 no cambia las respuestas de las llamadas
+existentes sin opciones.
 
 | Firma | Entrada | Resultado esperado |
 | --- | --- | --- |
@@ -86,6 +88,44 @@ La respuesta puede incluir **correo del propio usuario** para la interfaz de cue
 - Dos usuarios independientes solo ven sus datos personales; una tercera cuenta no accede a conversaciones o reservas ajenas (pruebas futuras de Bernabé).
 - Pruebas unitarias de `auth.js` con doble del SDK pueden avanzar sin red. Pruebas reales con Supabase y correo son **pendientes de autorización/configuración** y deben registrarse sin secretos.
 - Fijar versión/origen de `supabase-js` v2 y compatibilidad de módulos antes de conectar los HTML. `registro.html` y `login.html` son propiedad UI de Maricielo.
+
+### 5.1 Extensiones aprobadas para memoria contextual D1.3D
+
+Estas ampliaciones son específicas de la memoria del agente. No convierten el
+almacenamiento local en una frontera de autorización ni cambian la interfaz
+original de Auth.
+
+- `obtenerUsuarioActual()` sin opciones mantiene exactamente el DTO previo. La
+  opción aditiva `{ verificarSesionMemoria: true }` verifica primero el usuario
+  mediante `getUser()` y después los claims mediante `getClaims()` del mismo
+  cliente oficial. CampusLoop fija `supabase-js` **2.119.0** en
+  `js/supabase-cliente.js`; esta llamada usa la API `getClaims()` de esa versión.
+  Se exige `claims.sub === user.id`, `claims.is_anonymous === false` y un
+  `claims.session_id` UUID. El resultado reducido es `{ id, sesionId }`; nunca se
+  devuelve ni guarda JWT, refresh token, sesión cruda o claims completos. Una
+  ausencia, error o incompatibilidad de claims deniega la memoria.
+- `sesionId` solo permite vincular la elección de consentimiento de la pestaña con
+  la huella de la identidad y sesión ya verificadas. No acredita autorización de
+  servidor y no se serializa. La huella no permite recuperar el ID de sesión.
+- `escucharCambiosAuth(callback)` sigue entregando eventos reducidos y únicamente
+  provoca revalidación o limpieza. `INITIAL_SESSION`, `SIGNED_IN`,
+  `TOKEN_REFRESHED` y `SIGNED_OUT` no sustituyen `getUser()`/`getClaims()` al
+  realizar operaciones de memoria.
+- `escucharCierreSesionLocal(callback)` es un aviso local aditivo para cancelar
+  operaciones de memoria activas después de un cierre exitoso. No crea otro
+  cliente ni una suscripción Auth paralela.
+- `cerrarSesion()` conserva su resultado normal en éxito o fallo del `signOut()`.
+  Si Auth ya cerró la sesión local pero el contexto no pudo invalidarse y borrarse
+  de forma selectiva, devuelve `MEMORIA_NO_BORRADA`. Ese resultado significa que
+  el logout sí se completó y el borrado no se pudo confirmar; la UI debe abandonar
+  el área autenticada, informar el problema de privacidad y no reintentar el
+  logout como si siguiera activa la sesión. Si `signOut()` falla, se conserva el
+  error normal anterior y no se afirma que la sesión se haya cerrado.
+
+La coordinación de revocación utiliza una marca por cuenta y Web Locks en pestañas
+cooperantes del mismo origen/perfil. No ofrece transacciones de Storage, cierre de
+sesión en otros dispositivos ni autorización de servidor. La política está
+ratificada por coordinación; AG-03 continúa sujeto a aceptación funcional real.
 
 ## 6. Orden de implementación y revisión
 
