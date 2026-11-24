@@ -33,6 +33,7 @@ function entorno() {
   const prohibido = () => { control.intentosRed++; throw new Error('Red deshabilitada en pruebas'); };
   const contexto = createContext({
     URL, setTimeout, clearTimeout, fetch: prohibido,
+    navigator: { locks: { request: async (_nombre, _opciones, trabajo) => trabajo() } },
     console: { log() { control.mensajesConsola++; }, warn() { control.mensajesConsola++; }, error() { control.mensajesConsola++; } },
     // Sin document, window ni storage: el servicio no necesita DOM ni tokens propios.
   });
@@ -55,6 +56,19 @@ async function cargarCliente() {
   await cliente.evaluate();
   return { ...e, config: config.namespace, cliente: cliente.namespace };
 }
+
+test('memoria exige claims verificados de una cuenta registrada y de la misma sesión del SDK', async () => {
+  const { auth, sdk } = await cargarAuth();
+  const sesionId = '11111111-1111-4111-8111-111111111111';
+  const buenos = { sub: USUARIO.id, is_anonymous: false, session_id: sesionId };
+  for (const claims of [buenos, { ...buenos, sub: sesionId }, { ...buenos, is_anonymous: true },
+    { ...buenos, is_anonymous: undefined }, { ...buenos, session_id: '' }]) {
+    sdk.auth.getClaims = async () => ({ data: { claims }, error: null });
+    const r = await auth.obtenerUsuarioActual({ verificarSesionMemoria: true });
+    assert.equal(r.ok, claims === buenos);
+    if (r.ok) assert.deepEqual(plano(r.datos), { id: USUARIO.id, sesionId });
+  }
+});
 
 function sdkSimulado() {
   const llamadas = [];
@@ -86,6 +100,18 @@ function sdkSimulado() {
 
 async function cargarAuth({ sdk = sdkSimulado(), proveedor, configuracion } = {}) {
   const e = entorno();
+  const memoriaLocal = { eliminaciones: [], fallo: false,
+    eliminarContextoAgente(id) { this.eliminaciones.push(id); return { ok: !this.fallo }; } };
+  const storageCompartido = new SyntheticModule(['crearAlmacenamientoLocal'], function () {
+    this.setExport('crearAlmacenamientoLocal', () => memoriaLocal);
+  }, { context: e.contexto });
+  const memoriaAgente = new SyntheticModule(['crearClaveMemoria', 'CLAVE_CONSENTIMIENTO_MEMORIA'], function () {
+    this.setExport('crearClaveMemoria', id => ({ ok: typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id) }));
+    this.setExport('CLAVE_CONSENTIMIENTO_MEMORIA', 'campusloop_tb4_v1_agente_consentimiento');
+  }, { context: e.contexto });
+  const bloqueoMemoria = new SyntheticModule(['revocarMemoriaCuenta'], function () {
+    this.setExport('revocarMemoriaCuenta', async ({ almacenamiento, usuarioId }) => almacenamiento.eliminarContextoAgente(usuarioId));
+  }, { context: e.contexto });
   const configReal = e.modulo('config-publica.js');
   await configReal.link(() => { throw new Error('Importación inesperada'); });
   await configReal.evaluate();
@@ -105,11 +131,14 @@ async function cargarAuth({ sdk = sdkSimulado(), proveedor, configuracion } = {}
   const modulo = e.modulo('auth.js');
   await modulo.link(nombre => {
     if (nombre === './config-publica.js') return configInyectada;
+    if (nombre === './localstorage.js') return storageCompartido;
+    if (nombre === './agente-memoria.js') return memoriaAgente;
+    if (nombre === './agente-memoria-lock.js') return bloqueoMemoria;
     assert.equal(nombre, './supabase-cliente.js');
     return inyectado;
   });
   await modulo.evaluate();
-  return { ...e, sdk, config: configReal.namespace, auth: modulo.namespace, consultasCliente: () => consultasCliente };
+  return { ...e, sdk, memoriaLocal, config: configReal.namespace, auth: modulo.namespace, consultasCliente: () => consultasCliente };
 }
 
 function sinSecretos(valor) {
@@ -198,9 +227,9 @@ test('cliente: SDK sin createClient es CONFIGURACION, no RED', async () => {
   assert.equal(r.error.codigo, 'CONFIGURACION'); sinSecretos(r);
 });
 
-test('auth exporta exactamente las siete funciones acordadas', async () => {
+test('Auth conserva las siete funciones y expone aviso local de cierre', async () => {
   const e = await cargarAuth();
-  assert.deepEqual(Object.keys(e.auth).sort(), ['registrar', 'iniciarSesion', 'obtenerUsuarioActual', 'obtenerEstadoAuth', 'cerrarSesion', 'escucharCambiosAuth', 'requerirAutenticacion'].sort());
+  assert.deepEqual(Object.keys(e.auth).sort(), ['registrar', 'iniciarSesion', 'obtenerUsuarioActual', 'obtenerEstadoAuth', 'cerrarSesion', 'escucharCambiosAuth', 'escucharCierreSesionLocal', 'requerirAutenticacion'].sort());
   assert.equal(e.control.intentosRed, 0); assert.equal(e.control.mensajesConsola, 0);
 });
 
@@ -332,7 +361,8 @@ test('estado inicial espera restauración SDK; logout local y siguiente lectura 
   restaurar({ data: { session: SESION }, error: null });
   const r = await inicial; assert.equal(r.datos.estado, 'AUTENTICADO'); sinSecretos(r);
   assert.equal((await e.auth.cerrarSesion()).datos.estado, 'NO_AUTENTICADO');
-  assert.deepEqual(plano(e.sdk.llamadas), [['signOut', { scope: 'local' }]]);
+  assert.deepEqual(plano(e.sdk.llamadas), [['getUser'], ['signOut', { scope: 'local' }]]);
+  assert.deepEqual(e.memoriaLocal.eliminaciones, [USUARIO.id]);
   e.sdk.auth.getSession = async () => ({ data: { session: null }, error: null });
   assert.equal((await e.auth.obtenerEstadoAuth()).datos.estado, 'NO_AUTENTICADO');
 });
@@ -341,6 +371,50 @@ test('logout fallido no anuncia cierre y preserva error normalizado', async () =
   const e = await cargarAuth();
   e.sdk.auth.signOut = async () => ({ error: { name: 'AuthRetryableFetchError', message: 'REFRESH_SIMULADO' } });
   const r = await e.auth.cerrarSesion(); assert.equal(r.error.codigo, 'RED'); sinSecretos(r);
+  assert.deepEqual(e.memoriaLocal.eliminaciones, []);
+});
+
+test('logout sin widget elimina solo contexto propio y consentimiento de la pestaña', async () => {
+  const e = await cargarAuth();
+  const datos = new Map([['campusloop_tb4_v1_agente_consentimiento', 'huella'], ['otra_preferencia', 'intacta']]);
+  e.contexto.sessionStorage = { removeItem: clave => datos.delete(clave) };
+  let avisos = 0;
+  const dejar = e.auth.escucharCierreSesionLocal(() => { avisos++; });
+  assert.equal((await e.auth.cerrarSesion()).ok, true);
+  assert.deepEqual(e.memoriaLocal.eliminaciones, [USUARIO.id]);
+  assert.equal(datos.has('campusloop_tb4_v1_agente_consentimiento'), false);
+  assert.equal(datos.get('otra_preferencia'), 'intacta');
+  assert.equal(avisos, 1);
+  dejar();
+  await e.auth.cerrarSesion();
+  assert.equal(avisos, 1);
+});
+
+test('logout con borrado bloqueado informa fallo de memoria sin éxito falso', async () => {
+  const e = await cargarAuth(); e.memoriaLocal.fallo = true;
+  const r = await e.auth.cerrarSesion();
+  assert.equal(r.ok, false);
+  assert.equal(r.error.codigo, 'MEMORIA_NO_BORRADA');
+  assert.match(r.error.mensaje, /Se cerró la sesión/);
+  assert.deepEqual(e.memoriaLocal.eliminaciones, [USUARIO.id]);
+});
+
+test('logout sin identidad verificable cierra Auth y no borra claves ajenas', async () => {
+  const e = await cargarAuth();
+  e.sdk.auth.getUser = async () => { throw new Error('detalle privado'); };
+  const r = await e.auth.cerrarSesion();
+  assert.equal(r.error.codigo, 'MEMORIA_NO_BORRADA');
+  sinSecretos(r);
+  assert.deepEqual(e.memoriaLocal.eliminaciones, []);
+});
+
+test('logout sin sesión conserva el resultado anterior y no inventa una cuenta', async () => {
+  const e = await cargarAuth();
+  e.sdk.estado.session = null;
+  e.sdk.auth.getUser = async () => { const error = new Error('sin sesión'); error.name = 'AuthSessionMissingError'; throw error; };
+  const r = await e.auth.cerrarSesion();
+  assert.deepEqual(plano(r), { ok: true, datos: { estado: 'NO_AUTENTICADO', usuario: null }, error: null });
+  assert.deepEqual(e.memoriaLocal.eliminaciones, []);
 });
 
 test('configuración faltante: todas las operaciones asíncronas fallan sin SDK/red', async () => {

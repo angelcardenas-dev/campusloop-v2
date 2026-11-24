@@ -157,8 +157,18 @@ export function adaptarArticulo(dto, { origenesImagen = [] } = {}) {
   return presentacion;
 }
 
+// Solo notifica selecciones que han pasado validarFiltros. No representa resultados REST.
+const observadores = new WeakMap();
+export function escucharSeleccionCatalogo(raiz, callback) {
+  if (!raiz) return () => {};
+  const oyentes = observadores.get(raiz) ?? new Set();
+  observadores.set(raiz, oyentes);
+  oyentes.add(callback);
+  return () => oyentes.delete(callback);
+}
+
 export function crearControladorCatalogo({ modo = 'pendiente', consultarCatalogo, adaptarFiltros, adaptarArticulo,
-  opciones = {}, origenesImagen = [], detalle = {}, alCambiar = () => {}, timeoutMs = 15000 } = {}) {
+  opciones = {}, origenesImagen = [], detalle = {}, alCambiar = () => {}, alSeleccionar, timeoutMs = 15000 } = {}) {
   const catalogos = opcionesDePresentacion(opciones);
   if (!origenesImagenValidos(origenesImagen) || !Number.isInteger(timeoutMs)
     || timeoutMs < 1 || timeoutMs > 20000) throw new TypeError('Configuración de presentación inválida');
@@ -190,6 +200,11 @@ export function crearControladorCatalogo({ modo = 'pendiente', consultarCatalogo
       let seleccion;
       try { seleccion = validarFiltros(filtros, catalogos); }
       catch { return publicar({ estado: 'error', codigo: 'VALIDACION', mensaje: MENSAJES.VALIDACION, vistas: [] }); }
+      if (alSeleccionar) {
+        const { categorias, estados, condiciones, precioMinimoCentimos, precioMaximoCentimos, orden } = seleccion;
+        alSeleccionar({ tipo: 'busqueda_catalogo', categorias: [...categorias], estados: [...estados],
+          condiciones: [...condiciones], precioMinimoCentimos, precioMaximoCentimos, orden });
+      }
       if (!disponible) return publicar({ estado: 'pendiente', mensaje: MENSAJES.PENDIENTE, vistas: [] });
       let consulta;
       try {
@@ -321,7 +336,8 @@ export function montarCatalogo({ raiz, opciones = {}, ...dependencias } = {}) {
       e['min-price'].focus();
     }
   }
-  const control = crearControladorCatalogo({ ...dependencias, opciones: catalogos, alCambiar: renderizar });
+  const control = crearControladorCatalogo({ ...dependencias, opciones: catalogos, alCambiar: renderizar,
+    alSeleccionar: seleccion => { for (const fn of observadores.get(raiz) ?? []) fn(copia(seleccion)); } });
   function leerFiltros() {
     const seleccion = contenedor => [...e[contenedor].querySelectorAll('input:checked')].map(input => input.value);
     return { busqueda: e.search.value, categorias: seleccion('category-options'), universidad: e.university.value,

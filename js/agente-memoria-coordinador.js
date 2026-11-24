@@ -30,7 +30,8 @@ export function crearCoordinadorMemoria({ widget, obtenerIdentidad, almacenamien
       if (identidadConocida && actor !== siguiente) widget.limpiarPorIdentidad();
       actor = siguiente; identidadConocida = true;
       return siguiente === null ? null : { id: siguiente };
-    } catch {
+    } catch (error) {
+      if (error === 'CANCELADA') throw error;
       // Una respuesta antigua no puede limpiar la interfaz de una identidad nueva.
       if (activa && !signal.aborted) {
         actor = null; identidadConocida = false; widget.limpiarPorIdentidad();

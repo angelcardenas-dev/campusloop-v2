@@ -1,5 +1,8 @@
 import { obtenerClienteSupabase } from './supabase-cliente.js';
 import { CONFIGURACION_PUBLICA, validarDestinoConfirmacion } from './config-publica.js';
+import { crearAlmacenamientoLocal } from './localstorage.js';
+import { crearClaveMemoria, CLAVE_CONSENTIMIENTO_MEMORIA } from './agente-memoria.js';
+import { revocarMemoriaCuenta } from './agente-memoria-lock.js';
 
 /* Datos */
 const MENSAJES = Object.freeze({
@@ -11,8 +14,17 @@ const MENSAJES = Object.freeze({
   LIMITE: 'Se alcanzó el límite de solicitudes. Espera antes de volver a intentarlo.',
   CONFIGURACION: 'El acceso todavía no está configurado. Comunícalo al equipo de CampusLoop.',
   SERVIDOR: 'El servicio de acceso no pudo completar la operación. Inténtalo más tarde.',
+  MEMORIA_NO_BORRADA: 'Se cerró la sesión, pero no se pudo confirmar el borrado del contexto recordado en este navegador.',
 });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const escuchasCierreLocal = new Set();
+
+// Invalida operaciones del agente antes del borrado, incluso si Auth difiere SIGNED_OUT.
+export function escucharCierreSesionLocal(callback) {
+  if (typeof callback !== 'function') return () => {};
+  escuchasCierreLocal.add(callback);
+  return () => escuchasCierreLocal.delete(callback);
+}
 
 /* Funciones */
 const exito = datos => ({ ok: true, datos, error: null });
@@ -123,14 +135,20 @@ export async function iniciarSesion(correo, contrasena) {
   });
 }
 
-export async function obtenerUsuarioActual() {
+export async function obtenerUsuarioActual({ verificarSesionMemoria = false } = {}) {
   return ejecutar(async auth => {
     try {
       const datos = comprobarRespuesta(await auth.getUser());
       if (!datos) return fallo('SERVIDOR');
       if (!datos.user) return exito(null);
       const usuario = reducirUsuario(datos.user);
-      return usuario ? exito(usuario) : fallo('SERVIDOR');
+      if (!usuario) return fallo('SERVIDOR');
+      if (!verificarSesionMemoria) return exito(usuario);
+      const claims = comprobarRespuesta(await auth.getClaims())?.claims;
+      if (claims?.sub !== usuario.id || claims.is_anonymous !== false || !UUID.test(claims.session_id)) {
+        return fallo('NO_AUTORIZADO');
+      }
+      return exito({ id: usuario.id, sesionId: claims.session_id });
     } catch (error) {
       // Coherente tanto si getUser devuelve el error como si lo lanza.
       if (error?.name === 'AuthSessionMissingError') return exito(null);
@@ -150,12 +168,33 @@ export async function obtenerEstadoAuth() {
 
 export async function cerrarSesion() {
   return ejecutar(async auth => {
+    // getUser verifica la cuenta antes de que signOut descarte su identidad.
+    // Si falla, el cierre continúa, pero no se afirma un borrado que no se pudo verificar.
+    let usuarioId = null, identidadIncierta = false;
+    try {
+      const respuesta = comprobarRespuesta(await auth.getUser());
+      if (respuesta?.user) {
+        const id = respuesta.user.id;
+        if (respuesta.user.is_anonymous === true || !crearClaveMemoria(id).ok) identidadIncierta = true;
+        else usuarioId = id;
+      } else if (!respuesta) identidadIncierta = true;
+    } catch (error) { if (error?.name !== 'AuthSessionMissingError') identidadIncierta = true; }
     // Cerrar la sesión actual, sin cerrar otros dispositivos del usuario.
     const respuesta = await auth.signOut({ scope: 'local' });
     if (!respuesta || respuesta.error) {
       if (respuesta?.error) throw respuesta.error;
       return fallo('SERVIDOR');
     }
+    for (const escuchar of escuchasCierreLocal) {
+      try { escuchar(); } catch { /* Un consumidor no impide el cierre. */ }
+    }
+    let borrado = !identidadIncierta;
+    if (usuarioId) {
+      const almacenamiento = crearAlmacenamientoLocal();
+      borrado = (await revocarMemoriaCuenta({ locks: globalThis.navigator?.locks, almacenamiento, usuarioId })).ok && borrado;
+    }
+    try { globalThis.sessionStorage?.removeItem(CLAVE_CONSENTIMIENTO_MEMORIA); } catch { borrado = false; }
+    if (!borrado) return fallo('MEMORIA_NO_BORRADA');
     return exito({ estado: 'NO_AUTENTICADO', usuario: null });
   });
 }
