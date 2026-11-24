@@ -264,6 +264,19 @@ test('Auth evento 07: callback antiguo después de desmontar no altera un montaj
   assert.equal(e.w.limpiezas, limpiezas); assert.equal(e.almacen.operaciones.length, operaciones);
   assert.equal(e.notificaciones.size, 1); assert.equal((await e.c.restaurar()).ok, true); e.c.desmontar();
 });
+test('control desmontado no invalida una conexión nueva del mismo widget', async () => {
+  const e = entorno(); await e.consentir(); await e.c.actualizar();
+  const viejo = e.c, callbackViejo = [...e.notificaciones][0]; viejo.desmontar();
+  e.id = B; e.c = e.crear(); await e.consentir(); await e.c.actualizar();
+  e.w.borrador = 'borrador nuevo'; e.w.historial.push('mensaje nuevo');
+  const estado = { ...e.w.estado }, limpiezas = e.w.limpiezas;
+  viejo.invalidarIdentidad(); callbackViejo({ evento: 'SIGNED_OUT', usuario: null }); viejo.desmontar();
+  assert.equal(e.w.borrador, 'borrador nuevo'); assert.deepEqual(e.w.historial, ['mensaje nuevo']);
+  assert.deepEqual(e.w.estado, estado); assert.equal(e.w.limpiezas, limpiezas);
+  assert.equal(e.notificaciones.size, 1); assert.equal(e.w.acciones.size, 2);
+  e.notificar(); assert.equal(e.w.borrador, ''); assert.deepEqual(e.w.historial, []);
+  e.c.desmontar(); assert.equal(e.notificaciones.size, 0); assert.equal(e.w.acciones.size, 0);
+});
 test('Auth evento 08: avisos incompletos, incompatibles, desconocidos o ilegibles se deniegan', async () => {
   const hostil = Object.defineProperty({}, 'evento', { get() { throw new Error('no exponer'); } });
   const invalidos = [null, {}, { evento: 'INITIAL_SESSION' },

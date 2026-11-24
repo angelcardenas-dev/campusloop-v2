@@ -103,6 +103,6 @@ export function conectarMemoriaAgente({ widget, autorizada = false, politica = n
     conexiones.delete(widget);
   }
   const control = Object.freeze({ restaurar: () => ejecutar('restaurar'), actualizar: () => ejecutar('actualizar'),
-    borrar: () => ejecutar('borrar'), invalidarIdentidad: () => revocar(true), desmontar });
+    borrar: () => ejecutar('borrar'), invalidarIdentidad: () => { if (viva) revocar(true); }, desmontar });
   conexiones.set(widget, control); return control;
 }
