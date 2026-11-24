@@ -132,6 +132,8 @@ const MENSAJES = Object.freeze({
   CUOTA_EXCEDIDA: 'No hay espacio suficiente en el almacenamiento local. Tus datos en pantalla se mantienen.',
   ERROR_ELIMINACION: 'No se pudieron eliminar los datos locales. Inténtalo de nuevo.',
   CONFIGURACION: 'El almacenamiento local no tiene una configuración válida.',
+  MARCA_AUSENTE: 'La marca de consentimiento del agente no existe; se requiere una elección nueva.',
+  MARCA_INVALIDA: 'La marca de consentimiento del agente es inválida; la memoria quedó bloqueada.',
 });
 
 /* Funciones: resultados */
@@ -470,6 +472,78 @@ export function crearAlmacenamientoLocal(opciones = {}) {
     }
   }
 
+  function destinoMarcaAgente(usuarioId) {
+    if (!configuracionValida) return { error: fallo('CONFIGURACION') };
+    if (!crearClaveMemoria(usuarioId).ok) return { error: fallo('IDENTIDAD_INVALIDA') };
+    const almacen = resolverAlmacenamiento();
+    return almacen ? { clave: `campusloop_tb4_v1_agente_generacion_${usuarioId.toLowerCase()}`, almacen }
+      : { error: fallo('ALMACENAMIENTO_NO_DISPONIBLE') };
+  }
+  function leerMarcaAgente(usuarioId) {
+    const destino = destinoMarcaAgente(usuarioId);
+    if (destino.error) return destino.error;
+    const lectura = leerCrudo(destino.almacen, destino.clave);
+    if (lectura.error) return lectura.error;
+    if (lectura.crudo === null) return fallo('MARCA_AUSENTE');
+    try {
+      const m = JSON.parse(lectura.crudo);
+      if (!m || Object.keys(m).length !== 4 || m.version !== 1
+        || !Number.isSafeInteger(m.consentimiento) || m.consentimiento < 0
+        || !Number.isSafeInteger(m.operacion) || m.operacion < 0
+        || typeof m.revocacionPendiente !== 'boolean') return fallo('MARCA_INVALIDA');
+      return exito({ version: 1, consentimiento: m.consentimiento, operacion: m.operacion,
+        revocacionPendiente: m.revocacionPendiente });
+    } catch { return fallo('MARCA_INVALIDA'); }
+  }
+  function escribirMarcaAgente(usuarioId, cambios, eliminarDocumento = false, inicializar = false,
+    revocacionPendienteInicial = false) {
+    const destino = destinoMarcaAgente(usuarioId);
+    if (destino.error) return destino.error;
+    const lectura = leerCrudo(destino.almacen, destino.clave);
+    if (lectura.error) return lectura.error;
+    let marca;
+    if (lectura.crudo === null && inicializar) {
+      // Una marca recién creada no puede reutilizar la generación inicial de una
+      // pestaña suspendida cuyo consentimiento sobreviva a la eliminación de la
+      // marca. Es metadata aleatoria, no credencial ni autorización.
+      try {
+        const aleatorios = new Uint32Array(2);
+        globalThis.crypto.getRandomValues(aleatorios);
+        const inicial = (aleatorios[0] & 0x000fffff) * 0x100000000 + aleatorios[1];
+        if (!Number.isSafeInteger(inicial) || inicial <= 0) return fallo('CONFIGURACION');
+        marca = { version: 1, consentimiento: inicial, operacion: inicial,
+          revocacionPendiente: revocacionPendienteInicial };
+      } catch { return fallo('CONFIGURACION'); }
+    }
+    else {
+      const vigente = leerMarcaAgente(usuarioId);
+      if (!vigente.ok) return vigente;
+      marca = vigente.datos;
+    }
+    const siguiente = { version: 1,
+      consentimiento: marca.consentimiento + (cambios.consentimiento ? 1 : 0),
+      operacion: marca.operacion + (cambios.operacion ? 1 : 0),
+      revocacionPendiente: typeof cambios.revocacionPendiente === 'boolean'
+        ? cambios.revocacionPendiente : marca.revocacionPendiente };
+    if (!Number.isSafeInteger(siguiente.consentimiento) || !Number.isSafeInteger(siguiente.operacion)) return fallo('MARCA_INVALIDA');
+    try {
+      destino.almacen.setItem(destino.clave, JSON.stringify(siguiente));
+    } catch (error) { return fallo(esCuota(error) ? 'CUOTA_EXCEDIDA' : esBloqueo(error) ? 'ALMACENAMIENTO_NO_DISPONIBLE' : 'ERROR_ESCRITURA'); }
+    if (eliminarDocumento) {
+      const borrado = operarAgente('eliminar', usuarioId);
+      if (!borrado.ok) return borrado;
+      if (siguiente.revocacionPendiente) {
+        // Si el borrado falló, queda la marca pendiente y el consentimiento nuevo
+        // se deniega. Solo se libera después de confirmar el borrado selectivo.
+        const limpia = { ...siguiente, revocacionPendiente: false };
+        try { destino.almacen.setItem(destino.clave, JSON.stringify(limpia)); }
+        catch (error) { return fallo(esCuota(error) ? 'CUOTA_EXCEDIDA' : esBloqueo(error) ? 'ALMACENAMIENTO_NO_DISPONIBLE' : 'ERROR_ESCRITURA'); }
+        return exito(limpia);
+      }
+    }
+    return exito(siguiente);
+  }
+
   return Object.freeze({
     // Detecta almacenamiento ausente o bloqueado al acceder. No escribe claves de
     // prueba: la cuota o un bloqueo solo de escritura se informan al guardar.
@@ -491,5 +565,13 @@ export function crearAlmacenamientoLocal(opciones = {}) {
     leerContextoAgente: protegida(usuarioId => operarAgente('leer', usuarioId), 'ERROR_LECTURA'),
     guardarContextoAgente: protegida((usuarioId, documento) => operarAgente('guardar', usuarioId, documento), 'ERROR_ESCRITURA'),
     eliminarContextoAgente: protegida(usuarioId => operarAgente('eliminar', usuarioId), 'ERROR_ELIMINACION'),
+    leerMarcaContextoAgente: protegida(usuarioId => leerMarcaAgente(usuarioId), 'ERROR_LECTURA'),
+    inicializarMarcaContextoAgente: protegida((usuarioId, revocacionPendiente = false) =>
+      typeof revocacionPendiente === 'boolean'
+        ? escribirMarcaAgente(usuarioId, {}, false, true, revocacionPendiente) : fallo('CONFIGURACION'), 'ERROR_ESCRITURA'),
+    avanzarMarcaContextoAgente: protegida((usuarioId, cambios = {}, eliminarDocumento = false) =>
+      escribirMarcaAgente(usuarioId, { consentimiento: cambios.consentimiento === true,
+        operacion: cambios.operacion === true,
+        ...(typeof cambios.revocacionPendiente === 'boolean' ? { revocacionPendiente: cambios.revocacionPendiente } : {}) }, eliminarDocumento), 'ERROR_ESCRITURA'),
   });
 }

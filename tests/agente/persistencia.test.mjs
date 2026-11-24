@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { conectarMemoriaAgente } from '../../js/agente-memoria-conexion.js';
 import { crearAdaptadorStorageAgente } from '../../js/agente-storage-adaptador.js';
 import { crearAlmacenamientoLocal } from '../../js/localstorage.js';
+import { revocarMemoriaCuenta } from '../../js/agente-memoria-lock.js';
 import { crearClaveMemoria, POLITICA_PROVISIONAL_MEMORIA as politica } from '../../js/agente-memoria.js';
 
 // Identidad, reloj y Storage sintéticos. Web Storage nativo se prueba en navegador.test.mjs.
@@ -33,14 +34,127 @@ function storage() {
 function entorno() {
   const e = { almacen: storage(), w: widget(), id: A, reloj: Date.parse('2026-11-22T18:00:00Z'),
     entrada: contexto(), consultas: 0, notificaciones: new Set(), cancelaciones: 0 };
-  e.auth = { obtenerUsuarioActual: () => { e.consultas++; return bien(e.id === null ? null : { id: e.id, correo: 'no debe proyectarse' }); },
+  e.auth = { obtenerUsuarioActual: () => { e.consultas++; return bien(e.id === null ? null : { id: e.id,
+      sesionId: '33333333-3333-4333-8333-333333333333', correo: 'no debe proyectarse' }); },
     escucharCambiosAuth: cb => { e.notificaciones.add(cb); return () => { e.cancelaciones++; e.notificaciones.delete(cb); }; } };
   e.crear = (w = e.w, extra = {}) => conectarMemoriaAgente({ widget: w, autorizada: true, politica,
     producirContexto: () => e.entrada, ahora: () => e.reloj, almacenamiento: e.almacen, auth: e.auth, ...extra });
   e.c = e.crear(); e.consentir = () => e.w.emitir('consentir');
-  e.notificar = () => { for (const cb of e.notificaciones) cb({ evento: 'SIGNED_OUT', usuario: null }); };
+  e.notificar = (evento = 'SIGNED_OUT') => { for (const cb of e.notificaciones) cb({ evento,
+    usuario: evento === 'SIGNED_OUT' || e.id === null ? null : { id: e.id } }); };
   return e;
 }
+
+test('sin Web Locks: la memoria persistente degrada cerrada y mantiene el chat temporal', async () => {
+  const e = entorno(); e.c.desmontar();
+  const elecciones = storage(), antes = e.almacen.operaciones.length;
+  e.c = e.crear(e.w, { obtenerStorageSesion: () => elecciones });
+  assert.equal(e.w.eleccion.disponible, false);
+  assert.equal((await e.c.actualizar()).ok, false);
+  await e.consentir();
+  assert.equal(e.consultas, 0);
+  assert.equal(e.almacen.operaciones.length, antes);
+  assert.equal(elecciones.operaciones.length, 0);
+  assert.equal(e.w.estado.estado, 'inactiva');
+  e.c.desmontar();
+});
+
+test('fallo de marca o de borrado revoca sin éxito falso ni recreación', async () => {
+  const e = entorno(); e.c.desmontar();
+  const compartido = crearAlmacenamientoLocal({ almacenamiento: e.almacen,
+    memoriaAgente: { politica, categoriasPermitidas: [] } });
+  assert.equal(compartido.inicializarMarcaContextoAgente(A).ok, true);
+  e.almacen.valores.set(clave(A), '{"contexto":"sintético"}');
+  const lock = { request: async (_nombre, _opciones, trabajo) => trabajo() };
+  const marcaInicial = compartido.leerMarcaContextoAgente(A).datos;
+  e.almacen.fallos.guardar = new Error('fallo sintético de marcador');
+  const falloMarca = await revocarMemoriaCuenta({ locks: lock, almacenamiento: compartido, usuarioId: A });
+  assert.equal(falloMarca.ok, false);
+  assert.deepEqual(compartido.leerMarcaContextoAgente(A).datos, marcaInicial);
+  assert.equal(e.almacen.valores.has(clave(A)), true);
+
+  e.almacen.fallos.guardar = null;
+  e.almacen.fallos.eliminar = new Error('fallo sintético de borrado');
+  const falloBorrado = await revocarMemoriaCuenta({ locks: lock, almacenamiento: compartido, usuarioId: A });
+  assert.equal(falloBorrado.ok, false);
+  const marcaPosterior = compartido.leerMarcaContextoAgente(A).datos;
+  assert.equal(marcaPosterior.consentimiento, marcaInicial.consentimiento + 1,
+    'aunque el documento no se borre, la generación anterior queda invalidada');
+  assert.equal(marcaPosterior.operacion, marcaInicial.operacion + 1);
+  assert.equal(marcaPosterior.revocacionPendiente, true,
+    'el fallo de borrado deja la memoria cerrada para consentimientos nuevos');
+  assert.equal(e.almacen.valores.has(clave(A)), true, 'el documento no se anuncia como borrado');
+});
+
+test('una revocación con borrado fallido no permite restaurar el documento antiguo tras reconsentir', async () => {
+  const e = entorno(); e.c.desmontar();
+  const compartido = crearAlmacenamientoLocal({ almacenamiento: e.almacen,
+    memoriaAgente: { politica, categoriasPermitidas: [] } });
+  const elecciones = storage(), lock = { request: async (_nombre, _opciones, trabajo) => trabajo() };
+  compartido.inicializarMarcaContextoAgente(A);
+  e.almacen.valores.set(clave(A), '{"documento":"contexto anterior"}');
+  e.almacen.fallos.eliminar = new Error('fallo sintético');
+  assert.equal((await revocarMemoriaCuenta({ locks: lock, almacenamiento: compartido, usuarioId: A })).ok, false);
+  assert.equal(compartido.leerMarcaContextoAgente(A).datos.revocacionPendiente, true);
+
+  e.c = e.crear(e.w, { obtenerStorageSesion: () => elecciones, locks: lock });
+  for (let i = 0; i < 20 && !e.w.eleccion.disponible; i++) await pausa();
+  await e.consentir();
+  assert.equal(e.almacen.valores.has(clave(A)), true, 'el documento anterior sigue sin anunciarse como borrado');
+  assert.equal(elecciones.valores.size, 0, 'no concede consentimiento mientras el borrado falla');
+  assert.equal(e.w.estado.estado, 'error', 'comunica que la nueva elección no pudo completar la limpieza');
+
+  e.almacen.fallos.eliminar = null;
+  await e.consentir();
+  assert.equal(e.almacen.valores.has(clave(A)), false, 'la nueva elección confirma el borrado antes de activarse');
+  assert.equal(compartido.leerMarcaContextoAgente(A).datos.revocacionPendiente, false);
+  assert.equal(e.w.estado.estado, 'sin-contexto');
+  e.c.desmontar();
+});
+
+test('marca ausente con documento huérfano: la nueva elección borra antes de habilitar memoria', async () => {
+  const e = entorno(); e.c.desmontar();
+  const elecciones = storage(), lock = { request: async (_nombre, _opciones, trabajo) => trabajo() };
+  e.almacen.valores.set(clave(A), '{"documento":"anterior a la marca"}');
+  e.c = e.crear(e.w, { obtenerStorageSesion: () => elecciones, locks: lock });
+  for (let i = 0; i < 20 && !e.w.eleccion.disponible; i++) await pausa();
+  assert.equal(e.w.estado.estado, 'sin-consentimiento');
+  assert.equal(e.almacen.valores.has(clave(A)), true, 'sin consentimiento no recupera el documento huérfano');
+  await e.consentir();
+  assert.equal(e.almacen.valores.has(clave(A)), false, 'el consentimiento explícito no revive datos sin marca');
+  assert.equal(e.w.estado.estado, 'sin-contexto');
+  assert.equal(JSON.parse(elecciones.valores.get('campusloop_tb4_v1_agente_consentimiento')).generacion,
+    crearAlmacenamientoLocal({ almacenamiento: e.almacen, memoriaAgente: { politica, categoriasPermitidas: [] } })
+      .leerMarcaContextoAgente(A).datos.consentimiento);
+  assert.equal(e.almacen.valores.get(`campusloop_tb4_v1_agente_generacion_${A}`) &&
+    JSON.parse(e.almacen.valores.get(`campusloop_tb4_v1_agente_generacion_${A}`)).revocacionPendiente, false);
+  e.c.desmontar();
+});
+
+test('SIGNED_OUT duplicado tardío no invalida una elección vigente; logout verificado sí revoca', async () => {
+  const e = entorno(); e.c.desmontar();
+  const elecciones = storage(), lock = { request: async (_nombre, _opciones, trabajo) => trabajo() };
+  e.c = e.crear(e.w, { obtenerStorageSesion: () => elecciones, locks: lock });
+  for (let i = 0; i < 20 && !e.w.eleccion.disponible; i++) await pausa();
+  await e.consentir(); await e.c.actualizar();
+  const compartido = crearAlmacenamientoLocal({ almacenamiento: e.almacen,
+    memoriaAgente: { politica, categoriasPermitidas: [] } });
+  const antes = compartido.leerMarcaContextoAgente(A).datos;
+  for (let i = 0; i < 2; i++) { e.notificar(); await new Promise(resolve => setTimeout(resolve, 20)); }
+  assert.equal(e.w.estado.estado, 'preparado', 'aviso tardío mientras Auth confirma la misma sesión no borra vista');
+  assert.ok(elecciones.valores.has('campusloop_tb4_v1_agente_consentimiento'));
+  assert.deepEqual(compartido.leerMarcaContextoAgente(A).datos, antes, 'duplicados no avanzan la generación');
+
+  e.id = null; e.notificar();
+  await new Promise(resolve => setTimeout(resolve, 30));
+  const despues = compartido.leerMarcaContextoAgente(A).datos;
+  assert.equal(despues.consentimiento, antes.consentimiento + 1, 'logout verificado invalida el consentimiento');
+  assert.equal(despues.operacion, antes.operacion + 1);
+  assert.equal(e.almacen.valores.has(clave(A)), false, 'logout elimina selectivamente el documento de A');
+  assert.equal(elecciones.valores.has('campusloop_tb4_v1_agente_consentimiento'), false);
+  assert.equal(e.w.estado.estado, 'sin-sesion');
+  e.c.desmontar();
+});
 
 test('montaje predeterminado: sin configuración ni consentimiento, cero Auth y cero IO', async () => {
   const e = entorno(); e.c.desmontar();
@@ -48,6 +162,37 @@ test('montaje predeterminado: sin configuración ni consentimiento, cero Auth y 
   assert.equal(e.w.eleccion.disponible, false); assert.equal(e.w.estado.estado, 'inactiva');
   await e.consentir(); assert.equal((await e.c.actualizar()).ok, false);
   assert.equal(e.consultas, 0); assert.equal(e.almacen.operaciones.length, 0);
+});
+test('revocación compartida sin documento invalida la vista y deja elegir de nuevo', async () => {
+  const e = entorno(); e.c.desmontar();
+  const eventos = new Map();
+  e.w.raiz = { ownerDocument: { defaultView: {
+    addEventListener(tipo, callback) { eventos.set(tipo, callback); },
+    removeEventListener(tipo, callback) { if (eventos.get(tipo) === callback) eventos.delete(tipo); },
+    document: { visibilityState: 'visible', addEventListener(tipo, callback) { eventos.set(tipo, callback); },
+      removeEventListener(tipo, callback) { if (eventos.get(tipo) === callback) eventos.delete(tipo); } },
+  } } };
+  const lock = { request: async (_nombre, _opciones, trabajo) => trabajo() };
+  const elecciones = storage();
+  e.c = e.crear(e.w, { obtenerStorageSesion: () => elecciones, locks: lock });
+  for (let i = 0; i < 10 && !e.w.eleccion.disponible; i++) await pausa();
+  await e.consentir();
+  assert.equal(e.w.estado.estado, 'sin-contexto');
+  assert.equal(e.almacen.valores.has(clave(A)), false, 'el caso reproduce revocación cuando no existe documento');
+  const compartido = crearAlmacenamientoLocal({ almacenamiento: e.almacen,
+    memoriaAgente: { politica, categoriasPermitidas: [] } });
+  const revocacion = await revocarMemoriaCuenta({ locks: lock, almacenamiento: compartido, usuarioId: A });
+  assert.equal(revocacion.ok, true);
+  eventos.get('storage')({ key: `campusloop_tb4_v1_agente_generacion_${A}`, newValue: JSON.stringify(revocacion.datos) });
+  await new Promise(resolve => setTimeout(resolve, 25));
+  assert.equal(e.w.borrador, '');
+  assert.equal(e.w.estado.estado, 'sin-consentimiento');
+  assert.equal((await e.c.actualizar()).ok, false);
+  assert.equal(e.w.eleccion.disponible, true, 'la nueva elección vuelve a habilitarse tras revalidar Auth');
+  await e.consentir();
+  assert.equal(e.w.estado.estado, 'sin-contexto', 'una nueva elección explícita funciona con la generación vigente');
+  e.c.desmontar();
+  assert.equal(eventos.size, 0);
 });
 test('sin configuración pública real no se inicia Auth oficial aunque se solicite activar', async () => {
   for (const auth of [undefined, null]) {
@@ -98,7 +243,7 @@ test('anónimo: no restaura cuenta anterior ni crea clave invitada', async () =>
 });
 test('cuentas A/B: invalida RAM inmediatamente y recupera únicamente la clave propia', async () => {
   const e = entorno(); await e.consentir(); await e.c.actualizar();
-  e.id = B; e.notificar(); assert.equal(e.w.borrador, ''); assert.equal(e.w.estado.estado, 'sin-consentimiento');
+  e.id = B; e.notificar('SIGNED_IN'); assert.equal(e.w.borrador, ''); assert.equal(e.w.estado.estado, 'sin-consentimiento');
   await e.consentir(); assert.equal(e.w.estado.estado, 'sin-contexto');
   assert.equal(e.almacen.operaciones.at(-1)[1], clave(B)); assert.equal(e.almacen.valores.has(clave(A)), true);
 });
@@ -239,18 +384,24 @@ test('Auth evento 04: SIGNED_IN diferente cancela A y su resultado tardío no su
   assert.equal(e.w.estado.estado, 'sin-contexto'); assert.equal(e.almacen.valores.get(clave(A)), jsonA);
   assert.equal(e.almacen.valores.has(clave(B)), false); e.c.desmontar();
 });
-test('Auth evento 06: SIGNED_OUT limpia RAM y cancela restauración sin borrar claves persistentes', async () => {
-  const e = entorno(); await e.consentir(); await e.c.actualizar();
-  const json = e.almacen.valores.get(clave(A)), original = e.auth.obtenerUsuarioActual, d = diferida();
+test('Auth evento 06: logout verificado limpia RAM, cancela lectura y elimina solo memoria de la cuenta', async () => {
+  const e = entorno(); e.c.desmontar();
+  const elecciones = storage(), lock = { request: async (_nombre, _opciones, trabajo) => trabajo() };
+  e.c = e.crear(e.w, { obtenerStorageSesion: () => elecciones, locks: lock });
+  for (let i = 0; i < 20 && !e.w.eleccion.disponible; i++) await pausa();
+  await e.consentir(); await e.c.actualizar();
+  const original = e.auth.obtenerUsuarioActual, d = diferida();
   e.w.historial.push('mensaje privado efímero'); e.auth.obtenerUsuarioActual = () => d.promesa;
-  const pendiente = e.c.restaurar(); await pausa(); e.notificar();
+  const pendiente = e.c.restaurar(); await pausa(); e.id = null; e.notificar();
+  d.resolver(bien(null));
+  assert.equal((await pendiente).ok, false);
+  for (let i = 0; i < 20 && e.almacen.valores.has(clave(A)); i++) await new Promise(resolve => setTimeout(resolve, 5));
   assert.equal(e.w.borrador, ''); assert.deepEqual(e.w.historial, []);
-  assert.equal((await e.c.actualizar()).ok, false); assert.equal(e.w.estado.estado, 'sin-consentimiento');
-  e.id = null; e.auth.obtenerUsuarioActual = original; await e.consentir();
-  assert.equal(e.w.estado.estado, 'sin-sesion'); d.resolver(bien({ id: A }));
-  assert.equal((await pendiente).ok, false); assert.equal(e.w.estado.estado, 'sin-sesion');
-  assert.equal(e.almacen.valores.get(clave(A)), json);
-  assert.equal(e.almacen.operaciones.some(([op]) => op === 'eliminar'), false); e.c.desmontar();
+  assert.equal(e.w.estado.estado, 'sin-sesion');
+  assert.equal(e.almacen.valores.has(clave(A)), false);
+  assert.equal(elecciones.valores.has('campusloop_tb4_v1_agente_consentimiento'), false);
+  assert.equal(e.almacen.valores.has(`campusloop_tb4_v1_agente_generacion_${B}`), false);
+  e.auth.obtenerUsuarioActual = original; e.c.desmontar();
 });
 test('Auth evento 07: callback antiguo después de desmontar no altera un montaje nuevo', async () => {
   const e = entorno(); await e.consentir(); await e.c.actualizar();
@@ -274,7 +425,8 @@ test('control desmontado no invalida una conexión nueva del mismo widget', asyn
   assert.equal(e.w.borrador, 'borrador nuevo'); assert.deepEqual(e.w.historial, ['mensaje nuevo']);
   assert.deepEqual(e.w.estado, estado); assert.equal(e.w.limpiezas, limpiezas);
   assert.equal(e.notificaciones.size, 1); assert.equal(e.w.acciones.size, 2);
-  e.notificar(); assert.equal(e.w.borrador, ''); assert.deepEqual(e.w.historial, []);
+  e.id = null; e.notificar(); await new Promise(resolve => setTimeout(resolve, 20));
+  assert.equal(e.w.borrador, ''); assert.deepEqual(e.w.historial, []);
   e.c.desmontar(); assert.equal(e.notificaciones.size, 0); assert.equal(e.w.acciones.size, 0);
 });
 test('Auth evento 08: avisos incompletos, incompatibles, desconocidos o ilegibles se deniegan', async () => {

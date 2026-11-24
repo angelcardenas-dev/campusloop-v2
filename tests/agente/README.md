@@ -842,14 +842,104 @@ El control de conexión desmontado ignora `invalidarIdentidad()`; las conexiones
 vigentes siguen invalidando RAM y operaciones en logout y cambios de cuenta.
 Las pruebas usan dobles de Auth y Storage; no prueban identidad Supabase real.
 
-**Propuesta de política, pendiente de coordinación:** versión 1; máximo provisional
-de 24 KiB y siete días; consentimiento explícito, actualmente efímero; persistencia
-solo del contexto estructurado permitido; borrado manual selectivo. Logout y cambio
-de cuenta limpian RAM y cancelan operaciones; la eliminación persistente en logout
-requiere decisión separada. JSON corrupto o versión incompatible se rechazan; cuota
-o Storage bloqueado degradan con error sin afirmar éxito ni perder el borrador.
-La política de persistencia del consentimiento y su comunicación necesitan revisión.
+**Registro histórico de D1.2/D1.3A (superado por la ratificación de D1.3D):** en
+esa etapa, versión 1, 24 KiB y siete días eran provisionales; el consentimiento era
+efímero y quedaba pendiente decidir el borrado persistente en logout. La coordinación
+ratificó posteriormente la política descrita en D1.3D, sin que eso equivalga a la
+aceptación funcional de AG-03.
 
 AG-03 continúa pendiente: falta productor conectado y verificado, identidad real,
 consentimiento y retención aprobados, activación autorizada y pruebas reales entre
 páginas. La continuidad temática con dobles no es memoria del hilo completo.
+
+## D1.3D — Continuidad de la selección de Explorar
+
+Con activación explícita en el montaje, aplicar filtros válidos en Explorar entrega
+al productor solo categorías, estados, condiciones, importes en céntimos y orden.
+La selección se puede recordar aunque el catálogo esté en modo pendiente. La
+restauración muestra el resumen y no lanza consultas. Inicio y Explorar usan el
+mismo montaje. El historial escrito o dictado sigue siendo efímero.
+
+**Política ratificada por coordinación y Maricielo.** Un documento v1 por cuenta
+reemplaza al anterior, con un máximo de 24 KiB y siete días. Frente a la propuesta
+de hasta 20 turnos, aquí solo se guarda una selección. El módulo compartido mantiene
+el documento en localStorage. La elección explícita se guarda en sessionStorage
+de la pestaña como huella del usuario y la sesión verificados, sin copiar el JWT.
+Navegar o recargar conserva la elección. La revocación elimina elección y contexto.
+Borrar conversación elimina el contexto y permite seguir recordando nuevas selecciones.
+SIGNED_OUT en el montaje activo limpia RAM, elección y el documento del actor conocido.
+El cambio de cuenta invalida inmediatamente la vista y requiere consentimiento válido.
+El consentimiento se vincula a pestaña y sesión autenticada. No se persisten mensajes,
+transcripciones, texto libre privado, tokens ni resultados completos de herramientas.
+Un fallo de eliminación se informa. El TTL de siete días invalida la recuperación
+de un documento vencido; no acredita una purga física automática en segundo plano.
+
+**Antes de activar.** Proporcionar
+un entorno autorizado con configuración pública y cuentas registradas. Verificar
+getUser y los claims de cuenta registrada y sesión del SDK. Suministrar las
+categorías de un directorio autorizado y verificar sus permisos efectivos. La
+lista por defecto está vacía. Mantener la activación deshabilitada hasta aprobar
+el recorrido real. La política ratificada no equivale a aceptación funcional:
+AG-03 continúa pendiente.
+
+La prueba de navegador usa las páginas y el productor de la aplicación, Chrome
+local con DevTools, localStorage y sessionStorage nativos, un proveedor Auth
+sintético y red externa bloqueada. Comprueba la recuperación de un presupuesto
+aplicado en Explorar al regresar a Inicio, volver a Explorar y recargar. Verifica
+aislamiento entre cuentas y sesiones, logout, revocación, borrado, caducidad,
+JSON corrupto, cuota simulada y conservación del borrador. El perfil temporal
+de prueba contiene exclusivamente datos sintéticos.
+
+### Cierre técnico D1.3D
+
+El aviso de privacidad separa mensajes escritos o dictados (solo RAM) del contexto
+estructurado que puede guardarse con consentimiento. El estado de memoria indica
+si la integración no está autorizada o configurada. El desplegable ocupa espacio
+propio y se desplaza internamente; el consentimiento aparece primero. El borrado
+visible se anuncia por separado del resultado del borrado persistente.
+
+`cerrarSesion()` conserva su resultado habitual en el camino correcto y ahora
+consulta `getUser()` antes de `signOut({ scope: 'local' })`. Después del cierre
+notifica sincrónicamente a `escucharCierreSesionLocal(callback)` para cancelar
+operaciones de widgets activos y usa `eliminarContextoAgente(usuarioId)` del módulo
+compartido para borrar únicamente la clave del usuario verificado. También elimina
+la huella de consentimiento de sessionStorage en esa pestaña. Si el cierre falla,
+no borra la memoria. Si el cierre ocurre pero no puede verificarse o completarse
+el borrado, devuelve `MEMORIA_NO_BORRADA` con un mensaje controlado que distingue
+el cierre efectivo del borrado no confirmado. No cambia claves del SDK ni datos
+de otras funciones.
+
+`obtenerUsuarioActual()` sin opciones conserva su DTO anterior. La opción
+`verificarSesionMemoria: true` exige claims `sub`, `is_anonymous: false` y
+`session_id` coherentes con `getUser()`, y entrega solamente `{ id, sesionId }`;
+no expone JWT ni sesión cruda. Esta ampliación y el resultado de borrado parcial
+están documentados como extensiones aprobadas del contrato Auth. Los eventos Auth
+son avisos de cambio,
+nunca prueba suficiente de autorización; cada acceso a memoria revalida la cuenta.
+
+La coordinación entre pestañas cooperantes usa una marca compacta de generación
+por cuenta y Web Locks para serializar escrituras, borrado manual y revocación. La
+marca existe aunque todavía no haya documento; perderla o encontrarla corrupta
+desactiva la recuperación y exige una elección explícita nueva. Al crear una marca
+por consentimiento nuevo, elimina primero cualquier documento huérfano. Borrar manualmente
+incrementa solo la generación operativa, elimina el documento y conserva el
+consentimiento. Revocar o cerrar sesión incrementa ambas generaciones y borra el
+documento de esa cuenta. La marca acotada incluye un indicador de limpieza
+pendiente: si la eliminación falla, una elección posterior debe confirmar el
+borrado del documento anterior antes de reactivar el consentimiento. La escritura
+verifica bajo el mismo bloqueo que su consentimiento y generación operativa siguen
+vigentes; una operación comenzada
+antes del borrado o revocación no puede recrear el documento al terminar.
+
+La coordinación cubre pestañas cooperantes del mismo origen y perfil que compartan
+Web Storage y Web Locks. No es una transacción de Web Storage ni protege frente a
+otros dispositivos, scripts hostiles, fallo del navegador o autorización del
+servidor. Si Web Locks no está disponible, la memoria persistente se deshabilita y
+el chat sigue temporal. `storage`, `pageshow` y `visibilitychange` solo disparan
+revalidación: no son una fuente de identidad ni una garantía de que una pestaña
+suspendida reciba eventos en tiempo real. El cierre local del SDK tampoco cierra
+sesiones en otros dispositivos.
+
+La política de memoria ya está ratificada, pero la activación productiva permanece
+deshabilitada. AG-03 sigue pendiente de aceptación con Auth real, configuración
+autorizada, categorías del directorio confiable y recorrido funcional aprobado.

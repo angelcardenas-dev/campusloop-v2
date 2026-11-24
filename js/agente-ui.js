@@ -86,10 +86,10 @@ export function montarAgente({ documento = globalThis.document,
   mensajes.setAttribute('aria-label', 'Mensajes de prueba del asistente');
   mensajes.setAttribute('aria-live', 'polite'); mensajes.setAttribute('aria-relevant', 'additions');
   mensajes.setAttribute('aria-atomic', 'false'); mensajes.tabIndex = 0;
-  const aviso = nodo('p', 'aviso', 'Sin conexión a IA. Historial temporal, sin guardado. No escribas datos privados.');
+  const aviso = nodo('p', 'aviso', 'Mensajes escritos o dictados: temporales. El contexto de búsqueda permitido solo se guarda con consentimiento. IA no conectada.');
   aviso.id = `${prefijo}-aviso`;
   const vozAviso = nodo('p', 'aviso', typeof Reconocimiento === 'function'
-    ? 'El micrófono se activa solo al pulsarlo. La API disponible no garantiza un servicio de transcripción operativo. Puede utilizar un servicio del navegador; no es necesariamente local u offline. Revisa el texto antes de enviarlo.'
+    ? 'Voz: el micrófono se activa al pulsarlo. La transcripción puede usar un servicio del navegador; revisa el texto antes de enviarlo.'
     : 'Este navegador no ofrece reconocimiento de voz. Puedes continuar escribiendo.');
   vozAviso.id = `${prefijo}-voz-aviso`;
   const formulario = nodo('form', 'formulario'); formulario.noValidate = true;
@@ -113,15 +113,14 @@ export function montarAgente({ documento = globalThis.document,
   leer.setAttribute('aria-pressed', 'false');
   const ttsAviso = nodo('p', 'aviso', leer.disabled
     ? 'Lectura hablada no disponible. El texto sigue funcionando.'
-    : 'Lectura opcional: solo la bienvenida pública, nunca tus mensajes. La voz depende del navegador.');
+    : 'Lectura opcional: solo la bienvenida pública, nunca tus mensajes.');
   const informacion = nodo('details', 'informacion');
   const detalles = nodo('div', 'detalles');
   const consentimiento = nodo('label', 'aviso'); consentimiento.hidden = true;
   const recordar = documento.createElement('input'); recordar.type = 'checkbox'; recordar.disabled = true;
-  const consentimientoTexto = documento.createTextNode(' Recordar solo contexto permitido en este navegador (elección por página)');
+  const consentimientoTexto = documento.createTextNode(' Recordar mi selección de búsqueda en esta pestaña durante la sesión');
   consentimiento.append(recordar, consentimientoTexto);
-  detalles.append(aviso, vozAviso, ttsAviso, nodo('p', 'aviso', 'Solo se mantienen en esta página los últimos 20 mensajes de prueba. Se borran al desmontar o recargar.'));
-  detalles.append(consentimiento);
+  detalles.append(consentimiento, aviso, vozAviso, ttsAviso);
   informacion.append(nodo('summary', 'resumen', 'Privacidad y voz'), detalles);
   utilidades.append(informacion, borrar);
   const pie = nodo('div', 'pie'); pie.append(utilidades, formulario);
@@ -252,7 +251,10 @@ export function montarAgente({ documento = globalThis.document,
     if (!viva) return;
     limpiarMemoria();
     detenerVoz(); detenerLectura(); historial.length = 0; mensajes.replaceChildren();
-    agregarMensaje('informacion', BIENVENIDA); informar('Historial visible borrado. No hay historial persistido por este componente.');
+    agregarMensaje('informacion', BIENVENIDA);
+    informar(recordar.checked && !recordar.disabled
+      ? 'Historial visible borrado. Comprobando el borrado del contexto guardado.'
+      : 'Historial visible borrado. La memoria no está activa; no se confirmó borrado persistente.');
     if (abierta) texto.focus({ preventScroll: true });
   }
   // Puerto opcional D1.3A: recibir solo resúmenes deterministas del coordinador.
@@ -268,9 +270,9 @@ export function montarAgente({ documento = globalThis.document,
       'sin-sesion': 'Sin sesión verificada: no se recupera memoria de una cuenta.',
       error: 'No se pudo recuperar o guardar el contexto. Puedes seguir escribiendo.',
       inactiva: 'Memoria no disponible: habilitación, configuración, productor o política pendientes. El chat sigue funcionando.',
-      'sin-consentimiento': 'Memoria desactivada. Recordar contexto requiere tu elección explícita en cada página.',
-      borrado: 'Contexto visible borrado. El almacenamiento solo se elimina si el adaptador está configurado.',
-      'error-borrado': 'Conversación visible borrada; no se pudo confirmar la eliminación del contexto guardado.',
+      'sin-consentimiento': 'Memoria desactivada. Recordar contexto requiere tu consentimiento.',
+      borrado: 'Historial visible y contexto guardado eliminados.',
+      'error-borrado': 'Historial visible borrado. No se pudo confirmar la eliminación del contexto guardado.',
     };
     if (!Object.hasOwn(textos, tipo) || typeof resumen !== 'string' || resumen.length > 1000
       || (['recordado', 'preparado', 'conservado'].includes(tipo) && !resumen.trim())) return false;
@@ -318,11 +320,11 @@ export function montarAgente({ documento = globalThis.document,
     // El futuro adaptador debe clasificar contexto permitido; no persistir este texto libre.
     obtenerHistorial: () => historial.map(item => ({ ...item })),
     presentarMemoria, limpiarMemoria, limpiarPorIdentidad,
-    prepararConsentimientoMemoria({ disponible = false } = {}) {
-      consentimiento.hidden = false; recordar.checked = false; recordar.disabled = !disponible;
+    prepararConsentimientoMemoria({ disponible = false, marcado = false } = {}) {
+      consentimiento.hidden = false; recordar.checked = marcado; recordar.disabled = !disponible;
       recordar.setAttribute('aria-label', 'Recordar solo contexto permitido en este navegador');
       consentimientoTexto.textContent = disponible
-        ? ' Recordar solo contexto permitido en este navegador (elección por página)'
+        ? ' Recordar mi selección de búsqueda en esta pestaña durante la sesión'
         : ' Recordar contexto: pendiente de autorización y configuración';
     },
     escucharAccionesMemoria(callback) {
