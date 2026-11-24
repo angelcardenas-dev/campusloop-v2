@@ -1,5 +1,12 @@
 import { crearClaveMemoria } from './agente-memoria.js';
 
+const CODIGOS = new Set(['MARCA_AUSENTE', 'MARCA_INVALIDA', 'CANCELADA', 'CUOTA', 'CUOTA_EXCEDIDA',
+  'ERROR_LECTURA', 'ERROR_ESCRITURA', 'ERROR_ELIMINACION', 'ALMACENAMIENTO_NO_DISPONIBLE',
+  'IDENTIDAD_INVALIDA', 'CONFIGURACION', 'BLOQUEO_NO_DISPONIBLE', 'ALMACENAMIENTO']);
+export function falloMemoriaControlado(codigo) {
+  return { ok: false, datos: null, error: { codigo: CODIGOS.has(codigo) ? codigo : 'ALMACENAMIENTO' } };
+}
+
 /* Bloqueo cooperativo por cuenta para los metadatos y el documento del agente. */
 export async function conBloqueoMemoriaCuenta(locks, usuarioId, trabajo, signal) {
   const clave = crearClaveMemoria(usuarioId);
@@ -12,7 +19,7 @@ export async function conBloqueoMemoriaCuenta(locks, usuarioId, trabajo, signal)
         signal?.throwIfAborted();
         return trabajo();
       });
-    return datos?.ok === true ? datos : { ok: false, datos: null, error: { codigo: 'ALMACENAMIENTO' } };
+    return datos?.ok === true ? datos : falloMemoriaControlado(datos?.error?.codigo);
   } catch (error) {
     if (signal?.aborted) throw error;
     return { ok: false, datos: null, error: { codigo: 'BLOQUEO_NO_DISPONIBLE' } };

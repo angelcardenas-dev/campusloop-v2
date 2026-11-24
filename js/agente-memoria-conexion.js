@@ -47,7 +47,12 @@ export function conectarMemoriaAgente({ widget, autorizada = false, politica = n
   const compartido = disponible ? crearAlmacenamientoLocal({ ...(almacenamiento !== undefined ? { almacenamiento } : {}),
     ahora, memoriaAgente: { politica, categoriasPermitidas } }) : null;
   const puerto = crearAdaptadorStorageAgente({ almacenamiento: compartido, obtenerActor: () => consentido ? actor : null,
-    ...(obtenerStorageSesion ? { locks, obtenerMarcaOperacion: signal => marcasOperacion.get(signal), revocarGeneracionOperacion: true } : {}) });
+    ...(obtenerStorageSesion ? { locks, obtenerMarcaOperacion: signal => marcasOperacion.get(signal), revocarGeneracionOperacion: true,
+      confirmarBorrado: (signal, marca) => {
+        if (!viva || !consentido || signal?.aborted) return;
+        marcasOperacion.set(signal, { consentimiento: marca.consentimiento, operacion: marca.operacion });
+        marcaOperacionActiva = marca.operacion;
+      } } : {}) });
 
   function leerConsentimiento() {
     try {
@@ -102,14 +107,18 @@ export function conectarMemoriaAgente({ widget, autorizada = false, politica = n
           || eleccion.huella !== cuenta.marca || eleccion.generacion !== vigente.datos?.consentimiento) {
           olvidarEleccion(false); revocar(true); throw new Error();
         }
-        marcasOperacion.set(signal, { consentimiento: vigente.datos.consentimiento, operacion: vigente.datos.operacion });
+        const capturada = marcasOperacion.get(signal);
+        if (capturada && (capturada.consentimiento !== vigente.datos.consentimiento
+          || capturada.operacion !== vigente.datos.operacion)) throw 'CANCELADA';
+        if (!capturada) marcasOperacion.set(signal, { consentimiento: vigente.datos.consentimiento, operacion: vigente.datos.operacion });
         marcaOperacionActiva = vigente.datos.operacion;
       }
       const siguiente = cuenta.id;
       if (actor !== null && actor !== siguiente) { revocar(true); throw new Error(); }
       actor = siguiente; tuvoIdentidad = true;
       return { id: siguiente }; // Nunca entregar correo, sesión ni tokens al dominio.
-    } catch {
+    } catch (error) {
+      if (error === 'CANCELADA') throw error;
       if (viva && consentido && turno === generacion && !signal.aborted) {
         olvidarEleccion(false); revocar(true, 'error');
       }

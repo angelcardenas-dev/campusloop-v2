@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { conectarMemoriaAgente } from '../../js/agente-memoria-conexion.js';
 import { crearAdaptadorStorageAgente } from '../../js/agente-storage-adaptador.js';
 import { crearAlmacenamientoLocal } from '../../js/localstorage.js';
-import { revocarMemoriaCuenta } from '../../js/agente-memoria-lock.js';
+import { revocarMemoriaCuenta, conBloqueoMemoriaCuenta } from '../../js/agente-memoria-lock.js';
 import { crearClaveMemoria, POLITICA_PROVISIONAL_MEMORIA as politica } from '../../js/agente-memoria.js';
 
 // Identidad, reloj y Storage sintéticos. Web Storage nativo se prueba en navegador.test.mjs.
@@ -44,6 +44,69 @@ function entorno() {
     usuario: evento === 'SIGNED_OUT' || e.id === null ? null : { id: e.id } }); };
   return e;
 }
+
+test('generación de operación fija: borrado remoto sin evento storage no permite adoptar G2', async () => {
+  const e = entorno(); e.c.desmontar();
+  const elecciones = storage(), lock = { request: async (_n, _o, trabajo) => trabajo() };
+  const compartido = crearAlmacenamientoLocal({ almacenamiento: e.almacen, memoriaAgente: { politica } });
+  let pendiente = null;
+  const iniciada = diferida();
+  e.c = e.crear(e.w, { obtenerStorageSesion: () => elecciones, locks: lock,
+    producirContexto: () => { if (pendiente) iniciada.resolver(); return pendiente?.promesa ?? contexto(); } });
+  for (let i = 0; i < 20 && !e.w.eleccion.disponible; i++) await pausa();
+  await e.consentir(); await e.c.actualizar();
+  const eleccion = [...elecciones.valores.values()][0];
+  pendiente = diferida(); const antigua = e.c.actualizar(); await iniciada.promesa;
+  assert.equal(compartido.avanzarMarcaContextoAgente(A, { operacion: true }, true).ok, true);
+  pendiente.resolver(contexto());
+  assert.equal((await antigua).error.codigo, 'CANCELADA');
+  assert.equal(e.almacen.valores.has(clave(A)), false);
+  assert.equal([...elecciones.valores.values()][0], eleccion, 'borrado no revoca consentimiento');
+  pendiente = null;
+  assert.equal((await e.c.actualizar()).ok, true, 'selección nueva utiliza la generación vigente');
+  assert.equal((await e.c.borrar()).ok, true, 'borrado propio reconoce su transición confirmada');
+  assert.equal((await e.c.actualizar()).ok, true);
+  e.c.desmontar();
+});
+
+test('lock conserva códigos controlados y nunca detalles privados; adaptador conserva cuota/cancelación', async () => {
+  const locks = { request: async (_n, _o, trabajo) => trabajo() };
+  for (const codigo of ['MARCA_AUSENTE', 'MARCA_INVALIDA', 'CANCELADA', 'CUOTA', 'CUOTA_EXCEDIDA', 'ERROR_LECTURA', 'ERROR_ELIMINACION']) {
+    const r = await conBloqueoMemoriaCuenta(locks, A, () => ({ ok: false, datos: 'privado', error: { codigo, mensaje: 'privado' } }));
+    assert.equal(r.error.codigo, codigo); assert.doesNotMatch(JSON.stringify(r), /privado/);
+  }
+  const desconocido = await conBloqueoMemoriaCuenta(locks, A, () => ({ ok: false, error: { codigo: 'privado' } }));
+  assert.equal(desconocido.error.codigo, 'ALMACENAMIENTO');
+  const p = crearAdaptadorStorageAgente({ locks, obtenerActor: () => A,
+    almacenamiento: { guardarContextoAgente: () => ({ ok: false, error: { codigo: 'CUOTA_EXCEDIDA', mensaje: 'privado' } }) } });
+  assert.equal((await p.guardar(clave(A), '{}')).error.codigo, 'CUOTA');
+  const cancelado = crearAdaptadorStorageAgente({ locks, obtenerActor: () => A,
+    obtenerMarcaOperacion: () => ({ consentimiento: 1, operacion: 1 }),
+    almacenamiento: { leerMarcaContextoAgente: () => bien({ consentimiento: 1, operacion: 2 }) } });
+  assert.equal((await cancelado.guardar(clave(A), '{}')).error.codigo, 'CANCELADA');
+});
+
+test('marca eliminada: pageshow invalida elección antigua y permite una nueva explícita', async () => {
+  const e = entorno(); e.c.desmontar();
+  const ventana = new EventTarget(); ventana.document = new EventTarget(); ventana.document.visibilityState = 'visible';
+  e.w.raiz = { ownerDocument: { defaultView: ventana } };
+  const elecciones = storage(), locks = { request: async (_n, _o, trabajo) => trabajo() };
+  e.c = e.crear(e.w, { obtenerStorageSesion: () => elecciones, locks });
+  for (let i = 0; i < 20 && !e.w.eleccion.disponible; i++) await pausa();
+  await e.consentir(); await e.c.actualizar();
+  const anterior = [...elecciones.valores.values()][0];
+  e.almacen.removeItem(`campusloop_tb4_v1_agente_generacion_${A}`);
+  ventana.dispatchEvent(new Event('pageshow'));
+  for (let i = 0; i < 30; i++) await pausa();
+  assert.equal(elecciones.valores.size, 0);
+  assert.equal(e.w.estado.estado, 'sin-consentimiento');
+  assert.equal(e.w.eleccion.disponible, true);
+  await e.consentir();
+  assert.notEqual([...elecciones.valores.values()][0], anterior);
+  assert.equal(e.almacen.valores.has(clave(A)), false, 'no revive documento huérfano');
+  assert.equal((await e.c.actualizar()).ok, true);
+  e.c.desmontar();
+});
 
 test('sin Web Locks: la memoria persistente degrada cerrada y mantiene el chat temporal', async () => {
   const e = entorno(); e.c.desmontar();

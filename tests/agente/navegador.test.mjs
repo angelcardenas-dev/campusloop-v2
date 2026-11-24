@@ -838,6 +838,19 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
     assert.equal(await evaluar("window.__tabB.sessionStorage.getItem('campusloop_tb4_v1_agente_consentimiento')"), null,
       'el montaje recuperado elimina la elección invalidada antes de restaurar');
     assert.equal(await evaluar(`window.__tabB.localStorage.getItem('${claveA}')`), null);
+    // El código MARCA_AUSENTE debe permitir recuperar la elección explícita,
+    // incluso cuando desaparece la marca con un documento todavía guardado.
+    await evaluar('window.__tabB.__consentir()');
+    await esperar("window.__tabB.__state().checked===true"); await delay(80);
+    await evaluar('window.__tabB.__connection.actualizar().then(r=>window.__tabB.__marcaUpdate=r.ok);true');
+    await esperar('window.__tabB.__marcaUpdate===true');
+    await evaluar(`localStorage.removeItem('${marcaA}')`);
+    await esperar("window.__tabB.__state().checked===false && window.__tabB.__state().memory==='sin-consentimiento' && !window.__tabB.document.querySelector('.cl-agente-detalles input[type=checkbox]').disabled");
+    await evaluar('window.__tabB.__consentir()');
+    await esperar("window.__tabB.__state().checked===true && window.__tabB.__state().memory==='sin-contexto'");
+    assert.equal(await evaluar(`localStorage.getItem('${claveA}')`), null, 'marca nueva no revive documento huérfano');
+    await evaluar('window.__tabB.__connection.actualizar().then(r=>window.__tabB.__nuevaMarcaUpdate=r.ok);true');
+    await esperar('window.__tabB.__nuevaMarcaUpdate===true');
     await evaluar('window.__tabB.close();window.__tabC.close()');
   });
   await t.test('20 red externa y errores de consola ausentes', () => {

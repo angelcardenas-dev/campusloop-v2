@@ -197,7 +197,7 @@ export function crearMemoriaAgente({ almacenamiento = null, obtenerIdentidad, pr
       throw e?.name === 'QuotaExceededError' ? 'CUOTA' : 'ALMACENAMIENTO';
     }
     comprobar(op);
-    if (r?.ok !== true) throw r?.error?.codigo === 'CUOTA' ? 'CUOTA' : 'ALMACENAMIENTO';
+    if (r?.ok !== true) throw ['CUOTA', 'CANCELADA'].includes(r?.error?.codigo) ? r.error.codigo : 'ALMACENAMIENTO';
     return r.datos;
   }
   function despachar(tarea) {
