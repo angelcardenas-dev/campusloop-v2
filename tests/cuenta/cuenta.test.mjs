@@ -20,7 +20,9 @@ const OTRO = { id: '5a7b9c1d-2e3f-4a5b-8c6d-7e8f9a0b1c2d', correo: 'otra@example
 const autenticado = (usuario = USUARIO) => ({ ok: true, datos: { estado: 'AUTENTICADO', usuario }, error: null });
 const CERRADA = { ok: true, datos: { estado: 'NO_AUTENTICADO', usuario: null }, error: null };
 const fallo = (codigo, mensaje = `Mensaje simulado de auth.js: ${codigo}`) => ({ ok: false, datos: null, error: { codigo, mensaje } });
-const MENSAJE_MEMORIA = 'Mensaje simulado de auth.js: sesión cerrada sin confirmar borrado.';
+const MENSAJE_MEMORIA = 'Se cerró la sesión, pero no se pudo confirmar el borrado del contexto recordado en este navegador.';
+const MENSAJES_ERROR = { RED: 'No hay conexión. Inténtalo de nuevo.', LIMITE: 'Demasiados intentos. Espera un momento.',
+  SERVIDOR: 'Servicio temporalmente no disponible.' };
 
 /* DOM mínimo: solo lo que usa cuenta.js */
 class Estilo {
@@ -139,7 +141,7 @@ async function montar(opciones = {}) {
   const carga = await cargar();
   const dom = domCuenta();
   const s = servicios(opciones);
-  const montaje = carga.api.montarCuenta({ documento: dom.documento, servicios: s.servicios });
+  const montaje = carga.api.montarCuenta({ documento: dom.documento, servicios: s.servicios, esperaAuthMs: opciones.esperaAuthMs });
   await pausa();
   return { ...carga, dom, s, montaje };
 }
@@ -184,7 +186,7 @@ test('clasificarAutenticacion: usuario autenticado, sin sesión, errores y respu
   assert.deepEqual(plano(api.clasificarAutenticacion(fallo('NO_AUTORIZADO'))), { tipo: 'SIN_SESION' });
   for (const codigo of ['RED', 'LIMITE', 'SERVIDOR']) {
     assert.deepEqual(plano(api.clasificarAutenticacion(fallo(codigo))),
-      { tipo: 'ERROR', mensaje: `Mensaje simulado de auth.js: ${codigo}`, reintentable: true });
+      { tipo: 'ERROR', mensaje: MENSAJES_ERROR[codigo], reintentable: true });
   }
   assert.equal(api.clasificarAutenticacion(fallo('CONFIGURACION')).reintentable, false);
   for (const respuesta of [undefined, null, {}, { ok: true, datos: null }, autenticado(null), autenticado({ id: '' }),
@@ -201,7 +203,7 @@ test('clasificarCierre: éxito, MEMORIA_NO_BORRADA y fallos', async () => {
   assert.deepEqual(plano(api.clasificarCierre(fallo('MEMORIA_NO_BORRADA', MENSAJE_MEMORIA))),
     { tipo: 'CERRADA_SIN_BORRADO', mensaje: MENSAJE_MEMORIA });
   assert.match(api.clasificarCierre({ ok: false, error: { codigo: 'MEMORIA_NO_BORRADA' } }).mensaje, /Se cerró la sesión/);
-  assert.deepEqual(plano(api.clasificarCierre(fallo('RED'))), { tipo: 'FALLIDO', mensaje: 'Mensaje simulado de auth.js: RED' });
+  assert.deepEqual(plano(api.clasificarCierre(fallo('RED'))), { tipo: 'FALLIDO', mensaje: MENSAJES_ERROR.RED });
   for (const respuesta of [undefined, null, {}]) {
     assert.deepEqual(plano(api.clasificarCierre(respuesta)), { tipo: 'FALLIDO', mensaje: 'No pudimos cerrar la sesión. Inténtalo de nuevo.' });
   }
@@ -261,7 +263,7 @@ test('usuario no autenticado: aviso y acceso a Iniciar sesión, sin datos de eje
 
 test('errores de autenticación: mensaje de auth.js y reintento solo cuando corresponde', async () => {
   const { dom, s } = await montar({ auth: fallo('RED') });
-  assert.equal(mensaje(dom).textContent, 'Mensaje simulado de auth.js: RED');
+  assert.equal(mensaje(dom).textContent, MENSAJES_ERROR.RED);
   assert.equal(mensaje(dom).className, 'alert alert-error');
   assert.equal(visible(dom.$('cuenta-reintentar-zona')), true);
   for (const id of ['cuenta-acceso', 'cuenta-cerrar-sesion-zona', 'cuenta-pendiente', 'cuenta-correo']) {
@@ -303,6 +305,26 @@ test('respuesta tardía: una comprobación antigua no sobrescribe la más recien
   assert.equal(s.llamadas.auth, 2);
 });
 
+test('SIGNED_IN durante comprobación pendiente invalida la identidad anterior', async () => {
+  const primera = diferida();
+  const { dom, s } = await montar({ auth: () => primera.promesa });
+  s.respuestas.auth = autenticado(OTRO);
+  s.emitir({ evento: 'SIGNED_IN', estado: 'AUTENTICADO', usuario: OTRO });
+  await pausa();
+  assert.equal(dom.$('cuenta-correo').textContent, OTRO.correo);
+  primera.resolver(autenticado(USUARIO));
+  await pausa();
+  assert.equal(dom.$('cuenta-correo').textContent, OTRO.correo);
+});
+
+test('respuesta contradictoria y mensajes privados no se presentan', async () => {
+  const { api } = await cargar();
+  assert.equal(api.clasificarAutenticacion({ ...autenticado(), error: { codigo: 'SERVIDOR', mensaje: 'token privado' } }).tipo, 'ERROR');
+  assert.equal(api.clasificarAutenticacion(fallo('SERVIDOR', 'token privado')).mensaje, MENSAJES_ERROR.SERVIDOR);
+  assert.equal(api.clasificarAutenticacion(autenticado({ ...USUARIO, is_anonymous: true })).tipo, 'ERROR');
+  assert.equal(api.clasificarCierre({ ok: true, datos: null, error: null }).tipo, 'FALLIDO');
+});
+
 /* Cierre de sesión */
 test('cierre de sesión exitoso: sale del área autenticada y no repite la llamada', async () => {
   const pendiente = diferida();
@@ -326,11 +348,12 @@ test('cierre de sesión exitoso: sale del área autenticada y no repite la llama
   sinEfectos(control);
 });
 
-test('cierre de sesión fallido: la sesión sigue activa y se puede reintentar', async () => {
+test('cierre fallido: reconciliar la sesión antes de permitir reintento', async () => {
   const { dom, s } = await montar({ cierre: fallo('RED') });
   dom.$('cuenta-cerrar-sesion').disparar('click');
   await pausa();
-  assert.equal(mensaje(dom).textContent, 'Mensaje simulado de auth.js: RED');
+  await pausa();
+  assert.equal(mensaje(dom).textContent, MENSAJES_ERROR.RED);
   assert.equal(mensaje(dom).className, 'alert alert-error');
   assert.equal(dom.$('cuenta-correo').textContent, USUARIO.correo);
   assert.equal(visible(dom.$('cuenta-cerrar-sesion-zona')), true);
@@ -339,6 +362,7 @@ test('cierre de sesión fallido: la sesión sigue activa y se puede reintentar',
   assert.equal(dom.raiz.getAttribute('aria-busy'), null);
   s.respuestas.cierre = () => Promise.reject(new Error('fallo interno'));
   dom.$('cuenta-cerrar-sesion').disparar('click');
+  await pausa();
   await pausa();
   assert.equal(mensaje(dom).textContent, 'No pudimos cerrar la sesión. Inténtalo de nuevo.');
   s.respuestas.cierre = CERRADA;
@@ -401,7 +425,101 @@ test('cambios de autenticación durante el cierre: manda el resultado de cerrarS
   assert.equal(mensaje(dom).textContent, 'Cerrando sesión…');
   pendiente.resolver(fallo('MEMORIA_NO_BORRADA', MENSAJE_MEMORIA));
   await pausa();
-  assert.equal(mensaje(dom).textContent, MENSAJE_MEMORIA);
+  assert.match(mensaje(dom).textContent, /sesión anterior se cerró/);
+  assert.match(mensaje(dom).textContent, /verificó por separado la sesión actual/);
+});
+
+test('logout ambiguo con SIGNED_OUT reconcilia sin restaurar correo anterior', async () => {
+  const pendiente = diferida();
+  const { dom, s } = await montar({ cierre: () => pendiente.promesa });
+  dom.$('cuenta-cerrar-sesion').disparar('click');
+  s.emitir({ evento: 'SIGNED_OUT', estado: 'NO_AUTENTICADO', usuario: null });
+  s.respuestas.auth = fallo('NO_AUTORIZADO');
+  pendiente.resolver(fallo('RED', 'token interno'));
+  await pausa(); await pausa();
+  vistaSinSesion(dom);
+  assert.equal(dom.$('cuenta-correo').textContent, '');
+  assert.equal(s.llamadas.auth, 2);
+});
+
+test('logout ambiguo con cambio de cuenta solo muestra la identidad revalidada', async () => {
+  const pendiente = diferida();
+  const { dom, s } = await montar({ cierre: () => pendiente.promesa });
+  dom.$('cuenta-cerrar-sesion').disparar('click');
+  s.emitir({ evento: 'SIGNED_IN', estado: 'AUTENTICADO', usuario: OTRO });
+  s.respuestas.auth = autenticado(OTRO);
+  pendiente.resolver(fallo('SERVIDOR', 'token interno'));
+  await pausa(); await pausa();
+  assert.equal(dom.$('cuenta-correo').textContent, OTRO.correo);
+  assert.doesNotMatch(mensaje(dom).textContent, /token interno/);
+});
+
+for (const resultado of [CERRADA, fallo('MEMORIA_NO_BORRADA')]) {
+  test(`cambio a cuenta B durante logout ${resultado.error?.codigo ?? 'exitoso'} reconcilia identidad`, async () => {
+    const pendiente = diferida();
+    const { dom, s } = await montar({ cierre: () => pendiente.promesa });
+    dom.$('cuenta-cerrar-sesion').disparar('click');
+    s.emitir({ evento: 'SIGNED_IN', estado: 'AUTENTICADO', usuario: OTRO });
+    s.respuestas.auth = autenticado(OTRO);
+    pendiente.resolver(resultado);
+    await pausa(); await pausa();
+    assert.equal(dom.$('cuenta-correo').textContent, OTRO.correo);
+    assert.doesNotMatch(mensaje(dom).textContent, /la sesión anterior|contexto recordado/);
+  });
+}
+
+test('timeout de logout no confirma ni repite cierre pendiente; recheck y respuesta tardía', async () => {
+  const pendiente = diferida();
+  const { dom, s, montaje } = await montar({ cierre: () => pendiente.promesa, esperaAuthMs: 1 });
+  dom.$('cuenta-cerrar-sesion').disparar('click');
+  await pausa(); await pausa();
+  assert.equal(s.llamadas.cierre, 1);
+  assert.match(mensaje(dom).textContent, /sigue pendiente/);
+  assert.equal(dom.$('cuenta-correo').textContent, USUARIO.correo);
+  dom.$('cuenta-cerrar-sesion').disparar('click');
+  await pausa();
+  assert.equal(s.llamadas.cierre, 1, 'la segunda pulsación solo comprueba Auth');
+  s.respuestas.auth = autenticado(OTRO);
+  s.emitir({ evento: 'SIGNED_IN', estado: 'AUTENTICADO', usuario: OTRO });
+  await pausa();
+  pendiente.resolver(CERRADA);
+  await pausa();
+  assert.equal(dom.$('cuenta-correo').textContent, OTRO.correo);
+  montaje.desmontar();
+});
+
+for (const terminaRechazando of [false, true]) {
+  test(`timeout permite nuevo cierre después de ${terminaRechazando ? 'rechazo' : 'resolución'} tardía`, async () => {
+    const pendiente = diferida();
+    const { dom, s } = await montar({ cierre: () => pendiente.promesa, esperaAuthMs: 1 });
+    dom.$('cuenta-cerrar-sesion').disparar('click');
+    await pausa(); await pausa();
+    assert.equal(s.llamadas.cierre, 1);
+    if (terminaRechazando) pendiente.resolver(Promise.reject(new Error('detalle interno')));
+    else pendiente.resolver(CERRADA);
+    await pausa(); await pausa();
+    s.respuestas.cierre = CERRADA;
+    assert.equal(dom.$('cuenta-correo').textContent, USUARIO.correo, 'la reconciliación confirma la sesión activa');
+    dom.$('cuenta-cerrar-sesion').disparar('click');
+    await pausa();
+    assert.equal(s.llamadas.cierre, 2);
+  });
+}
+
+test('desmontaje durante logout con timeout no restaura datos al montaje nuevo', async () => {
+  const pendiente = diferida();
+  const anterior = await montar({ cierre: () => pendiente.promesa, esperaAuthMs: 1 });
+  anterior.dom.$('cuenta-cerrar-sesion').disparar('click');
+  await pausa(); await pausa();
+  anterior.montaje.desmontar();
+  pendiente.resolver(autenticado(USUARIO));
+  await pausa(); await pausa();
+  assert.equal(anterior.dom.$('cuenta-correo').textContent, '');
+  anterior.s.respuestas.auth = autenticado(OTRO);
+  const nuevo = anterior.api.montarCuenta({ documento: anterior.dom.documento, servicios: anterior.s.servicios, esperaAuthMs: 20 });
+  await pausa();
+  assert.equal(anterior.dom.$('cuenta-correo').textContent, OTRO.correo);
+  nuevo.desmontar();
 });
 
 test('desmontar: cancela la suscripción, retira oyentes y descarta respuestas posteriores', async () => {
@@ -453,9 +571,10 @@ test('cuenta.html: carga el controlador y contiene los IDs y marcas que usa cuen
     'cuenta-verificado', 'cuenta-avatar', 'cuenta-vendedor-estado', 'cuenta-pendiente']) {
     assert.equal((html.match(new RegExp(`id="${id}"`, 'g')) ?? []).length, 1, `id ${id}`);
   }
-  assert.equal((html.match(/data-cuenta-demo/g) ?? []).length, 5);
+  assert.equal((html.match(/data-cuenta-demo/g) ?? []).length, 0);
+  assert.doesNotMatch(html, /María López|maria\.lopez@|MacBook Air M1|4\.9 · 5 opiniones/);
   // Los contenedores nuevos no tienen clase: hidden los oculta aunque el script no se cargue.
-  for (const id of ['cuenta-mensaje', 'cuenta-reintentar-zona', 'cuenta-acceso', 'cuenta-cerrar-sesion-zona', 'cuenta-pendiente']) {
+  for (const id of ['cuenta-mensaje', 'cuenta-reintentar-zona', 'cuenta-acceso', 'cuenta-cerrar-sesion-zona']) {
     const etiqueta = html.match(new RegExp(`<[a-z]+ id="${id}"[^>]*>`))[0];
     assert.match(etiqueta, /\shidden[\s>]/, `${id} sin hidden`);
     assert.doesNotMatch(etiqueta, /class=/, `${id} con clase`);

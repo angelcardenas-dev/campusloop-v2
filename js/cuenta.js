@@ -41,19 +41,36 @@ const MENSAJES = Object.freeze({
   DESCRIPCION: 'Mi cuenta muestra el correo de la sesión iniciada. El nombre, la universidad, el campus, el estado de vendedor, las métricas, la reputación y la actividad están pendientes de integración.',
 });
 const montajes = new WeakMap();
+const cierresPendientes = new WeakSet();
+const ESPERA_AUTH_MS = 8000; // Límite defensivo provisional de UI; no cancela físicamente Auth.
+function esperarAuth(operacion, limite = ESPERA_AUTH_MS) {
+  let temporizador;
+  let trabajo;
+  try { trabajo = Promise.resolve(operacion()); } catch (error) { trabajo = Promise.reject(error); }
+  return Promise.race([trabajo, new Promise((_, rechazar) => {
+    temporizador = setTimeout(() => rechazar(Object.assign(new Error('ESPERA_AGOTADA'), { codigo: 'ESPERA_AGOTADA' })), limite);
+  })]).finally(() => clearTimeout(temporizador));
+}
 
 /* Funciones: interpretación de resultados de auth.js, sin DOM (exportadas para pruebas offline) */
-const mensajeDe = (resultado, respaldo) => (typeof resultado?.error?.mensaje === 'string' && resultado.error.mensaje
-  ? resultado.error.mensaje : respaldo);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const MENSAJE_ERROR = Object.freeze({ RED: 'No hay conexión. Inténtalo de nuevo.', LIMITE: 'Demasiados intentos. Espera un momento.',
+  SERVIDOR: 'Servicio temporalmente no disponible.', CONFIGURACION: 'La verificación de cuenta no está disponible.',
+  MEMORIA_NO_BORRADA: MENSAJES.MEMORIA_NO_BORRADA });
+const errorCoherente = r => r?.ok === false && r.datos === null && typeof r.error?.codigo === 'string';
+const mensajeDe = (resultado, respaldo) => {
+  const codigo = resultado?.error?.codigo;
+  return typeof codigo === 'string' && Object.hasOwn(MENSAJE_ERROR, codigo) ? MENSAJE_ERROR[codigo] : respaldo;
+};
 
 export function clasificarAutenticacion(resultado) {
   const usuario = resultado?.datos?.usuario;
-  if (resultado?.ok === true && resultado.datos?.estado === 'AUTENTICADO'
-    && typeof usuario?.id === 'string' && usuario.id) {
+  if (resultado?.ok === true && resultado.error === null && resultado.datos?.estado === 'AUTENTICADO'
+    && typeof usuario?.id === 'string' && UUID.test(usuario.id) && usuario?.is_anonymous !== true) {
     return { tipo: 'AUTENTICADO', id: usuario.id, correo: typeof usuario.correo === 'string' && usuario.correo ? usuario.correo : null };
   }
-  if (resultado?.ok === false && resultado.error?.codigo === 'NO_AUTORIZADO') return { tipo: 'SIN_SESION' };
-  if (resultado?.ok === false) {
+  if (errorCoherente(resultado) && resultado.error.codigo === 'NO_AUTORIZADO') return { tipo: 'SIN_SESION' };
+  if (errorCoherente(resultado)) {
     return { tipo: 'ERROR', mensaje: mensajeDe(resultado, MENSAJES.COMPROBACION_FALLIDA),
       reintentable: REINTENTABLES.includes(resultado.error?.codigo) };
   }
@@ -62,9 +79,10 @@ export function clasificarAutenticacion(resultado) {
 }
 
 export function clasificarCierre(resultado) {
-  if (resultado?.ok === true) return { tipo: 'CERRADA' };
+  if (resultado?.ok === true && resultado.error === null && resultado.datos?.estado === 'NO_AUTENTICADO'
+    && resultado.datos.usuario === null) return { tipo: 'CERRADA' };
   // La sesión sí se cerró; solo falta confirmar el borrado del contexto local del agente.
-  if (resultado?.ok === false && resultado.error?.codigo === 'MEMORIA_NO_BORRADA') {
+  if (errorCoherente(resultado) && resultado.error.codigo === 'MEMORIA_NO_BORRADA') {
     return { tipo: 'CERRADA_SIN_BORRADO', mensaje: mensajeDe(resultado, MENSAJES.MEMORIA_NO_BORRADA) };
   }
   return { tipo: 'FALLIDO', mensaje: mensajeDe(resultado, MENSAJES.CIERRE_FALLIDO) };
@@ -126,13 +144,15 @@ function neutralizarDemo(e) {
 /* Funciones: montaje */
 export function montarCuenta({
   documento,
+  esperaAuthMs = ESPERA_AUTH_MS,
   servicios = { requerirAutenticacion, cerrarSesion, escucharCambiosAuth },
 } = {}) {
   if (typeof documento?.getElementById !== 'function') return null;
   const e = buscarElementos(documento);
   if (!e || montajes.has(e.raiz)) return null; // Sin elementos, la página conserva su HTML.
   const region = crearRegion(e.mensaje);
-  const estado = { vista: 'cargando', usuarioId: null, turno: 0, cerrando: false, desmontado: false, cancelar: null };
+  const estado = { vista: 'cargando', usuarioId: null, turno: 0, cerrando: false,
+    desmontado: false, cierreIndeterminado: false, authCambioDuranteCierre: false, cancelar: null };
 
   function ocupado(valor) {
     if (valor) e.raiz.setAttribute('aria-busy', 'true');
@@ -151,6 +171,7 @@ export function montarCuenta({
 
   function mostrarCargando() {
     estado.vista = 'cargando';
+    estado.usuarioId = null;
     ocupado(true);
     conservarFoco(e.reintentar);
     limpiarCorreo();
@@ -198,7 +219,7 @@ export function montarCuenta({
     mostrarCargando();
     let clasificacion;
     try {
-      clasificacion = clasificarAutenticacion(await servicios.requerirAutenticacion());
+      clasificacion = clasificarAutenticacion(await esperarAuth(() => servicios.requerirAutenticacion(), esperaAuthMs));
     } catch {
       clasificacion = { tipo: 'ERROR', mensaje: MENSAJES.COMPROBACION_FALLIDA, reintentable: true };
     }
@@ -210,36 +231,82 @@ export function montarCuenta({
   }
 
   async function cerrar() {
-    if (estado.vista !== 'autenticado' || estado.cerrando || estado.desmontado) return;
+    if (estado.desmontado || estado.cerrando) return;
+    if (estado.cierreIndeterminado || cierresPendientes.has(servicios.cerrarSesion)) {
+      estado.cierreIndeterminado = true;
+      await comprobar();
+      if (!estado.desmontado) {
+        e.cerrar.disabled = false;
+        region.mostrar('No pudimos confirmar el cierre. Se comprobó tu sesión; vuelve a comprobarla antes de cerrar otra vez.', 'aviso');
+      }
+      return;
+    }
+    if (estado.vista !== 'autenticado') return;
     estado.cerrando = true;
+    estado.authCambioDuranteCierre = false;
     estado.turno += 1; // Invalida comprobaciones en curso.
+    limpiarCorreo();
     e.cerrar.disabled = true;
     ocupado(true);
     region.mostrar(MENSAJES.CERRANDO, 'info');
     let clasificacion;
     try {
-      clasificacion = clasificarCierre(await servicios.cerrarSesion());
-    } catch {
-      clasificacion = { tipo: 'FALLIDO', mensaje: MENSAJES.CIERRE_FALLIDO };
+      let operacionCierre;
+      try { operacionCierre = Promise.resolve(servicios.cerrarSesion()); }
+      catch (error) { operacionCierre = Promise.reject(error); }
+      cierresPendientes.add(servicios.cerrarSesion);
+      const cerrarServicio = servicios.cerrarSesion;
+      const liberarCierre = () => {
+        cierresPendientes.delete(cerrarServicio);
+        if (estado.desmontado || !estado.cierreIndeterminado) return;
+        estado.cierreIndeterminado = false;
+        // Si ya hay una comprobación más nueva en curso, su resultado gobierna la vista.
+        if (estado.vista !== 'cargando' && !estado.cerrando) void comprobar();
+      };
+      operacionCierre.then(liberarCierre, liberarCierre).catch(() => {});
+      clasificacion = clasificarCierre(await esperarAuth(() => operacionCierre, esperaAuthMs));
+    } catch (error) {
+      if (error?.codigo === 'ESPERA_AGOTADA') estado.cierreIndeterminado = true;
+      clasificacion = { tipo: 'FALLIDO', mensaje: error?.codigo === 'ESPERA_AGOTADA'
+        ? 'El cierre sigue pendiente; no se puede confirmar todavía.' : MENSAJES.CIERRE_FALLIDO };
     }
     estado.cerrando = false;
     if (estado.desmontado) return;
+    if (estado.authCambioDuranteCierre) {
+      await comprobar();
+      if (estado.desmontado) return;
+      if (clasificacion.tipo === 'CERRADA_SIN_BORRADO') {
+        region.mostrar('La sesión anterior se cerró, pero no se pudo confirmar el borrado de su contexto. Se verificó por separado la sesión actual.', 'aviso');
+      } else if (clasificacion.tipo === 'FALLIDO' && estado.vista === 'autenticado') {
+        region.mostrar(clasificacion.mensaje, 'error');
+      }
+      return;
+    }
     if (clasificacion.tipo === 'CERRADA') {
       mostrarSinSesion(MENSAJES.SESION_CERRADA, 'info');
     } else if (clasificacion.tipo === 'CERRADA_SIN_BORRADO') {
       // Se abandona el área autenticada y no se ofrece repetir el cierre.
       mostrarSinSesion(clasificacion.mensaje, 'aviso');
     } else {
-      // La sesión sigue activa: se conservan sus datos y se permite reintentar.
-      ocupado(false);
-      e.cerrar.disabled = false;
-      region.mostrar(clasificacion.mensaje, 'error');
+      // Un error no prueba que la sesión anterior siga activa: reconciliar con Auth.
+      await comprobar();
+      if (!estado.desmontado && estado.vista === 'autenticado') {
+        if (estado.cierreIndeterminado) {
+          e.cerrar.disabled = false;
+          region.mostrar('El cierre sigue pendiente. La sesión fue verificada; vuelve a comprobar antes de intentar cerrar de nuevo.', 'aviso');
+        } else region.mostrar(clasificacion.mensaje, 'error');
+      }
     }
   }
 
   function alCambiarAuth(notificacion) {
-    // Durante el cierre manda el resultado de cerrarSesion().
-    if (estado.desmontado || estado.cerrando) return;
+    if (estado.desmontado) return;
+    if (estado.cerrando) {
+      estado.authCambioDuranteCierre = true;
+      estado.turno += 1;
+      limpiarCorreo();
+      return;
+    }
     const estadoAuth = notificacion?.estado;
     if (notificacion?.evento === 'SIGNED_OUT' || estadoAuth === 'NO_AUTENTICADO') {
       if (estado.vista === 'sin-sesion') return; // Conserva el aviso vigente.
@@ -247,8 +314,8 @@ export function montarCuenta({
       mostrarSinSesion(MENSAJES.SESION_FINALIZADA, 'aviso');
       return;
     }
-    if (estadoAuth === 'AUTENTICADO' && estado.vista !== 'cargando'
-      && (estado.vista !== 'autenticado' || notificacion.usuario?.id !== estado.usuarioId)) {
+    if (estadoAuth === 'AUTENTICADO' &&
+      (estado.vista !== 'autenticado' || notificacion.usuario?.id !== estado.usuarioId)) {
       void comprobar();
     }
     // Otros eventos (p. ej. ERROR) no modifican la vista.
@@ -263,6 +330,7 @@ export function montarCuenta({
       if (estado.desmontado) return;
       estado.desmontado = true;
       estado.turno += 1;
+      limpiarCorreo();
       e.reintentar.removeEventListener('click', alReintentar);
       e.cerrar.removeEventListener('click', alCerrar);
       try { estado.cancelar?.(); } catch { /* La suscripción ya no entrega eventos. */ }

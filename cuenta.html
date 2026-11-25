@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Mi cuenta demostrativa de CampusLoop: perfil de estudiante, métricas, reputación y actividad reciente.">
+  <meta name="description" content="Mi cuenta de CampusLoop. Consulta tu sesión y las funciones disponibles.">
   <title>Mi cuenta — CampusLoop</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="home-page account-page">
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
-  <p id="account-demo" class="visually-hidden">Prototipo estático. El perfil de María López, las métricas, la reputación y la actividad son datos de ejemplo de Figma; no representan una sesión ni operaciones reales.</p>
+  <p id="account-demo" class="visually-hidden">Los datos del perfil y la actividad están pendientes de integración.</p>
   <p id="account-static" class="visually-hidden">Acción demostrativa sin funcionamiento. No edita el perfil, no abre operaciones ni calificaciones y no guarda información.</p>
   <p id="account-pending" class="visually-hidden">Opción pendiente de integración. Esta pantalla no realiza búsquedas ni abre otra página.</p>
 
@@ -30,7 +30,7 @@
         <input id="account-header-search" type="search" placeholder="Buscar artículos..." readonly aria-disabled="true" aria-describedby="account-pending">
       </div>
       <button class="home-notifications home-icon-control" type="button" aria-label="Notificaciones (pendiente)" aria-disabled="true" aria-describedby="account-pending" title="Notificaciones: opción pendiente"><img src="assets/icons/campana.svg" width="24" height="24" alt=""></button>
-      <a class="home-account-link" href="cuenta.html" aria-current="page" aria-label="Mi cuenta"><img class="avatar" src="assets/images/avatares/maria-lopez.jpg" width="40" height="40" alt=""></a>
+      <a class="home-account-link" href="cuenta.html" aria-current="page" aria-label="Mi cuenta"><img class="avatar" src="assets/icons/usuarios.svg" width="40" height="40" alt=""></a>
     </header>
   </div>
 
@@ -46,17 +46,17 @@
 
       <div class="account-layout">
         <section class="account-identity panel" aria-labelledby="account-name">
-          <img class="account-avatar" id="cuenta-avatar" src="assets/images/avatares/maria-lopez.jpg" width="88" height="88" alt="">
-          <h2 class="account-name" id="account-name">María López</h2>
-          <p class="account-university" id="cuenta-universidad">PUCP · Campus San Miguel</p>
-          <p class="account-email" id="cuenta-correo">maria.lopez@pucp.edu.pe</p>
-          <p class="account-verified" id="cuenta-verificado">Correo universitario verificado</p>
+          <img class="account-avatar" id="cuenta-avatar" src="assets/icons/usuarios.svg" width="88" height="88" alt="" hidden>
+          <h2 class="account-name" id="account-name">Perfil pendiente de integración</h2>
+          <p class="account-university" id="cuenta-universidad">Universidad y campus pendientes de integración</p>
+          <p class="account-email" id="cuenta-correo" hidden></p>
+          <p class="account-verified" id="cuenta-verificado" hidden></p>
           <button class="button button-outline account-action" type="button" aria-disabled="true" aria-describedby="account-static">Editar perfil</button>
           <p id="cuenta-cerrar-sesion-zona" hidden><button id="cuenta-cerrar-sesion" class="button button-outline account-action" type="button">Cerrar sesión</button></p>
 
           <section class="account-seller" aria-labelledby="account-seller-title">
             <h3 class="account-seller-title" id="account-seller-title">Perfil vendedor</h3>
-            <span class="status" id="cuenta-vendedor-estado">Inactivo</span>
+            <span class="status" id="cuenta-vendedor-estado">Pendiente de verificación</span>
             <a class="button button-primary account-action"
                href="activar-vendedor.html">
               Activar perfil vendedor
@@ -77,52 +77,7 @@
         </section>
 
         <div class="account-content">
-          <p id="cuenta-pendiente" hidden>Las métricas, la reputación y la actividad se mostrarán cuando sus servicios estén integrados.</p>
-          <section aria-label="Resumen de actividad de ejemplo" data-cuenta-demo>
-            <dl class="account-metrics">
-              <div class="account-metric panel"><dt>Compras completadas</dt><dd>5</dd></div>
-              <div class="account-metric panel"><dt>Reserva activa</dt><dd>1</dd></div>
-              <div class="account-metric panel"><dt><span class="account-label-mobile">Opiniones recibidas</span><span class="account-label-desktop">Calificaciones recibidas</span></dt><dd>5</dd></div>
-            </dl>
-          </section>
-
-          <div class="alert alert-warning" data-cuenta-demo>
-            <p class="alert-title">Tienes una calificación pendiente</p>
-            <p class="alert-body">La compra del Libro de Cálculo Stewart está completada. Puedes calificar a la otra parte sin esperar su opinión.</p>
-          </div>
-
-          <button class="button button-primary account-operation" type="button" aria-disabled="true" aria-describedby="account-static" data-cuenta-demo>Ver operación completada</button>
-
-          <section class="account-reputation panel" aria-labelledby="account-reputation-title" data-cuenta-demo>
-            <h2 class="account-panel-title" id="account-reputation-title">Tu reputación en la comunidad</h2>
-            <div class="account-rating">
-              <div class="stars" aria-hidden="true">
-                <img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt="">
-                <img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt="">
-                <img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt="">
-                <img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt="">
-                <img src="assets/icons/estrella-dorada-24.svg" width="24" height="24" alt="">
-              </div>
-              <p class="account-score">4.9 · 5 opiniones</p>
-            </div>
-            <p class="account-reputation-text">Las calificaciones recibidas como comprador también forman parte de tu reputación como participante confiable.</p>
-            <button class="button button-outline account-reputation-action" type="button" aria-disabled="true" aria-describedby="account-static">Ver calificaciones recibidas</button>
-            <button class="button button-outline account-reputation-action" type="button" aria-disabled="true" aria-describedby="account-static">Ver calificaciones realizadas</button>
-          </section>
-
-          <section class="account-activity panel" aria-labelledby="account-activity-title" data-cuenta-demo>
-            <h2 class="account-panel-title" id="account-activity-title">Actividad reciente</h2>
-            <ul class="account-activity-list">
-              <li>
-                <h3 class="account-activity-product">MacBook Air M1 256 GB</h3>
-                <p class="account-activity-meta">S/ 2,400 · Consulta · CL-1024</p>
-              </li>
-              <li>
-                <h3 class="account-activity-product">Libro de Cálculo Stewart</h3>
-                <p class="account-activity-meta">S/ 120 · Completada · <time datetime="2026-10-18">18 oct. 2026</time></p>
-              </li>
-            </ul>
-          </section>
+          <p id="cuenta-pendiente">Las métricas, la reputación y la actividad se mostrarán cuando sus servicios estén integrados.</p>
         </div>
       </div>
     </main>
