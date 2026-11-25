@@ -17,7 +17,7 @@
             <nav class="home-nav home-screen-nav">
                 <a href="inicio.html">Inicio</a>
                 <a href="explorar.html">Explorar</a>
-                <a href="publicar.html" aria-current="page">Publicar</a>
+                <a href="publicar.html">Publicar</a>
                 <a href="reservas.html">Reservas</a>
             </nav>
             <div class="home-search">
@@ -44,7 +44,7 @@
         <div class="activate-layout">
             <!-- COLUMNA IZQUIERDA: Beneficios -->
             <div class="activate-sidebar-card">
-                <span class="status-badge bg-gris">Inactivo</span>
+                <span id="insignia-estado-vendedor" class="status-badge bg-gris">Consultando estado</span>
                 <h2>Vende lo que ya no usas</h2>
                 <p class="subtitle-small">Publica tus artículos y conecta con estudiantes de Lima. Activar el perfil no te asigna ventas ni reputación.</p>
                 
@@ -66,40 +66,21 @@
 
             <!-- COLUMNA DERECHA: Formulario -->
             <div class="activate-form-section">
-                <h3>Información de tu experiencia</h3>
-                <label class="form-label">¿Tienes experiencia vendiendo?</label>
-                
-                
-                <div class="radio-group-vertical">
-                    <label class="radio-card">
-                        <input type="radio" name="experiencia" value="sin_experiencia" checked> 
-                        <span>Es mi primera vez</span>
-                    </label>
-                    <label class="radio-card">
-                        <input type="radio" name="experiencia" value="con_experiencia"> 
-                        <span>Sí, tengo experiencia</span>
-                    </label>
-                </div>
-
-                
+                <h3>Solicitud de activación</h3>
+                <p class="subtitle-small">Solicitar la activación no cambia tu acceso como comprador. La revisión la realiza una persona.</p>
                 <div class="info-alert">
-                    <strong>Puedes comenzar sin experiencia</strong>
-                    <span>No necesitas ventas previas ni evidencias para solicitar tu activación.</span>
-                </div>
-
-                <div class="form-group">
-                    <label>Universidad / campus</label>
-                    <input type="text" value="PUCP · San Miguel" readonly>
+                    <strong>La experiencia previa es opcional</strong>
+                    <span>No se requieren ventas previas para solicitar la activación.</span>
                 </div>
 
                 <div class="checkbox-group">
-                    <input type="checkbox" id="terminos">
+                    <input type="checkbox" id="terminos" required>
                     <label for="terminos">Acepto las normas de publicación y convivencia.</label>
                 </div>
 
-                
-                <a href="activar-vendedor-activo.html" class="btn-primary">Enviar solicitud</a>
-                <button type="button" class="btn-secondary">Guardar borrador</button>
+                <p id="estado-vendedor" role="status" aria-live="polite">Comprobando la solicitud con el servicio autorizado…</p>
+                <button type="button" id="solicitar-activacion" class="btn-primary" aria-describedby="estado-vendedor">Enviar solicitud para revisión humana</button>
+                <button type="button" id="reintentar-estado-vendedor" class="btn-secondary">Consultar estado</button>
             </div>
         </div>
     </main>
@@ -108,8 +89,9 @@
     <nav class="home-bottom home-screen-bottom" aria-label="Navegación móvil">
         <a href="inicio.html"><img src="assets/icons/campus.svg" width="24" height="24" alt=""><span>Inicio</span></a>
         <a href="explorar.html"><img src="assets/icons/explorar.svg" width="24" height="24" alt=""><span>Explorar</span></a>
-        <a href="publicar.html" aria-current="page"><img src="assets/icons/publicar.svg" width="24" height="24" alt=""><span>Publicar</span></a>
+        <a href="publicar.html"><img src="assets/icons/publicar.svg" width="24" height="24" alt=""><span>Publicar</span></a>
         <a href="reservas.html"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
     </nav>
+    <script src="js/vendedor.js"></script>
 </body>
 </html>

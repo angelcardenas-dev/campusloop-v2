@@ -994,6 +994,14 @@ main.page-width > section + section { margin-top: var(--space-24); }
 }
 .checkbox-group { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #6B7280; margin: 1rem 0; }
 .checkbox-group input[type="checkbox"] { accent-color: #2640A9; width: 16px; height: 16px; }
+.matias-page #estado-vendedor[role="alert"] {
+    color: #B91C1C;
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-block: 0.75rem;
+}
 
 /* Botones */
 .matias-page .btn-primary {
@@ -1053,6 +1061,26 @@ main.page-width > section + section { margin-top: var(--space-24); }
     line-height: 1.4;
 }
 
+.matias-page .status-alert {
+    background: #F3F4F6;
+    border: 1px solid #D1D5DB;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.matias-page .status-alert strong { color: #374151; display: block; margin-bottom: 0.3rem; font-size: 0.95rem; }
+.matias-page .status-alert span { color: #4B5563; font-size: 0.9rem; line-height: 1.4; }
+.matias-page #perfil-vendedor-aprobado:not([hidden]) {
+    background: #F0FDF4;
+    border: 1px solid #DCFCE7;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+.matias-page #perfil-vendedor-aprobado strong { color: #166534; display: block; margin-bottom: 0.3rem; }
+.matias-page #perfil-vendedor-aprobado span { color: #374151; display: block; font-size: 0.9rem; line-height: 1.4; }
+
 
 
 /* PUBLICAR / MATIAS */
@@ -1074,6 +1102,7 @@ main.page-width > section + section { margin-top: var(--space-24); }
 /* Galería de Fotos */
 .upload-gallery { border: 1px solid #D9E0F2; border-radius: 12px; background-color: #F7F9FF; padding: 1rem; }
 .main-photo { width: 100%; height: 200px; object-fit: cover; display: block; border-radius: 8px; }
+.publish-page #vista-fotografia[hidden], #perfil-vendedor-aprobado[hidden], #enlace-publicar-aprobado[hidden] { display: none !important; }
 .photo-counter { padding-top: 1rem; font-size: 0.9rem; color: #111827; }
 .text-blue { color: #2640A9; font-weight: 700; }
 
@@ -1082,6 +1111,7 @@ main.page-width > section + section { margin-top: var(--space-24); }
 .matias-page .publish-card-single .form-group label { font-weight: 600; font-size: 0.9rem; }
 
 .matias-page .publish-card-single .form-group input,
+.matias-page .publish-card-single .form-group select,
 .matias-page .publish-card-single .form-group textarea {
     width: 100%; 
     padding: 0.8rem; 
@@ -1093,8 +1123,37 @@ main.page-width > section + section { margin-top: var(--space-24); }
     font-size: 0.95rem;
 }
 
+.matias-page .publish-card-single .form-group select {
+    min-height: 46px;
+    padding-right: 2.5rem;
+    cursor: pointer;
+}
+
+.matias-page .publish-card-single .form-group input[type="file"] {
+    padding: 0.45rem;
+    border: 1px dashed #B7C4E2;
+    background: #F7F9FF;
+    cursor: pointer;
+}
+
+.matias-page .publish-card-single .form-group input[type="file"]::file-selector-button {
+    margin-right: 0.75rem;
+    padding: 0.55rem 0.85rem;
+    border: 0;
+    border-radius: 6px;
+    background: #2640A9;
+    color: #FFFFFF;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.matias-page .publish-card-single .form-group input[type="file"]::file-selector-button:hover { background: #1A2E80; }
+
 .matias-page .publish-card-single .form-group textarea { resize: vertical; outline: none; }
-.matias-page .publish-card-single .form-group input:focus, .matias-page .publish-card-single .form-group textarea:focus { border-color: #2640A9; }
+.matias-page .publish-card-single .form-group input:focus,
+.matias-page .publish-card-single .form-group select:focus,
+.matias-page .publish-card-single .form-group textarea:focus { border-color: #2640A9; }
 
 .text-gray { color: #6B7280; }
 .helper-text { font-size: 0.9rem; color: #6B7280; margin-top: 0.2rem; display: block; }

@@ -47,66 +47,78 @@
                 <div class="publish-card-single">
                     <!-- 1. Fotos -->
                     <h2>1. Fotos del artículo</h2>
-                    <div class="upload-gallery">
-                        <img src="assets/images/productos/apuntes-calculo.jpg" alt="Apuntes de Cálculo" class="main-photo">
-                        <div class="photo-counter">
-                            <span class="text-blue">1/1 foto</span> · <span class="text-blue">Apuntes de Cálculo</span>
-                        </div>
+                    <div class="form-group">
+                        <label for="input-fotografia">Fotografía del artículo</label>
+                        <input type="file" id="input-fotografia" accept="image/jpeg,image/png,image/webp" aria-describedby="ayuda-fotografia error-fotografia" aria-invalid="false">
+                        <span id="ayuda-fotografia" class="helper-text">JPEG, PNG o WebP. Máximo objetivo 2 MiB; falta confirmar el límite efectivo de Storage.</span>
+                        <p id="error-fotografia" class="publish-field-error" role="status" aria-live="polite" hidden></p>
+                        <img id="vista-fotografia" class="main-photo" alt="Previsualización de la fotografía del artículo" hidden>
+                        <button type="button" id="retirar-fotografia" class="btn-secondary" disabled>Retirar fotografía</button>
+                        <p id="mensaje-fotografia" class="helper-text" role="status" aria-live="polite">Selecciona una fotografía para previsualizarla.</p>
                     </div>
 
                     <!-- 2. Información -->
                     <h2 class="mt-2">2. Información del artículo</h2>
                     <div class="form-group">
                         <label for="input-titulo">Título del artículo</label>
-                        <input type="text" id="input-titulo" value="Apuntes de Cálculo — Ciclo 2026-2" maxlength="100" aria-invalid="false">
+                        <input type="text" id="input-titulo" maxlength="100" aria-invalid="false" aria-describedby="error-titulo">
                         <p id="error-titulo" class="publish-field-error" hidden></p>
                     </div>
                     <div class="form-group">
                         <label for="input-categoria">Categoría</label>
-                        <input type="text" id="input-categoria" value="Académico · Apuntes">
+                        <select id="input-categoria" required aria-invalid="false" aria-describedby="estado-catalogos error-categoria">
+                            <option value="">Selecciona una categoría</option>
+                        </select>
+                        <p id="error-categoria" class="publish-field-error" hidden></p>
                     </div>
                     <div class="form-group">
                         <label for="input-precio">Precio (S/)</label>
-                        <input type="text" id="input-precio" value="25">
+                        <input type="text" id="input-precio" inputmode="decimal" autocomplete="off" placeholder="0,00" required aria-invalid="false" aria-describedby="ayuda-precio error-precio">
+                        <span id="ayuda-precio" class="helper-text">Ingresa un importe positivo en soles, con hasta dos decimales.</span>
+                        <p id="error-precio" class="publish-field-error" hidden></p>
                     </div>
                     <div class="form-group">
                         <label for="input-condicion">Condición del artículo</label>
-                        <input type="text" id="input-condicion" value="Buen estado">
+                        <select id="input-condicion" required aria-invalid="false" aria-describedby="error-condicion">
+                            <option value="">Selecciona la condición</option>
+                            <option value="nuevo">Nuevo</option>
+                            <option value="como_nuevo">Como nuevo</option>
+                            <option value="buen_estado">Buen estado</option>
+                            <option value="usado">Usado</option>
+                        </select>
+                        <p id="error-condicion" class="publish-field-error" hidden></p>
                     </div>
-                    <p class="helper-text">Estado inicial de la publicación: Disponible.</p>
+                    <p class="helper-text">El servicio autorizado determina el estado inicial de la publicación.</p>
 
                     <!-- 3. Descripción -->
                     <h2 class="mt-2">3. Descripción</h2>
                     <div class="form-group">
                         <label for="input-descripcion">Describe tu artículo</label>
-                        <textarea id="input-descripcion" rows="4" class="text-gray textarea-custom" maxlength="1000" aria-invalid="false" aria-describedby="descripcion-ayuda">Apuntes de Cálculo 1 organizados por temas, con ejercicios resueltos. Incluye carpeta.</textarea>
+                        <textarea id="input-descripcion" rows="4" class="text-gray textarea-custom" maxlength="1000" aria-invalid="false" aria-describedby="descripcion-ayuda error-descripcion"></textarea>
                         <p id="error-descripcion" class="publish-field-error" hidden></p>
                         <span id="descripcion-ayuda" class="helper-text">Máximo 1000 caracteres</span>
-                    </div>
-                    <div class="form-group">
-                        <label for="input-accesorios">Accesorios incluidos</label>
-                        <input type="text" id="input-accesorios" value="Carpeta y separadores">
                     </div>
 
                     <!-- 4. Ubicación -->
                     <h2 class="mt-2">4. Ubicación y disponibilidad</h2>
                     <div class="form-group">
                         <label for="input-campus">Campus del vendedor</label>
-                        <input type="text" id="input-campus" value="PUCP · San Miguel">
+                        <select id="input-campus" required aria-invalid="false" aria-describedby="estado-catalogos error-campus">
+                            <option value="">Selecciona un campus</option>
+                        </select>
+                        <p id="error-campus" class="publish-field-error" hidden></p>
                     </div>
-                    <div class="form-group">
-                        <label for="input-disponibilidad">Disponibilidad</label>
-                        <input type="text" id="input-disponibilidad" value="A coordinar en Reservas">
-                    </div>
+                    <p class="helper-text">No se cambia el estado del artículo desde este formulario.</p>
+                    <p id="estado-catalogos" class="helper-text" role="status" aria-live="polite">Integración pendiente: categorías y campus se cargarán desde el catálogo autorizado.</p>
 
                     <!-- Contenedor para mensajes de error/éxito-->
                     <div id="mensaje-formulario" class="msj-dinamico" role="status" aria-live="polite"></div>
 
                     <!-- Botones -->
                     <div class="publish-actions mt-2">
-                        <button type="button" class="btn-secondary">Guardar borrador</button>
-                        <button type="button" class="btn-primary" id="btn-publicar">Publicar artículo</button>
+                        <button type="button" class="btn-primary" id="btn-publicar" aria-describedby="estado-publicacion">Publicar artículo</button>
                     </div>
+                    <p id="estado-publicacion" class="helper-text">La publicación requiere un servicio autorizado y un perfil vendedor aprobado.</p>
                 </div>
             </div>
 
@@ -151,6 +163,7 @@
         <a href="reservas.html"><img src="assets/icons/reservas.svg" width="24" height="24" alt=""><span>Reservas</span></a>
     </nav>
 
+    <script src="js/imagenes.js"></script>
     <script src="js/publicaciones.js"></script>
 
 </body>

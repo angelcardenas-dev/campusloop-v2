@@ -14,6 +14,7 @@
 
     const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     const ESTADOS = new Set(["disponible", "reservado", "vendido"]);
+    const TIMEOUT_MS = 15000;
     const CONDICIONES = new Set(["nuevo", "como_nuevo", "buen_estado", "usado"]);
     const FORMATOS_IMAGEN = Object.freeze({ "image/jpeg": /\.(?:jpe?g)$/i, "image/png": /\.png$/i, "image/webp": /\.webp$/i });
     const MENSAJES = Object.freeze({
@@ -29,6 +30,32 @@
         codigo, mensaje: MENSAJES[codigo] || MENSAJES.SERVIDOR,
     } });
     const resultadoSeguro = error => fallo(error && Object.hasOwn(MENSAJES, error.codigo) ? error.codigo : "SERVIDOR");
+
+    function esperarConLimite(invocar, signal, timeoutMs) {
+        if (signal?.aborted) return Promise.reject(Object.assign(new Error("Operación cancelada."), { name: "AbortError" }));
+        return new Promise((resolve, reject) => {
+            let terminado = false;
+            const limpiar = () => { global.clearTimeout(temporizador); signal?.removeEventListener("abort", abortar); };
+            const finalizar = (fn, resultado) => { if (terminado) return; terminado = true; limpiar(); fn(resultado); };
+            const abortar = () => finalizar(reject, Object.assign(new Error("Operación cancelada."), { name: "AbortError" }));
+            const temporizador = global.setTimeout(() => finalizar(reject, Object.assign(
+                new Error("Tiempo de espera agotado."), { name: "TimeoutError" })), timeoutMs);
+            signal?.addEventListener("abort", abortar, { once: true });
+            Promise.resolve().then(() => {
+                if (signal?.aborted) throw Object.assign(new Error("Operación cancelada."), { name: "AbortError" });
+                return invocar();
+            }).then(r => finalizar(resolve, r), e => finalizar(reject, e));
+        });
+    }
+
+    const camposPublicacionCoinciden = (publicada, enviada) => ["titulo", "descripcion", "categoriaId", "condicion", "precioCentimos", "moneda", "campusId"]
+        .every(campo => publicada[campo] === enviada[campo])
+        && imagenesCoinciden(publicada.imagen, enviada.imagen);
+
+    function imagenesCoinciden(a, b) {
+        return !!a && !!b && ["proveedor", "bucket", "ruta", "url", "formato", "bytes", "ancho", "alto"]
+            .every(campo => a[campo] === b[campo]);
+    }
 
     const controles = new WeakMap();
 
@@ -78,13 +105,14 @@
             && typeof dto.descripcion === "string" && dto.descripcion.trim().length > 0 && dto.descripcion.length <= 1000
             && Number.isSafeInteger(dto.precioCentimos) && dto.precioCentimos > 0 && dto.moneda === "PEN"
             && CONDICIONES.has(dto.condicion) && ESTADOS.has(dto.estado)
-            && dto.estado === "disponible" && validarImagen(dto.imagen, origenStorage, dto.vendedorId)
+            && validarImagen(dto.imagen, origenStorage, dto.vendedorId)
             && typeof dto.creadoEn === "string" && Number.isFinite(Date.parse(dto.creadoEn))
             && typeof dto.actualizadoEn === "string" && Number.isFinite(Date.parse(dto.actualizadoEn))
             && Number.isSafeInteger(dto.version) && dto.version > 0;
     }
 
-    function crearControladorPublicaciones({ documento = global.document, servicios = {}, prepararPublicacion, origenStorage } = {}) {
+    function crearControladorPublicaciones({ documento = global.document, servicios = {}, prepararPublicacion, origenStorage,
+        opcionesCatalogo, verificarVendedor, serviciosImagenes = {}, imagenes = global.CampusLoopImagenes, timeoutMs = TIMEOUT_MS } = {}) {
         let desmontado = false;
         let enCurso = false;
         let generacion = 0;
@@ -94,6 +122,11 @@
         const titulo = documento?.getElementById("input-titulo");
         const descripcion = documento?.getElementById("input-descripcion");
         const mensaje = documento?.getElementById("mensaje-formulario");
+        const categoria = documento?.getElementById("input-categoria");
+        const condicion = documento?.getElementById("input-condicion");
+        const precio = documento?.getElementById("input-precio");
+        const campus = documento?.getElementById("input-campus");
+        const estadoCatalogos = documento?.getElementById("estado-catalogos");
         if (!btn || !titulo || !descripcion || !mensaje) return { desmontar() {} };
 
         if (controles.has(btn)) return controles.get(btn);
@@ -101,7 +134,12 @@
         const campos = new Map([
             [titulo, { error: documento.getElementById("error-titulo"), vacio: "Por favor, ingresa un título para tu artículo." }],
             [descripcion, { error: documento.getElementById("error-descripcion"), vacio: "Por favor, ingresa una descripción para tu artículo." }],
+            [categoria, { error: documento.getElementById("error-categoria"), vacio: "Selecciona una categoría del catálogo." }],
+            [condicion, { error: documento.getElementById("error-condicion"), vacio: "Selecciona la condición del artículo." }],
+            [precio, { error: documento.getElementById("error-precio"), vacio: "Ingresa un precio positivo en soles." }],
+            [campus, { error: documento.getElementById("error-campus"), vacio: "Selecciona un campus del catálogo." }],
         ]);
+        for (const [campo, config] of [...campos]) if (!campo) campos.delete(campo);
         const registrar = (elemento, tipo, listener) => {
             if (!elemento) return;
             elemento.addEventListener(tipo, listener);
@@ -125,6 +163,10 @@
             const config = campos.get(campo);
             let texto = "";
             if (!campo.value.trim()) texto = config.vacio;
+            else if (campo === categoria && !Array.from(categoria.options || []).some(o => o.value === campo.value && o.value)) texto = config.vacio;
+            else if (campo === campus && !Array.from(campus.options || []).some(o => o.value === campo.value && o.value)) texto = config.vacio;
+            else if (campo === condicion && !CONDICIONES.has(campo.value)) texto = config.vacio;
+            else if (campo === precio && (precioACentimos(campo.value) === null || precioACentimos(campo.value) <= 0)) texto = "El precio debe ser válido, positivo y tener hasta dos decimales.";
             else if (campo.maxLength >= 0 && campo.value.length > campo.maxLength) {
                 texto = `El campo admite un máximo de ${campo.maxLength} caracteres.`;
             }
@@ -139,45 +181,68 @@
             else if (tipo === "info" || tipo === "integracion_pendiente") mensaje.classList.add("is-info");
         }
         function validarFormulario() {
-            const tituloValido = validarCampo(titulo);
-            const descripcionValida = validarCampo(descripcion);
-            if (!tituloValido || !descripcionValida) {
-                const primero = !tituloValido ? titulo : descripcion;
-                mostrarMensaje(campos.get(primero).error.textContent, "error");
-                primero.focus();
+            let primero = null;
+            for (const campo of campos.keys()) if (!validarCampo(campo) && !primero) primero = campo;
+            const foto = imagenesControl?.obtenerArchivo?.();
+            const fotoValida = !!foto;
+            const errorFoto = documento.getElementById("error-fotografia");
+            const inputFoto = documento.getElementById("input-fotografia");
+            if (errorFoto) { errorFoto.hidden = fotoValida; errorFoto.textContent = fotoValida ? "" : "Selecciona una fotografía válida para continuar."; }
+            if (inputFoto) inputFoto.setAttribute("aria-invalid", String(!fotoValida));
+            if (!fotoValida && !primero) primero = inputFoto;
+            if (primero) {
+                mostrarMensaje(campos.get(primero)?.error?.textContent || "Selecciona una fotografía válida.", "error");
+                primero?.focus?.();
                 return false;
             }
             return true;
         }
-        const dtoFormulario = () => ({ titulo: titulo.value.trim(), descripcion: descripcion.value.trim() });
+        function precioACentimos(valor) {
+            if (typeof valor !== "string" || !/^\d{1,12}(?:[.,]\d{1,2})?$/.test(valor.trim())) return null;
+            const [entero, fraccion = ""] = valor.trim().split(/[.,]/);
+            const total = Number(entero) * 100 + Number(fraccion.padEnd(2, "0"));
+            return Number.isSafeInteger(total) ? total : null;
+        }
+        const imagenesControl = typeof imagenes?.crearControladorImagenes === "function"
+            ? imagenes.crearControladorImagenes({ documento, subirFotografia: serviciosImagenes.subirFotografia }) : null;
+        function cargarSelect(select, lista) {
+            if (!select || !Array.isArray(lista)) return false;
+            const validas = lista.filter(item => item && UUID.test(item.id) && typeof item.etiqueta === "string" && item.etiqueta.trim());
+            if (validas.length !== lista.length || new Set(validas.map(o => o.id)).size !== validas.length) return false;
+            while (select.options.length > 1) select.remove(1);
+            for (const item of validas) { const option = documento.createElement("option"); option.value = item.id; option.textContent = item.etiqueta; select.append(option); }
+            return validas.length > 0;
+        }
+        const catalogosListos = cargarSelect(categoria, opcionesCatalogo?.categorias)
+            && cargarSelect(campus, opcionesCatalogo?.campus);
+        if (estadoCatalogos && catalogosListos) estadoCatalogos.textContent = "Opciones inyectadas en modo preparatorio; se debe verificar su origen antes de conectar la publicación.";
+        const dtoFormulario = () => ({ titulo: titulo.value.trim(), descripcion: descripcion.value.trim(),
+            categoriaId: categoria?.value || "", condicion: condicion?.value || "",
+            precioCentimos: precioACentimos(precio?.value || ""), moneda: "PEN", campusId: campus?.value || "" });
         const respuestaValida = r => r && typeof r === "object" && typeof r.ok === "boolean"
             && Object.hasOwn(r, "datos") && Object.hasOwn(r, "error")
-            && (r.ok ? r.error === null : r.datos === null && typeof r.error?.codigo === "string");
+            && (r.ok ? r.error === null && !!r.datos && typeof r.datos === "object" && !Array.isArray(r.datos)
+                : r.datos === null && !!r.error && typeof r.error === "object" && typeof r.error.codigo === "string");
 
         async function publicar(evento) {
             evento.preventDefault();
             if (desmontado || enCurso) return;
             if (!validarFormulario()) return;
+            const seleccionFotografia = imagenesControl?.capturarSeleccion?.() ?? null;
+            if (imagenesControl?.capturarSeleccion && !seleccionFotografia) {
+                mostrarMensaje("Selecciona una fotografía válida para continuar.", "error");
+                documento.getElementById("input-fotografia")?.focus?.();
+                return;
+            }
+            if (typeof verificarVendedor !== "function") {
+                mostrarMensaje("Integración pendiente: falta consultar al servicio autorizado para confirmar el perfil vendedor.", "integracion_pendiente");
+                return;
+            }
             if (typeof servicios.crearPublicacion !== "function" || typeof prepararPublicacion !== "function") {
                 mostrarMensaje("Integración pendiente: falta conectar el servicio autorizado de publicaciones.", "integracion_pendiente");
                 return;
             }
             const entrada = dtoFormulario();
-            let preparado;
-            try { preparado = prepararPublicacion(entrada); }
-            catch { preparado = null; }
-            if (!preparado || preparado.ok !== true || (preparado.error !== undefined && preparado.error !== null)
-                || !validarDtoPublicacion(preparado.datos, origenStorage)
-                || preparado.datos.titulo !== entrada.titulo || preparado.datos.descripcion !== entrada.descripcion) {
-                // Códigos provisionales del controlador. Nunca mostrar mensajes del preparador.
-                const rechazado = respuestaValida(preparado) && !preparado.ok;
-                mostrarMensaje(rechazado ? resultadoSeguro(preparado.error).error.mensaje : MENSAJES_VALIDACION_DTO, "error");
-                if (rechazado) {
-                    const campo = [...campos.keys()].find(c => c.id === preparado.campo);
-                    campo?.focus();
-                }
-                return;
-            }
             enCurso = true;
             const operacion = ++generacion;
             abortador = new AbortController();
@@ -187,28 +252,87 @@
             restaurarBoton = () => {
                 btn.textContent = textoBoton;
                 btn.disabled = disabledAnterior;
-                if (busyAnterior === null) btn.removeAttribute("aria-busy");
-                else btn.setAttribute("aria-busy", busyAnterior);
+                if (busyAnterior === null) btn.removeAttribute("aria-busy"); else btn.setAttribute("aria-busy", busyAnterior);
                 restaurarBoton = null;
             };
             btn.disabled = true;
             btn.setAttribute("aria-busy", "true");
             btn.textContent = "Procesando…";
+            let preparado;
+            let estadoVendedor;
+            let errorEspera = null;
+            try { estadoVendedor = await esperarConLimite(() => verificarVendedor({ signal: abortador.signal }), abortador.signal, timeoutMs); }
+            catch (error) { errorEspera = error; if (error?.name === "TimeoutError") abortador.abort(); estadoVendedor = null; }
+            if (desmontado || operacion !== generacion) return;
+            if (!respuestaValida(estadoVendedor) || estadoVendedor?.ok !== true || estadoVendedor?.datos?.estado !== "APROBADO") {
+                mostrarMensaje(errorEspera?.name === "TimeoutError"
+                    ? "La consulta de vendedor tardó demasiado. Tus datos siguen en el formulario; verifica el estado antes de reintentar."
+                    : estadoVendedor?.datos?.estado === "PENDIENTE"
+                    ? "Tu perfil vendedor sigue pendiente de revisión humana; no se puede publicar todavía."
+                    : "No se pudo confirmar un perfil vendedor aprobado. Conservamos los datos del formulario.", "error");
+                enCurso = false; abortador = null; restaurarBoton();
+                return;
+            }
+            let resultadoFotografia = null;
+            const fotografiaOperacion = seleccionFotografia ? Object.freeze({
+                obtenerArchivo: () => seleccionFotografia.datos,
+                preparar: async opciones => {
+                    const resultado = await imagenesControl.preparar({ ...opciones, seleccion: seleccionFotografia });
+                    if (resultado?.ok === true && resultado.error === null && resultado.datos && typeof resultado.datos === "object") {
+                        resultadoFotografia = resultado.datos;
+                    }
+                    return resultado;
+                },
+                esSeleccionActual: () => imagenesControl.esSeleccionActual(seleccionFotografia),
+            }) : imagenesControl;
+            try { preparado = await esperarConLimite(() => prepararPublicacion(entrada, {
+                signal: abortador.signal, fotografia: fotografiaOperacion, seleccionFotografia,
+            }), abortador.signal, timeoutMs); }
+            catch (error) { errorEspera = error; if (error?.name === "TimeoutError") abortador.abort(); preparado = null; }
+            if (desmontado || operacion !== generacion) return;
+            if (!preparado || preparado.ok !== true || (preparado.error !== undefined && preparado.error !== null)
+                || !validarDtoPublicacion(preparado.datos, origenStorage)
+                || preparado.datos.titulo !== entrada.titulo || preparado.datos.descripcion !== entrada.descripcion
+                || preparado.datos.categoriaId !== entrada.categoriaId || preparado.datos.condicion !== entrada.condicion
+                || preparado.datos.precioCentimos !== entrada.precioCentimos || preparado.datos.moneda !== entrada.moneda
+                || preparado.datos.campusId !== entrada.campusId
+                || (seleccionFotografia && (preparado.seleccionFotografia !== seleccionFotografia
+                    || imagenesControl?.esSeleccionActual?.(seleccionFotografia) !== true
+                    || !resultadoFotografia || !imagenesCoinciden(preparado.datos.imagen, resultadoFotografia)
+                    || (() => { const foto = imagenesControl.obtenerDatosSeleccion?.(seleccionFotografia); return !foto
+                        || foto.formato !== preparado.datos.imagen.formato || foto.bytes !== preparado.datos.imagen.bytes
+                        || foto.ancho !== preparado.datos.imagen.ancho || foto.alto !== preparado.datos.imagen.alto; })()))
+                || errorEspera?.name === "TimeoutError") {
+                // Códigos provisionales del controlador. Nunca mostrar mensajes del preparador.
+                const rechazado = respuestaValida(preparado) && !preparado.ok;
+                mostrarMensaje(errorEspera?.name === "TimeoutError"
+                    ? "La preparación tardó demasiado. Tus datos siguen en el formulario; verifica el estado antes de reintentar."
+                    : rechazado ? resultadoSeguro(preparado.error).error.mensaje : MENSAJES_VALIDACION_DTO, "error");
+                if (rechazado) {
+                    const campo = [...campos.keys()].find(c => c.id === preparado.campo);
+                    campo?.focus();
+                }
+                enCurso = false; abortador = null; restaurarBoton();
+                return;
+            }
             mostrarMensaje("Enviando la publicación…", "info");
             try {
-                const r = await servicios.crearPublicacion(preparado.datos, { signal: abortador.signal });
+                const r = await esperarConLimite(() => servicios.crearPublicacion(preparado.datos, { signal: abortador.signal }), abortador.signal, timeoutMs);
                 if (desmontado || operacion !== generacion) return;
                 if (!respuestaValida(r)) { mostrarMensaje(MENSAJES.RESPUESTA_INVALIDA, "error"); return; }
                 if (!r.ok) { mostrarMensaje(resultadoSeguro(r.error).error.mensaje, "error"); return; }
-                if (!validarArticulo(r.datos, origenStorage)) { mostrarMensaje(MENSAJES.RESPUESTA_INVALIDA, "error"); return; }
+                if (!validarArticulo(r.datos, origenStorage) || !camposPublicacionCoinciden(r.datos, preparado.datos)) {
+                    mostrarMensaje(MENSAJES.RESPUESTA_INVALIDA, "error"); return;
+                }
                 const actual = dtoFormulario();
                 mostrarMensaje(actual.titulo === entrada.titulo && actual.descripcion === entrada.descripcion
                     ? "Respuesta válida del servicio de prueba. Revisa los datos antes de continuar."
                     : "La respuesta corresponde al envío anterior. Tus cambios siguen en el formulario.", "info");
             } catch (error) {
                 if (desmontado || operacion !== generacion) return;
-                if (error?.name === "AbortError") {
-                    mostrarMensaje("Se interrumpió la espera. Tus datos siguen en el formulario.");
+                if (error?.name === "AbortError" || error?.name === "TimeoutError") {
+                    if (error?.name === "TimeoutError") abortador?.abort();
+                    mostrarMensaje("La espera terminó. El servicio pudo haber recibido la publicación; comprueba su estado antes de reintentar. Tus datos siguen en el formulario.", "error");
                     return;
                 }
                 mostrarMensaje(resultadoSeguro(error).error.mensaje, "error");
@@ -229,6 +353,12 @@
             const pendiente = [...campos].find(([otro]) => otro.getAttribute("aria-invalid") === "true");
             mostrarMensaje(pendiente ? pendiente[1].error.textContent : "Campo corregido. Puedes revisar los datos antes de continuar.", pendiente ? "error" : "info");
         });
+        for (const [campo] of campos) if (campo === categoria || campo === condicion || campo === campus) registrar(campo, "change", () => {
+            if (campo.getAttribute("aria-invalid") !== "true") return;
+            const anterior = mensaje.textContent;
+            if (!validarCampo(campo) || anterior !== campos.get(campo).error.textContent) return;
+            mostrarMensaje("Campo corregido. Puedes revisar los datos antes de continuar.", "info");
+        });
 
         const aplicarBorradorValidado = borrador => {
             if (desmontado || enCurso || !borrador || typeof borrador !== "object" || Array.isArray(borrador)
@@ -245,6 +375,7 @@
             return true;
         };
 
+        limpiezas.push(() => imagenesControl?.desmontar?.());
         limpiezas.push(montarInterfazIA(documento, validarFormulario, () => enCurso || desmontado));
         const control = {
             publicar,
@@ -366,7 +497,8 @@
 
     global.CampusLoopPublicaciones = Object.freeze({ crearControladorPublicaciones, validarArticulo, validarDtoPublicacion });
     if (global.document) global.document.addEventListener("DOMContentLoaded", () => {
-        const controlador = crearControladorPublicaciones({});
+        const dependencias = global.CampusLoopPublicacionesDependencias || {};
+        const controlador = crearControladorPublicaciones({ documento: global.document, imagenes: global.CampusLoopImagenes, ...dependencias });
         global.campusLoopPublicaciones = controlador;
     }, { once: true });
 })(typeof window === "undefined" ? globalThis : window);
