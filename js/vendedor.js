@@ -43,7 +43,8 @@
     });
   }
 
-  function crearControladorVendedor({ documento = global.document, servicios = {}, ubicacion = global.location, timeoutMs = TIMEOUT_MS } = {}) {
+  function crearControladorVendedor({ documento = global.document, servicios = {}, ubicacion = global.location,
+    observarCambioIdentidad, timeoutMs = TIMEOUT_MS } = {}) {
     const estado = documento?.getElementById('estado-vendedor');
     const insignia = documento?.getElementById('insignia-estado-vendedor');
     const boton = documento?.getElementById('solicitar-activacion');
@@ -55,6 +56,7 @@
     let desmontado = false;
     let enCurso = false;
     let peticion = null;
+    let tipoPeticion = null;
     let solicitudIndeterminada = false;
     const listeners = [];
     const registrar = (e, tipo, fn) => { if (!e) return; e.addEventListener(tipo, fn); listeners.push(() => e.removeEventListener(tipo, fn)); };
@@ -66,25 +68,32 @@
       if (insignia) insignia.textContent = ({ NO_SOLICITADO: 'No solicitado', PENDIENTE: 'Pendiente', APROBADO: 'Aprobado', RECHAZADO: 'Rechazado', CARGANDO: 'Cargando', ERROR: 'Error', INTEGRACION: 'Integración pendiente' })[valor] || 'Estado desconocido';
       if (panelAprobado) panelAprobado.hidden = valor !== 'APROBADO';
       if (botonPublicar) botonPublicar.hidden = valor !== 'APROBADO';
-      if (boton) boton.disabled = enCurso || ['PENDIENTE', 'APROBADO'].includes(valor);
+      if (boton) boton.disabled = enCurso || solicitudIndeterminada || ['PENDIENTE', 'APROBADO'].includes(valor);
     };
     async function consultar() {
       if (desmontado || enCurso) return;
       if (typeof servicios.consultarEstado !== 'function') { mostrar('INTEGRACION'); return; }
       enCurso = true;
-      const actual = new AbortController(); peticion = actual; mostrar('CARGANDO');
+      const actual = new AbortController(); peticion = actual; tipoPeticion = 'consultar'; mostrar('CARGANDO');
       try {
         const r = await esperarConLimite(servicios.consultarEstado({ signal: actual.signal }), actual.signal, timeoutMs);
         if (desmontado || peticion !== actual || actual.signal.aborted) return;
         if (!respuestaValida(r) || !r.ok || !ESTADOS.has(r.datos.estado)) { mostrar('ERROR', 'alert'); return; }
-        solicitudIndeterminada = false;
+        const estabaIndeterminada = solicitudIndeterminada;
+        // NO_SOLICITADO no reconcilia una petición que pudo seguir procesándose
+        // tras el timeout. Se requiere un resultado autoritativo no ambiguo.
+        if (estabaIndeterminada && r.datos.estado !== 'NO_SOLICITADO') solicitudIndeterminada = false;
         mostrar(r.datos.estado, r.datos.estado === 'RECHAZADO' ? 'alert' : 'status');
+        if (estabaIndeterminada && r.datos.estado === 'NO_SOLICITADO') {
+          estado.textContent = 'El servicio aún no confirma el resultado de la solicitud anterior. No la vuelvas a enviar hasta reconciliarla.';
+          estado.setAttribute('role', 'alert');
+        }
       } catch (error) {
         if (error?.name === 'TimeoutError') actual.abort();
         if (!desmontado && peticion === actual && error?.name !== 'AbortError') mostrar('ERROR', 'alert');
       } finally {
         if (peticion === actual) {
-          enCurso = false; peticion = null;
+          enCurso = false; peticion = null; tipoPeticion = null;
           if (boton) boton.disabled = solicitudIndeterminada || ['PENDIENTE', 'APROBADO'].includes(estado.dataset.estado);
         }
       }
@@ -100,7 +109,7 @@
       }
       if (typeof servicios.solicitarActivacion !== 'function') { mostrar('INTEGRACION'); return; }
       enCurso = true;
-      const actual = new AbortController(); peticion = actual;
+      const actual = new AbortController(); peticion = actual; tipoPeticion = 'solicitar';
       if (boton) { boton.disabled = true; boton.setAttribute('aria-busy', 'true'); }
       mostrar('CARGANDO');
       try {
@@ -125,7 +134,7 @@
         }
       } finally {
         if (peticion === actual) {
-          enCurso = false; peticion = null;
+          enCurso = false; peticion = null; tipoPeticion = null;
           boton?.removeAttribute('aria-busy');
           if (boton) boton.disabled = solicitudIndeterminada || ['PENDIENTE', 'APROBADO'].includes(estado.dataset.estado);
         }
@@ -134,6 +143,27 @@
     registrar(boton, 'click', solicitar);
     registrar(documento.getElementById('reintentar-estado-vendedor'), 'click', consultar);
     if (formulario) registrar(formulario, 'submit', solicitar);
+    if (typeof observarCambioIdentidad === 'function') {
+      try {
+        const desuscribir = observarCambioIdentidad(() => {
+          if (desmontado) return;
+          if (tipoPeticion === 'solicitar') solicitudIndeterminada = true;
+          peticion?.abort();
+          peticion = null;
+          tipoPeticion = null;
+          enCurso = false;
+          mostrar('CARGANDO');
+          // El evento solo invalida estado visual; la consulta vuelve a resolver
+          // la identidad mediante el servicio confiable, nunca desde el evento.
+          if (typeof servicios.consultarEstado === 'function') void consultar();
+          else mostrar('INTEGRACION');
+        });
+        if (typeof desuscribir === 'function') listeners.push(desuscribir);
+      } catch {
+        solicitudIndeterminada = true;
+        mostrar('INTEGRACION');
+      }
+    }
     const modoResultado = documento.body?.dataset.vendedorResultado === 'true';
     if (modoResultado) {
       mostrar('CARGANDO');

@@ -16,7 +16,10 @@
     const ESTADOS = new Set(["disponible", "reservado", "vendido"]);
     const TIMEOUT_MS = 15000;
     const CONDICIONES = new Set(["nuevo", "como_nuevo", "buen_estado", "usado"]);
-    const FORMATOS_IMAGEN = Object.freeze({ "image/jpeg": /\.(?:jpe?g)$/i, "image/png": /\.png$/i, "image/webp": /\.webp$/i });
+    const EXTENSIONES_IMAGEN = Object.freeze({ "image/jpeg": /\.(?:jpe?g)$/i, "image/png": /\.png$/i, "image/webp": /\.webp$/i });
+    const MAX_BYTES_IMAGEN = 2 * 1024 * 1024;
+    const MIN_DIMENSION_IMAGEN = 100;
+    const MAX_DIMENSION_IMAGEN = 12000;
     const MENSAJES = Object.freeze({
         VALIDACION: "Revisa los datos ingresados.",
         NO_AUTORIZADO: "No tienes permiso para realizar esta operación.",
@@ -53,36 +56,45 @@
         && imagenesCoinciden(publicada.imagen, enviada.imagen);
 
     function imagenesCoinciden(a, b) {
-        return !!a && !!b && ["proveedor", "bucket", "ruta", "url", "formato", "bytes", "ancho", "alto"]
+        return !!a && !!b && ["proveedor", "bucket", "ruta", "formato", "bytes", "ancho", "alto"]
             .every(campo => a[campo] === b[campo]);
     }
 
     const controles = new WeakMap();
 
-    function validarImagen(imagen, origen, propietario) {
-        if (!imagen || typeof imagen !== "object" || Array.isArray(imagen)
-            || imagen.proveedor !== "supabase" || typeof imagen.bucket !== "string"
-            || !/^[a-z0-9][a-z0-9_-]{0,99}$/.test(imagen.bucket)
-            || typeof imagen.ruta !== "string" || imagen.ruta.length > 500
-            || !UUID.test(imagen.ruta.split('/')[0])
-            || (propietario && imagen.ruta.split('/')[0] !== propietario.toLowerCase())
-            || !/^[0-9a-f-]{36}\/[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|webp)$/.test(imagen.ruta)
-            || typeof imagen.url !== "string" || imagen.url.length > 2048
-            || !Object.hasOwn(FORMATOS_IMAGEN, imagen.formato)
-            || !FORMATOS_IMAGEN[imagen.formato].test(imagen.ruta)
-            || !Number.isSafeInteger(imagen.bytes) || imagen.bytes <= 0
-            || !Number.isSafeInteger(imagen.ancho) || imagen.ancho <= 0
-            || !Number.isSafeInteger(imagen.alto) || imagen.alto <= 0) return false;
+    function validarContextoStorage(contexto) {
+        if (!contexto || typeof contexto !== "object" || Array.isArray(contexto) || Object.keys(contexto).length !== 4
+            || !["proveedor", "bucket", "propietarioId", "origenStorage"].every(k => Object.hasOwn(contexto, k))
+            || contexto.proveedor !== "supabase" || typeof contexto.bucket !== "string"
+            || !/^[a-z0-9][a-z0-9_-]{0,99}$/.test(contexto.bucket)
+            || typeof contexto.propietarioId !== "string" || !UUID.test(contexto.propietarioId)
+            || typeof contexto.origenStorage !== "string") return false;
         try {
-            const base = new URL(origen);
-            return base.protocol === "https:" && base.origin === origen
-                && imagen.url === `${origen}/storage/v1/object/public/${imagen.bucket}/${imagen.ruta}`;
+            const origen = new URL(contexto.origenStorage);
+            return origen.protocol === "https:" && origen.origin === contexto.origenStorage
+                && !origen.username && !origen.password;
         } catch { return false; }
+    }
+
+    function validarImagen(imagen, contextoStorage, propietario = contextoStorage?.propietarioId) {
+        const claves = ["proveedor", "bucket", "ruta", "formato", "bytes", "ancho", "alto"];
+        if (!validarContextoStorage(contextoStorage) || !imagen || typeof imagen !== "object" || Array.isArray(imagen)
+            || Object.keys(imagen).length !== claves.length || !claves.every(k => Object.hasOwn(imagen, k))
+            || imagen.proveedor !== contextoStorage.proveedor || imagen.bucket !== contextoStorage.bucket
+            || typeof imagen.ruta !== "string" || imagen.ruta.length > 500
+            || !Object.hasOwn(EXTENSIONES_IMAGEN, imagen.formato) || !EXTENSIONES_IMAGEN[imagen.formato].test(imagen.ruta)
+            || !Number.isSafeInteger(imagen.bytes) || imagen.bytes <= 0 || imagen.bytes > MAX_BYTES_IMAGEN
+            || !Number.isSafeInteger(imagen.ancho) || imagen.ancho < MIN_DIMENSION_IMAGEN || imagen.ancho > MAX_DIMENSION_IMAGEN
+            || !Number.isSafeInteger(imagen.alto) || imagen.alto < MIN_DIMENSION_IMAGEN || imagen.alto > MAX_DIMENSION_IMAGEN) return false;
+        const [dueno, nombre, extra] = imagen.ruta.split("/");
+        return extra === undefined && UUID.test(dueno || "") && dueno === propietario.toLowerCase()
+            && dueno === contextoStorage.propietarioId.toLowerCase()
+            && /^[A-Za-z0-9_-]+\.(?:jpe?g|png|webp)$/i.test(nombre || "");
     }
 
     // DTO mínimo de escritura. No acepta identidad/estado suministrados por UI;
     // el servicio autorizado deriva el vendedor y asigna el estado inicial.
-    function validarDtoPublicacion(dto, origenStorage) {
+    function validarDtoPublicacion(dto, contextoStorage) {
         const claves = ["titulo", "descripcion", "categoriaId", "condicion", "precioCentimos", "moneda", "campusId", "imagen"];
         if (!dto || typeof dto !== "object" || Array.isArray(dto)
             || Object.keys(dto).length !== claves.length || !claves.every(clave => Object.hasOwn(dto, clave))) return false;
@@ -92,11 +104,11 @@
             && typeof dto.campusId === "string" && UUID.test(dto.campusId)
             && typeof dto.condicion === "string" && CONDICIONES.has(dto.condicion)
             && Number.isSafeInteger(dto.precioCentimos) && dto.precioCentimos > 0
-            && dto.moneda === "PEN" && validarImagen(dto.imagen, origenStorage);
+            && dto.moneda === "PEN" && validarImagen(dto.imagen, contextoStorage);
     }
 
-    function validarArticulo(dto, origenStorage) {
-        if (!dto || typeof dto !== "object" || Array.isArray(dto)) return false;
+    function validarArticulo(dto, contextoStorage) {
+        if (!validarContextoStorage(contextoStorage) || !dto || typeof dto !== "object" || Array.isArray(dto)) return false;
         return typeof dto.id === "string" && UUID.test(dto.id)
             && typeof dto.vendedorId === "string" && UUID.test(dto.vendedorId)
             && typeof dto.categoriaId === "string" && UUID.test(dto.categoriaId)
@@ -105,16 +117,21 @@
             && typeof dto.descripcion === "string" && dto.descripcion.trim().length > 0 && dto.descripcion.length <= 1000
             && Number.isSafeInteger(dto.precioCentimos) && dto.precioCentimos > 0 && dto.moneda === "PEN"
             && CONDICIONES.has(dto.condicion) && ESTADOS.has(dto.estado)
-            && validarImagen(dto.imagen, origenStorage, dto.vendedorId)
+            && dto.vendedorId.toLowerCase() === contextoStorage?.propietarioId?.toLowerCase()
+            && validarImagen(dto.imagen, contextoStorage, dto.vendedorId)
             && typeof dto.creadoEn === "string" && Number.isFinite(Date.parse(dto.creadoEn))
             && typeof dto.actualizadoEn === "string" && Number.isFinite(Date.parse(dto.actualizadoEn))
             && Number.isSafeInteger(dto.version) && dto.version > 0;
     }
 
-    function crearControladorPublicaciones({ documento = global.document, servicios = {}, prepararPublicacion, origenStorage,
-        opcionesCatalogo, verificarVendedor, serviciosImagenes = {}, imagenes = global.CampusLoopImagenes, timeoutMs = TIMEOUT_MS } = {}) {
+    function crearControladorPublicaciones({ documento = global.document, servicios = {}, prepararPublicacion,
+        opcionesCatalogo, verificarVendedor, resolverContextoStorage, observarCambioIdentidad,
+        serviciosImagenes = {}, imagenes = global.CampusLoopImagenes, timeoutMs = TIMEOUT_MS } = {}) {
         let desmontado = false;
         let enCurso = false;
+        let publicacionIndeterminada = false;
+        let creacionPendiente = false;
+        let observadorIdentidadListo = false;
         let generacion = 0;
         let abortador = null;
         const limpiezas = [];
@@ -219,6 +236,13 @@
         const dtoFormulario = () => ({ titulo: titulo.value.trim(), descripcion: descripcion.value.trim(),
             categoriaId: categoria?.value || "", condicion: condicion?.value || "",
             precioCentimos: precioACentimos(precio?.value || ""), moneda: "PEN", campusId: campus?.value || "" });
+        const capturarFormularioVisible = () => Object.freeze({ titulo: titulo.value, descripcion: descripcion.value,
+            categoriaId: categoria?.value || "", condicion: condicion?.value || "", precio: precio?.value || "",
+            campusId: campus?.value || "" });
+        const formularioVisibleCoincide = captura => {
+            const actual = capturarFormularioVisible();
+            return Object.keys(captura).every(campo => actual[campo] === captura[campo]);
+        };
         const respuestaValida = r => r && typeof r === "object" && typeof r.ok === "boolean"
             && Object.hasOwn(r, "datos") && Object.hasOwn(r, "error")
             && (r.ok ? r.error === null && !!r.datos && typeof r.datos === "object" && !Array.isArray(r.datos)
@@ -227,6 +251,10 @@
         async function publicar(evento) {
             evento.preventDefault();
             if (desmontado || enCurso) return;
+            if (publicacionIndeterminada) {
+                mostrarMensaje("No se puede reenviar: el resultado anterior requiere reconciliación con el servicio autorizado.", "error");
+                return;
+            }
             if (!validarFormulario()) return;
             const seleccionFotografia = imagenesControl?.capturarSeleccion?.() ?? null;
             if (imagenesControl?.capturarSeleccion && !seleccionFotografia) {
@@ -242,7 +270,12 @@
                 mostrarMensaje("Integración pendiente: falta conectar el servicio autorizado de publicaciones.", "integracion_pendiente");
                 return;
             }
+            if (typeof resolverContextoStorage !== "function" || !observadorIdentidadListo) {
+                mostrarMensaje("Integración pendiente: faltan el contexto autorizado de Storage y la vigilancia de cambios de sesión.", "integracion_pendiente");
+                return;
+            }
             const entrada = dtoFormulario();
+            const capturaFormulario = capturarFormularioVisible();
             enCurso = true;
             const operacion = ++generacion;
             abortador = new AbortController();
@@ -273,11 +306,27 @@
                 enCurso = false; abortador = null; restaurarBoton();
                 return;
             }
+            let contextoStorage = null;
+            try {
+                const contextoRespuesta = await esperarConLimite(() => resolverContextoStorage({ signal: abortador.signal }), abortador.signal, timeoutMs);
+                if (desmontado || operacion !== generacion) return;
+                if (respuestaValida(contextoRespuesta) && contextoRespuesta.ok
+                    && validarContextoStorage(contextoRespuesta.datos)) contextoStorage = Object.freeze({ ...contextoRespuesta.datos });
+            } catch (error) {
+                errorEspera = error;
+                if (error?.name === "TimeoutError") abortador.abort();
+            }
+            if (desmontado || operacion !== generacion) return;
+            if (!contextoStorage) {
+                mostrarMensaje("No se pudo verificar el contexto de almacenamiento del propietario. Conservamos el formulario.", "error");
+                enCurso = false; abortador = null; restaurarBoton();
+                return;
+            }
             let resultadoFotografia = null;
             const fotografiaOperacion = seleccionFotografia ? Object.freeze({
                 obtenerArchivo: () => seleccionFotografia.datos,
                 preparar: async opciones => {
-                    const resultado = await imagenesControl.preparar({ ...opciones, seleccion: seleccionFotografia });
+                    const resultado = await imagenesControl.preparar({ ...opciones, seleccion: seleccionFotografia, contextoStorage });
                     if (resultado?.ok === true && resultado.error === null && resultado.datos && typeof resultado.datos === "object") {
                         resultadoFotografia = resultado.datos;
                     }
@@ -291,7 +340,7 @@
             catch (error) { errorEspera = error; if (error?.name === "TimeoutError") abortador.abort(); preparado = null; }
             if (desmontado || operacion !== generacion) return;
             if (!preparado || preparado.ok !== true || (preparado.error !== undefined && preparado.error !== null)
-                || !validarDtoPublicacion(preparado.datos, origenStorage)
+                || !validarDtoPublicacion(preparado.datos, contextoStorage)
                 || preparado.datos.titulo !== entrada.titulo || preparado.datos.descripcion !== entrada.descripcion
                 || preparado.datos.categoriaId !== entrada.categoriaId || preparado.datos.condicion !== entrada.condicion
                 || preparado.datos.precioCentimos !== entrada.precioCentimos || preparado.datos.moneda !== entrada.moneda
@@ -317,30 +366,41 @@
             }
             mostrarMensaje("Enviando la publicación…", "info");
             try {
+                creacionPendiente = true;
                 const r = await esperarConLimite(() => servicios.crearPublicacion(preparado.datos, { signal: abortador.signal }), abortador.signal, timeoutMs);
                 if (desmontado || operacion !== generacion) return;
-                if (!respuestaValida(r)) { mostrarMensaje(MENSAJES.RESPUESTA_INVALIDA, "error"); return; }
-                if (!r.ok) { mostrarMensaje(resultadoSeguro(r.error).error.mensaje, "error"); return; }
-                if (!validarArticulo(r.datos, origenStorage) || !camposPublicacionCoinciden(r.datos, preparado.datos)) {
-                    mostrarMensaje(MENSAJES.RESPUESTA_INVALIDA, "error"); return;
+                if (!respuestaValida(r)) { publicacionIndeterminada = true; mostrarMensaje(MENSAJES.RESPUESTA_INVALIDA + " El resultado requiere reconciliación antes de reintentar.", "error"); return; }
+                if (!r.ok) {
+                    // Sin contrato de resultado definitivo del servicio, el artículo pudo crearse.
+                    publicacionIndeterminada = true;
+                    mostrarMensaje(`${resultadoSeguro(r.error).error.mensaje} El resultado requiere reconciliación antes de reintentar.`, "error");
+                    return;
                 }
-                const actual = dtoFormulario();
-                mostrarMensaje(actual.titulo === entrada.titulo && actual.descripcion === entrada.descripcion
+                if (!validarArticulo(r.datos, contextoStorage) || !camposPublicacionCoinciden(r.datos, preparado.datos)) {
+                    publicacionIndeterminada = true;
+                    mostrarMensaje(MENSAJES.RESPUESTA_INVALIDA + " El resultado requiere reconciliación antes de reintentar.", "error"); return;
+                }
+                creacionPendiente = false;
+                mostrarMensaje(formularioVisibleCoincide(capturaFormulario)
+                    && (!seleccionFotografia || imagenesControl?.esSeleccionActual?.(seleccionFotografia) === true)
                     ? "Respuesta válida del servicio de prueba. Revisa los datos antes de continuar."
                     : "La respuesta corresponde al envío anterior. Tus cambios siguen en el formulario.", "info");
             } catch (error) {
                 if (desmontado || operacion !== generacion) return;
                 if (error?.name === "AbortError" || error?.name === "TimeoutError") {
                     if (error?.name === "TimeoutError") abortador?.abort();
+                    if (creacionPendiente) publicacionIndeterminada = true;
                     mostrarMensaje("La espera terminó. El servicio pudo haber recibido la publicación; comprueba su estado antes de reintentar. Tus datos siguen en el formulario.", "error");
                     return;
                 }
-                mostrarMensaje(resultadoSeguro(error).error.mensaje, "error");
+                if (creacionPendiente) publicacionIndeterminada = true;
+                mostrarMensaje(`${resultadoSeguro(error).error.mensaje} El resultado requiere reconciliación con el servicio antes de volver a enviar.`, "error");
             } finally {
                 if (!desmontado && operacion === generacion) {
                     enCurso = false;
                     abortador = null;
                     restaurarBoton();
+                    if (publicacionIndeterminada) btn.disabled = true;
                 }
             }
         }
@@ -376,13 +436,39 @@
         };
 
         limpiezas.push(() => imagenesControl?.desmontar?.());
+        if (typeof observarCambioIdentidad === "function") {
+            try {
+                const desuscribir = observarCambioIdentidad(() => {
+                    if (desmontado) return;
+                    if (creacionPendiente) publicacionIndeterminada = true;
+                    generacion++;
+                    abortador?.abort();
+                    enCurso = false;
+                    abortador = null;
+                    if (restaurarBoton) restaurarBoton();
+                    if (publicacionIndeterminada) btn.disabled = true;
+                    mostrarMensaje(publicacionIndeterminada
+                        ? "Cambió la sesión durante una publicación. Comprueba el resultado con el servicio autorizado antes de continuar."
+                        : "Cambió la sesión. Se canceló la operación; vuelve a verificar tu perfil vendedor.", "error");
+                });
+                if (typeof desuscribir === "function") {
+                    observadorIdentidadListo = true;
+                    limpiezas.push(desuscribir);
+                } else {
+                    mostrarMensaje("Integración pendiente: no se pudo confirmar la limpieza del observador de sesión.", "integracion_pendiente");
+                }
+            } catch {
+                mostrarMensaje("No se pudo observar el ciclo de identidad. La publicación permanece deshabilitada.", "integracion_pendiente");
+                btn.disabled = true;
+            }
+        }
         limpiezas.push(montarInterfazIA(documento, validarFormulario, () => enCurso || desmontado));
         const control = {
             publicar,
             aplicarBorradorValidado,
             validarFormulario: () => !desmontado && !enCurso && validarFormulario(),
-            validarArticulo: dto => validarArticulo(dto, origenStorage),
-            validarDtoPublicacion: dto => validarDtoPublicacion(dto, origenStorage),
+            validarArticulo: (dto, contexto) => validarArticulo(dto, contexto),
+            validarDtoPublicacion: (dto, contexto) => validarDtoPublicacion(dto, contexto),
             desmontar() {
                 if (desmontado) return;
                 desmontado = true;
