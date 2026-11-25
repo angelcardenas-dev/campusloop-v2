@@ -37,6 +37,7 @@ const RECURSOS = [
   'js/supabase-cliente.js',
   'js/config-publica.js',
   'js/catalogo.js',
+  'js/directorios.js',
   'js/landing.js',
   'js/imagenes.js',
   'js/publicaciones.js',
