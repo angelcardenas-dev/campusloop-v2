@@ -943,3 +943,33 @@ sesiones en otros dispositivos.
 La política de memoria ya está ratificada, pero la activación productiva permanece
 deshabilitada. AG-03 sigue pendiente de aceptación con Auth real, configuración
 autorizada, categorías del directorio confiable y recorrido funcional aprobado.
+
+## D2 — Registro y orquestador offline
+
+`js/agente-herramientas.js` conserva los siete nombres **propuestos** en el
+contrato del agente §7. `confirmar_publicacion` queda fuera del registro. La
+fábrica `crearOrquestadorHerramientas({ obtenerIdentidad, servicios,
+categoriasPermitidas, universidadesPermitidas, campusPermitidos })` recibe un proveedor que ya verificó Auth y proyecta
+exclusivamente `{ id }`. No se conecta automáticamente al widget, al SDK ni al
+modelo. Categorías, universidades y campus requieren listas obtenidas de un
+directorio confiable; por defecto están vacías. La búsqueda usa la firma vigente
+`consultarCatalogo(filtros, { signal })` cuando se inyecta el servicio de Bernabé.
+
+Los puertos `consultarMisReservas(id, { signal })` y
+`consultarEstadoVendedor(id, { signal })` son **propuestas internas de inyección**,
+no exports aprobados de Bernabé. Sin ellos, la herramienta correspondiente
+responde `INTEGRACION_PENDIENTE`. Reservas se proyecta únicamente a ID/estado
+para presentación directa al titular; `destino: titular` solo clasifica la
+salida y no es una frontera de seguridad. D3 debe impedir que datos privados de
+reservas lleguen al contexto del proveedor NVIDIA. El borrador devuelve solo
+título/descripción editables para revisión humana y no
+llama al controlador de Matías. Cuenta, estado vendedor como consulta separada,
+publicaciones propias y recomendaciones quedan registradas pero deshabilitadas
+hasta contar con servicios, privacidad y contratos efectivos. Intercambios y
+reputación carecen de nombres/firma ratificados y no entran al registro.
+
+La ejecución offline con dobles no acredita RLS, Auth real, artículos reales,
+reservas reales ni publicación. Los límites HTTP/turnos y el proveedor de IA
+siguen pendientes. Los topes locales de 8192 unidades UTF-16 de JSON normalizado y
+24 resultados por operación son defensivos y no constituyen una cuota aprobada.
+D1.3D conserva su estado y AG-03 continúa pendiente.
