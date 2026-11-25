@@ -23,6 +23,7 @@ const RECURSOS = [
   'css/styles.css',
   'css/agente.css',
   'js/agente-ui.js',
+  'js/agente-cliente.js',
   'js/agente-montaje.js',
   'js/agente-contexto-catalogo.js',
   'js/agente-memoria.js',
