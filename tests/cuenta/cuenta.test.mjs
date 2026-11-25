@@ -522,6 +522,27 @@ test('desmontaje durante logout con timeout no restaura datos al montaje nuevo',
   nuevo.desmontar();
 });
 
+test('remontaje antes de terminar logout: permite cerrar luego de terminar', async () => {
+  const pendiente = diferida();
+  const a = await montar({ cierre: () => pendiente.promesa, esperaAuthMs: 1 });
+  a.dom.$('cuenta-cerrar-sesion').disparar('click');
+  await pausa(); await pausa();
+  a.montaje.desmontar();
+  a.s.respuestas.auth = autenticado(OTRO);
+  const nuevo = a.api.montarCuenta({ documento: a.dom.documento, servicios: a.s.servicios, esperaAuthMs: 20 });
+  await pausa();
+  a.dom.$('cuenta-cerrar-sesion').disparar('click');
+  await pausa();
+  assert.equal(a.s.llamadas.cierre, 1);
+  pendiente.resolver(CERRADA);
+  await pausa(); await pausa();
+  a.s.respuestas.cierre = CERRADA;
+  a.dom.$('cuenta-cerrar-sesion').disparar('click');
+  await pausa();
+  assert.equal(a.s.llamadas.cierre, 2);
+  nuevo.desmontar();
+});
+
 test('desmontar: cancela la suscripción, retira oyentes y descarta respuestas posteriores', async () => {
   const pendiente = diferida();
   const { api, dom, s, montaje } = await montar({ auth: () => pendiente.promesa });

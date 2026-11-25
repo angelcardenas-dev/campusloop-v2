@@ -41,7 +41,7 @@ const MENSAJES = Object.freeze({
   DESCRIPCION: 'Mi cuenta muestra el correo de la sesión iniciada. El nombre, la universidad, el campus, el estado de vendedor, las métricas, la reputación y la actividad están pendientes de integración.',
 });
 const montajes = new WeakMap();
-const cierresPendientes = new WeakSet();
+const cierresPendientes = new WeakMap();
 const ESPERA_AUTH_MS = 8000; // Límite defensivo provisional de UI; no cancela físicamente Auth.
 function esperarAuth(operacion, limite = ESPERA_AUTH_MS) {
   let temporizador;
@@ -232,14 +232,29 @@ export function montarCuenta({
 
   async function cerrar() {
     if (estado.desmontado || estado.cerrando) return;
-    if (estado.cierreIndeterminado || cierresPendientes.has(servicios.cerrarSesion)) {
+    const cierreCompartido = cierresPendientes.get(servicios.cerrarSesion);
+    if (cierreCompartido) {
       estado.cierreIndeterminado = true;
-      await comprobar();
-      if (!estado.desmontado) {
-        e.cerrar.disabled = false;
-        region.mostrar('No pudimos confirmar el cierre. Se comprobó tu sesión; vuelve a comprobarla antes de cerrar otra vez.', 'aviso');
+      try { await esperarAuth(() => cierreCompartido, esperaAuthMs); } catch { /* Sigue indeterminado; no repetir signOut. */ }
+      if (estado.desmontado) return;
+      if (cierresPendientes.get(servicios.cerrarSesion) === cierreCompartido) {
+        await comprobar();
+        if (!estado.desmontado) {
+          e.cerrar.disabled = false;
+          region.mostrar('No pudimos confirmar el cierre. Se comprobó tu sesión; vuelve a comprobarla antes de cerrar otra vez.', 'aviso');
+        }
+        return;
       }
-      return;
+      estado.cierreIndeterminado = false;
+      await comprobar();
+      if (estado.desmontado || estado.vista !== 'autenticado') return;
+      return cerrar();
+    }
+    if (estado.cierreIndeterminado) {
+      estado.cierreIndeterminado = false;
+      await comprobar();
+      if (estado.desmontado || estado.vista !== 'autenticado') return;
+      return cerrar();
     }
     if (estado.vista !== 'autenticado') return;
     estado.cerrando = true;
@@ -254,10 +269,10 @@ export function montarCuenta({
       let operacionCierre;
       try { operacionCierre = Promise.resolve(servicios.cerrarSesion()); }
       catch (error) { operacionCierre = Promise.reject(error); }
-      cierresPendientes.add(servicios.cerrarSesion);
       const cerrarServicio = servicios.cerrarSesion;
+      cierresPendientes.set(cerrarServicio, operacionCierre);
       const liberarCierre = () => {
-        cierresPendientes.delete(cerrarServicio);
+        if (cierresPendientes.get(cerrarServicio) === operacionCierre) cierresPendientes.delete(cerrarServicio);
         if (estado.desmontado || !estado.cierreIndeterminado) return;
         estado.cierreIndeterminado = false;
         // Si ya hay una comprobación más nueva en curso, su resultado gobierna la vista.
