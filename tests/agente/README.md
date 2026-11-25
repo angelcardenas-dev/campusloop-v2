@@ -973,3 +973,83 @@ reservas reales ni publicación. Los límites HTTP/turnos y el proveedor de IA
 siguen pendientes. Los topes locales de 8192 unidades UTF-16 de JSON normalizado y
 24 resultados por operación son defensivos y no constituyen una cuota aprobada.
 D1.3D conserva su estado y AG-03 continúa pendiente.
+
+## D3 — Preparación offline del backend global
+
+`POST /api/agente` se enruta a `netlify/functions/agente.mjs`. El handler
+desplegado permanece cerrado: necesita `AGENTE_ORIGEN_PERMITIDO`,
+`IA_HABILITADA=true`, verificación Auth y un adaptador de cuota; la base actual
+no tiene cuota transaccional aprobada ni fábrica de servicios productivos,
+así que devuelve 503 antes de contactar Auth o NVIDIA. Un origen distinto recibe
+403. Variables de servidor previstas:
+`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `IA_HABILITADA`,
+`AGENTE_ORIGEN_PERMITIDO`, `NVIDIA_API_KEY`, `NVIDIA_MODEL` y
+`NVIDIA_MODELOS_APROBADOS`. No se configuran valores aquí.
+
+Puertos preparados: `crearHandlerAgente({ env, verificarUsuario, reservarCuota,
+proveedor, crearServiciosAutorizados, fetchImpl, timeoutMs, origenPermitido })` compone la solicitud.
+`verificarUsuario({ token, signal })` solo puede devolver el actor luego de verificarlo;
+`reservarCuota({ actor, solicitudId, signal })` debe reservar atómicamente cuota
+global/por actor y deduplicar la solicitud antes del proveedor; ese adaptador aún
+no existe. `crearServiciosAutorizados({ actor, token, signal })` crea servicios
+aislados por petición. El token solo vive en el servidor y no entra en DTO,
+cuotas, mensajes del modelo ni respuestas. La fábrica real sigue pendiente de
+los servicios autorizados de Bernabé. Puede proporcionar
+`consultarCatalogo(filtros, { signal })`,
+`consultarMisReservas(actor, { signal })` y
+`consultarEstadoVendedor(actor, { signal })`. La lista autorizada de directorios
+se inyecta; no se inventan categorías. `crearProveedorNvidia(...)` expone
+`completar({ mensajes, herramientas, signal })` y controla el endpoint y las variables servidor.
+El cliente exporta `crearClienteAgente({ obtenerToken, fetchImpl, timeoutMs })` y
+`solicitar({ mensaje, contexto, solicitudId, signal })`; no se conecta al widget.
+
+El verificador Auth usa `/auth/v1/user` para validar el token con Supabase; no
+decodifica JWT ni usa `service_role`. El adaptador NIM mantiene el endpoint
+servidor fijo, limita respuesta/tiempo y no devuelve errores originales. La
+orquestación compone D2, permite solo las tres herramientas con servicios
+inyectados y limita a tres rondas y tres ejecuciones totales de herramienta por solicitud. Reservas y borradores
+se retornan al navegador como tipos separados y no se añaden al historial de
+mensajes enviado de nuevo al modelo. `destino: titular` no sustituye autorización
+ni RLS. En las pruebas offline, la proyección de catálogo enviada al modelo usa
+ID, título, precio, moneda y estado; el texto de título sigue siendo contenido
+no confiable. El catálogo requiere autenticación: esos campos aún necesitan
+autorización expresa para su transmisión productiva a NVIDIA.
+
+El mensaje libre puede incluir información personal. Hay un rechazo preventivo
+para algunos patrones evidentes, pero no garantiza detectar toda información
+sensible: el cliente debe advertir al usuario y no solicitar secretos. No se
+envía memoria local al servidor ni se guarda historial. El cliente obtiene el
+token por un proveedor inyectado y solo lo usa en el encabezado Authorization;
+no conecta automáticamente el widget. Aunque el esquema admite `contexto`, el
+handler rechaza su contenido cuando viene del navegador: la aprobación del
+historial temporal y su transmisión al proveedor siguen pendientes. El modelo
+solo recibe instrucciones del servidor y el mensaje actual aceptado. Esto no
+cambia la política de memoria D1.3D.
+
+Los topes D3 actuales (8 KiB de cuerpo, ocho turnos, 2000 caracteres por texto,
+32 KiB de respuesta, 700 tokens de salida, tres rondas del proveedor y tres
+ejecuciones de herramientas por solicitud; timeout máximo configurable de 30 s)
+son defensivos/provisionales, no cuotas ratificadas. La cancelación termina la
+espera local y envía AbortSignal; no garantiza detener una operación que un
+servicio externo ya haya empezado. Una cuota efectiva por actor/global y
+deduplicación requiere un adaptador transaccional de Bernabé antes de cualquier
+activación. Los servicios reales de catálogo, reservas propias y autorización de
+vendedor aún requieren adaptadores de servidor y contratos efectivos.
+
+El texto libre del usuario se considera no confiable. El rechazo de algunos
+patrones evidentes (correos, URLs, UUID, tokens y formatos telefónicos comunes)
+es una defensa limitada, no detecta todos los datos personales ni hace segura automáticamente una transcripción. Antes de activar transmisión
+real, el producto necesita informar qué texto se enviará a NVIDIA, pedir la
+decisión de privacidad que corresponda y evitar solicitar secretos o datos
+privados. En esta entrega no existe un escáner que garantice anonimización. El
+servidor nunca añade el token Auth, el actor verificado ni resultados privados
+de reservas al cuerpo del proveedor; las reservas se devuelven al navegador en
+una proyección mínima para el titular.
+
+Validación actual: 43/43 pruebas en
+`node --test tests/agente/backend.test.mjs tests/agente/cliente.test.mjs tests/agente/herramientas.test.mjs`;
+44/44 pruebas históricas de US17 en
+`node --experimental-vm-modules --test tests/ia/cliente.test.mjs tests/ia/auth-servidor.test.mjs`.
+El build local publicó 67 archivos, incluidos 14 HTML, con 389 referencias
+locales verificadas. Los dobles son sintéticos: esto no acredita Auth real,
+cuotas globales, llamadas a NVIDIA, servicios de negocio ni despliegue.
