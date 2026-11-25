@@ -39,6 +39,7 @@ const RECURSOS = [
   'js/catalogo.js',
   'js/landing.js',
   'js/imagenes.js',
+  'js/cuenta.js',
   'js/publicaciones.js',
   'js/vendedor.js',
   'assets/fonts/inter-variable.woff2',
