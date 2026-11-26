@@ -9,6 +9,9 @@ SELECT id::uuid,'00000000-0000-4000-8000-000000000091','Titulo','Descripcion',
 'articulos','00000000-0000-4000-8000-000000000091/'||id||'.jpg','https://example.invalid/foto.jpg','image/jpeg',100,100,100
 FROM unnest(ARRAY['00000000-0000-4000-8000-000000000093','00000000-0000-4000-8000-000000000094',
  '00000000-0000-4000-8000-000000000095','00000000-0000-4000-8000-000000000096']) id;
+INSERT INTO public.lugares_publicos(id,campus_id,nombre,referencia_publica,activo) VALUES
+ ('00000000-0000-4000-8000-000000000097','82d7186a-920c-49e2-bcc5-9aaa03ad655e','Entrada principal','Lugar publico',true),
+ ('00000000-0000-4000-8000-000000000098','6fc0d006-f5ec-4936-ab83-a15ef417c648','Otro campus','Lugar publico',true);
 SET LOCAL ROLE authenticated;
 DO $prueba$
 DECLARE
@@ -19,6 +22,7 @@ DECLARE
  c uuid := '00000000-0000-4000-8000-000000000095';
  d uuid := '00000000-0000-4000-8000-000000000096';
  r uuid; rechazar uuid; cancelar uuid; cal jsonb;
+ lugar uuid:='00000000-0000-4000-8000-000000000097';
 BEGIN
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',comprador,'is_anonymous',false)::text,true);
  r:=(public.crear_mi_reserva(a,1,comprador)->>'id')::uuid;
@@ -35,7 +39,21 @@ BEGIN
    RAISE EXCEPTION 'Calificacion anticipada';
  EXCEPTION WHEN SQLSTATE 'PT404' THEN NULL;
  END;
- IF public.gestionar_mi_reserva(cancelar,1,'cancelar',comprador)->>'motivoCierre'<>'cancelada' THEN RAISE EXCEPTION 'Cancelacion'; END IF;
+ BEGIN
+   PERFORM public.acordar_lugar_mi_reserva(cancelar,1,'00000000-0000-4000-8000-000000000098',false,comprador);
+   RAISE EXCEPTION 'Campus ajeno';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL;
+ END;
+ IF public.acordar_lugar_mi_reserva(cancelar,1,lugar,false,comprador)->>'estadoPunto'<>'propuesto' THEN RAISE EXCEPTION 'Propuesta'; END IF;
+ BEGIN
+   PERFORM public.acordar_lugar_mi_reserva(cancelar,2,lugar,true,comprador);
+   RAISE EXCEPTION 'Autoaceptacion';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',vendedor,'is_anonymous',false)::text,true);
+ IF public.acordar_lugar_mi_reserva(cancelar,2,lugar,true,vendedor)->>'estadoPunto'<>'aceptado' THEN RAISE EXCEPTION 'Acuerdo'; END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',comprador,'is_anonymous',false)::text,true);
+ IF public.gestionar_mi_reserva(cancelar,3,'cancelar',comprador)->>'motivoCierre'<>'cancelada' THEN RAISE EXCEPTION 'Cancelacion'; END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',vendedor,'is_anonymous',false)::text,true);
  IF public.gestionar_mi_reserva(rechazar,1,'rechazar',vendedor)->>'motivoCierre'<>'rechazada' THEN RAISE EXCEPTION 'Rechazo'; END IF;
  IF public.gestionar_mi_reserva(r,1,'confirmar',vendedor)->>'estado'<>'confirmada' THEN RAISE EXCEPTION 'Confirmacion'; END IF;

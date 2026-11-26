@@ -109,3 +109,17 @@ export async function calificarMiIntercambio({ reservaId, estrellas, comentario 
     return data?.reservaId === reservaId.toLowerCase() && data.autorId === actor ? exito(data) : fallo('SERVIDOR');
   });
 }
+
+export async function acordarLugarMiReserva({ id, versionEsperada, lugarId, aceptar } = {}, { actorEsperado } = {}) {
+  if (!esId(actorEsperado)) return fallo('NO_AUTORIZADO');
+  if (!esId(id) || !esId(lugarId) || typeof aceptar !== 'boolean' || !Number.isInteger(versionEsperada)
+    || versionEsperada < 1 || versionEsperada > 2147483647) return fallo('VALIDACION');
+  return conCuenta(async (sdk, actor) => {
+    if (actor !== actorEsperado) return fallo('NO_AUTORIZADO');
+    const { data, error, status } = await sdk.rpc('acordar_lugar_mi_reserva', {
+      p_id: id, p_version: versionEsperada, p_lugar_id: lugarId, p_aceptar: aceptar, p_actor_esperado: actorEsperado,
+    });
+    if (error) return errorReserva(error, status);
+    return data?.id === id.toLowerCase() && data.lugarId === lugarId.toLowerCase() ? exito(data) : fallo('SERVIDOR');
+  });
+}
