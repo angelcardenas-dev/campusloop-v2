@@ -39,6 +39,7 @@ const RECURSOS = [
   'js/catalogo.js',
   'js/directorios.js',
   'js/perfiles.js',
+  'js/mensajeria.js',
   'js/landing.js',
   'js/imagenes.js',
   'js/publicaciones.js',
