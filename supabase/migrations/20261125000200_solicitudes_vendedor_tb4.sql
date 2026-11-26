@@ -84,7 +84,7 @@ REVOKE ALL ON FUNCTION tb4_ventas_privado.dto_solicitud(tb4_ventas_privado.solic
 GRANT EXECUTE ON FUNCTION tb4_ventas_privado.dto_solicitud(tb4_ventas_privado.solicitudes) TO tb4_gestor_vendedores;
 
 CREATE FUNCTION public.enviar_solicitud_vendedor(p_clave_idempotencia uuid,p_tiene_experiencia boolean,
-    p_acepta_normas boolean,p_normas_version text)
+    p_acepta_normas boolean,p_normas_version text,p_actor_esperado uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $f$
 DECLARE
@@ -93,7 +93,7 @@ DECLARE
     s tb4_ventas_privado.solicitudes;
     instante timestamptz;
 BEGIN
-    IF actor IS NULL THEN RAISE insufficient_privilege; END IF;
+    IF actor IS NULL OR actor IS DISTINCT FROM p_actor_esperado THEN RAISE insufficient_privilege; END IF;
     IF p_clave_idempotencia IS NULL OR p_tiene_experiencia IS NULL OR p_acepta_normas IS NOT TRUE
        OR p_normas_version IS NULL OR char_length(p_normas_version) NOT BETWEEN 1 AND 80 THEN
         RAISE invalid_parameter_value;
@@ -157,7 +157,7 @@ BEGIN
 END;
 $f$;
 
-CREATE FUNCTION public.decidir_solicitud_vendedor(p_solicitud_id uuid,p_version_esperada integer,p_decision text,p_motivo text)
+CREATE FUNCTION public.decidir_solicitud_vendedor(p_solicitud_id uuid,p_version_esperada integer,p_decision text,p_motivo text,p_actor_esperado uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $f$
 DECLARE
@@ -167,7 +167,7 @@ DECLARE
     motivo text := pg_catalog.btrim(p_motivo);
     instante timestamptz;
 BEGIN
-    IF actor IS NULL THEN RAISE insufficient_privilege; END IF;
+    IF actor IS NULL OR actor IS DISTINCT FROM p_actor_esperado THEN RAISE insufficient_privilege; END IF;
     PERFORM FROM tb4_ventas_privado.revisores WHERE perfil_id=actor AND habilitado FOR SHARE;
     IF NOT FOUND THEN RAISE insufficient_privilege; END IF;
     IF p_version_esperada IS NULL OR p_version_esperada < 1 OR p_solicitud_id IS NULL OR p_decision IS NULL
@@ -213,12 +213,12 @@ BEGIN
 END;
 $f$;
 
-CREATE FUNCTION public.marcar_notificacion_leida(p_notificacion_id uuid)
+CREATE FUNCTION public.marcar_notificacion_leida(p_notificacion_id uuid,p_actor_esperado uuid)
 RETURNS timestamptz LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $f$
 DECLARE actor uuid := tb4_perfiles_privado.actor_confirmado(); fecha timestamptz;
 BEGIN
-    IF actor IS NULL THEN RAISE insufficient_privilege; END IF;
+    IF actor IS NULL OR actor IS DISTINCT FROM p_actor_esperado THEN RAISE insufficient_privilege; END IF;
     UPDATE tb4_ventas_privado.notificaciones
       SET leida_en=coalesce(leida_en,pg_catalog.clock_timestamp())
       WHERE id=p_notificacion_id AND destinatario_id=actor RETURNING leida_en INTO fecha;
@@ -233,12 +233,12 @@ DO $acl$
 DECLARE firma regprocedure; permiso record;
 BEGIN
   FOREACH firma IN ARRAY ARRAY[
-     'public.enviar_solicitud_vendedor(uuid,boolean,boolean,text)'::regprocedure,
+     'public.enviar_solicitud_vendedor(uuid,boolean,boolean,text,uuid)'::regprocedure,
      'public.consultar_mis_solicitudes(integer,timestamptz,uuid)'::regprocedure,
      'public.consultar_solicitudes_revision(integer,timestamptz,uuid)'::regprocedure,
-     'public.decidir_solicitud_vendedor(uuid,integer,text,text)'::regprocedure,
+     'public.decidir_solicitud_vendedor(uuid,integer,text,text,uuid)'::regprocedure,
      'public.consultar_mis_notificaciones(integer,boolean,timestamptz,uuid)'::regprocedure,
-     'public.marcar_notificacion_leida(uuid)'::regprocedure]
+     'public.marcar_notificacion_leida(uuid,uuid)'::regprocedure]
   LOOP
      EXECUTE pg_catalog.format('REVOKE ALL ON FUNCTION %s FROM PUBLIC',firma);
      FOR permiso IN SELECT r.rolname FROM pg_proc p CROSS JOIN LATERAL aclexplode(p.proacl) a

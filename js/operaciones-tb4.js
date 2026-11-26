@@ -44,12 +44,20 @@ async function ejecutarRPC(nombre, parametros) {
   }
 }
 
-export function enviarSolicitudVendedor({ claveIdempotencia, tieneExperiencia, aceptaNormas, normasVersion } = {}) {
-  return ejecutarRPC('enviar_solicitud_vendedor', {
+function escribirRPC(nombre, parametros, actorEsperado) {
+  if (!idValido(actorEsperado)) return Promise.resolve(fallo('NO_AUTORIZADO'));
+  return ejecutarRPC(nombre, { ...parametros, p_actor_esperado: actorEsperado });
+}
+export function enviarSolicitudVendedor({ claveIdempotencia, tieneExperiencia, aceptaNormas, normasVersion } = {}, { actorEsperado } = {}) {
+  return escribirRPC('enviar_solicitud_vendedor', {
     p_clave_idempotencia: claveIdempotencia, p_tiene_experiencia: tieneExperiencia,
     p_acepta_normas: aceptaNormas, p_normas_version: normasVersion,
-  });
+  }, actorEsperado);
 }
+export function consultarNormasVendedor() {
+  return ejecutarRPC('consultar_normas_vendedor', {});
+}
+
 export function consultarMisSolicitudes({ limite = 20, cursor } = {}) {
   return ejecutarRPC('consultar_mis_solicitudes', {
     p_limite: limite, p_antes_de: cursor?.enviadaEn ?? null, p_antes_id: cursor?.id ?? null,
@@ -74,10 +82,10 @@ export function consultarSolicitudesRevision({ limite = 20, cursor } = {}) {
     p_limite: limite, p_despues_de: cursor?.responderAntesDe ?? null, p_despues_id: cursor?.id ?? null,
   });
 }
-export function decidirSolicitudVendedor({ solicitudId, versionEsperada, decision, motivo } = {}) {
-  return ejecutarRPC('decidir_solicitud_vendedor', {
+export function decidirSolicitudVendedor({ solicitudId, versionEsperada, decision, motivo } = {}, { actorEsperado } = {}) {
+  return escribirRPC('decidir_solicitud_vendedor', {
     p_solicitud_id: solicitudId, p_version_esperada: versionEsperada, p_decision: decision, p_motivo: motivo,
-  });
+  }, actorEsperado);
 }
 export function consultarMisNotificaciones({ limite = 20, soloNoLeidas = false, cursor } = {}) {
   return ejecutarRPC('consultar_mis_notificaciones', {
@@ -85,30 +93,30 @@ export function consultarMisNotificaciones({ limite = 20, soloNoLeidas = false, 
     p_antes_de: cursor?.creadaEn ?? null, p_antes_id: cursor?.id ?? null,
   });
 }
-export function marcarNotificacionLeida(id) {
-  return ejecutarRPC('marcar_notificacion_leida', { p_notificacion_id: id });
+export function marcarNotificacionLeida(id, { actorEsperado } = {}) {
+  return escribirRPC('marcar_notificacion_leida', { p_notificacion_id: id }, actorEsperado);
 }
 export async function crearMiArticulo({ claveIdempotencia, titulo, descripcion, categoriaId, condicion,
-  precioCentimos, moneda = 'PEN', campusId, imagen } = {}) {
+  precioCentimos, moneda = 'PEN', campusId, imagen } = {}, { actorEsperado } = {}) {
   if (!idValido(claveIdempotencia) || !idValido(categoriaId) || !idValido(campusId)
     || moneda !== 'PEN' || !Number.isSafeInteger(precioCentimos) || precioCentimos <= 0
     || imagen?.proveedor !== 'supabase' || imagen.bucket !== 'articulos'
     || typeof imagen.ruta !== 'string' || imagen.ruta.length > 500) return fallo('VALIDACION');
-  return ejecutarRPC('crear_mi_articulo', {
+  return escribirRPC('crear_mi_articulo', {
     p_clave: claveIdempotencia, p_titulo: titulo, p_descripcion: descripcion,
     p_categoria_id: categoriaId, p_condicion: condicion, p_precio_centimos: precioCentimos,
     p_campus_id: campusId, p_ruta: imagen.ruta,
-  });
+  }, actorEsperado);
 }
-export async function editarMiArticulo({ id, versionEsperada, titulo, descripcion, categoriaId, condicion, precioCentimos } = {}) {
+export async function editarMiArticulo({ id, versionEsperada, titulo, descripcion, categoriaId, condicion, precioCentimos } = {}, { actorEsperado } = {}) {
   if (!Number.isSafeInteger(precioCentimos) || precioCentimos <= 0) return fallo('VALIDACION');
-  return ejecutarRPC('editar_o_retirar_mi_articulo', {
+  return escribirRPC('editar_o_retirar_mi_articulo', {
     p_id: id, p_version: versionEsperada, p_retirar: false, p_titulo: titulo,
     p_descripcion: descripcion, p_categoria_id: categoriaId, p_condicion: condicion, p_precio_centimos: precioCentimos,
-  });
+  }, actorEsperado);
 }
-export function retirarMiArticulo({ id, versionEsperada } = {}) {
-  return ejecutarRPC('editar_o_retirar_mi_articulo', { p_id: id, p_version: versionEsperada, p_retirar: true });
+export function retirarMiArticulo({ id, versionEsperada } = {}, { actorEsperado } = {}) {
+  return escribirRPC('editar_o_retirar_mi_articulo', { p_id: id, p_version: versionEsperada, p_retirar: true }, actorEsperado);
 }
 
 const FORMATOS = {

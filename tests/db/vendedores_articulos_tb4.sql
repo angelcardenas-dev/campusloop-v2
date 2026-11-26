@@ -18,13 +18,18 @@ DECLARE
  n jsonb;
 BEGIN
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a,'is_anonymous',false)::text,true);
- s := public.enviar_solicitud_vendedor(k,false,true,'sintetica');
+ BEGIN
+   PERFORM public.enviar_solicitud_vendedor(k,false,true,'sintetica',b);
+   RAISE EXCEPTION 'Cambio de sesion aceptado';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+ s := public.enviar_solicitud_vendedor(k,false,true,'sintetica',a);
  IF s->>'estado'<>'pendiente' OR (s->>'responderAntesDe')::timestamptz-(s->>'enviadaEn')::timestamptz<>interval '48 hours'
-   OR public.enviar_solicitud_vendedor(k,false,true,'sintetica') IS DISTINCT FROM s THEN
+   OR public.enviar_solicitud_vendedor(k,false,true,'sintetica',a) IS DISTINCT FROM s THEN
     RAISE EXCEPTION 'Solicitud, plazo o reintento incorrectos';
  END IF;
  BEGIN
-   PERFORM public.decidir_solicitud_vendedor((s->>'id')::uuid,1,'aprobado','Prueba');
+   PERFORM public.decidir_solicitud_vendedor((s->>'id')::uuid,1,'aprobado','Prueba',a);
    RAISE EXCEPTION 'Autoactivacion';
  EXCEPTION WHEN insufficient_privilege THEN NULL;
  END;
@@ -38,9 +43,9 @@ BEGIN
     OR (SELECT count(*) FROM public.consultar_solicitudes_revision())<>1 THEN
    RAISE EXCEPTION 'Aislamiento de solicitudes o cola';
  END IF;
- PERFORM public.decidir_solicitud_vendedor((s->>'id')::uuid,1,'aprobado','Revision humana');
+ PERFORM public.decidir_solicitud_vendedor((s->>'id')::uuid,1,'aprobado','Revision humana',b);
  BEGIN
-   PERFORM public.decidir_solicitud_vendedor((s->>'id')::uuid,1,'rechazado','Revision humana');
+   PERFORM public.decidir_solicitud_vendedor((s->>'id')::uuid,1,'rechazado','Revision humana',b);
    RAISE EXCEPTION 'Sobrescritura';
  EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
  END;
@@ -50,7 +55,7 @@ BEGIN
  IF n->>'tipo'<>'aprobado' OR NOT (SELECT vendedor_activado FROM public.perfiles WHERE id=a) THEN
    RAISE EXCEPTION 'Aprobacion no atomica';
  END IF;
- PERFORM public.marcar_notificacion_leida((n->>'id')::uuid);
+ PERFORM public.marcar_notificacion_leida((n->>'id')::uuid,a);
  IF EXISTS (SELECT FROM public.consultar_mis_notificaciones(20,true)) THEN RAISE EXCEPTION 'Lectura no guardada'; END IF;
 END;
 $prueba$;
@@ -71,19 +76,19 @@ DECLARE
 BEGIN
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',actor,'is_anonymous',false)::text,true);
  BEGIN
-   PERFORM public.crear_mi_articulo(clave,'Alta','Descripcion',categoria,'nuevo',100,campus,actor::text||'/no-verificada.jpg');
+   PERFORM public.crear_mi_articulo(clave,'Alta','Descripcion',categoria,'nuevo',100,campus,actor::text||'/no-verificada.jpg',actor);
    RAISE EXCEPTION 'Alta sin evidencia';
  EXCEPTION WHEN invalid_parameter_value THEN NULL;
  END;
- resultado := public.crear_mi_articulo(clave,'Alta','Descripcion',categoria,'nuevo',100,campus,ruta);
- IF resultado IS DISTINCT FROM public.crear_mi_articulo(clave,'Alta','Descripcion',categoria,'nuevo',100,campus,ruta)
+ resultado := public.crear_mi_articulo(clave,'Alta','Descripcion',categoria,'nuevo',100,campus,ruta,actor);
+ IF resultado IS DISTINCT FROM public.crear_mi_articulo(clave,'Alta','Descripcion',categoria,'nuevo',100,campus,ruta,actor)
      OR resultado->'imagen'->>'ruta'<>ruta OR resultado->'imagen' ? 'url' THEN
    RAISE EXCEPTION 'Alta o reintento incorrectos';
  END IF;
  IF NOT EXISTS(SELECT FROM public.articulos WHERE id=(resultado->>'id')::uuid
     AND vendedor_id=actor AND imagen_url IS NULL AND imagen_ruta=ruta) THEN RAISE EXCEPTION 'Referencia incorrecta'; END IF;
  BEGIN
-   PERFORM public.crear_mi_articulo(clave,'Alterado','Descripcion',categoria,'nuevo',100,campus,ruta);
+   PERFORM public.crear_mi_articulo(clave,'Alterado','Descripcion',categoria,'nuevo',100,campus,ruta,actor);
    RAISE EXCEPTION 'Reintento alterado';
  EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
  END;
@@ -135,16 +140,16 @@ DECLARE
 BEGIN
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',b,'is_anonymous',false)::text,true);
  BEGIN
-   PERFORM public.editar_o_retirar_mi_articulo(articulo_id_prueba,1,true);
+   PERFORM public.editar_o_retirar_mi_articulo(articulo_id_prueba,1,true,b);
    RAISE EXCEPTION 'Usuario sin permiso pudo retirar';
  EXCEPTION WHEN insufficient_privilege THEN NULL;
  END;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a,'is_anonymous',false)::text,true);
- IF (public.editar_o_retirar_mi_articulo(articulo_id_prueba,1,false,'Editado','Descripcion',c,'nuevo',200)->>'version')::int<>2 THEN
+ IF (public.editar_o_retirar_mi_articulo(articulo_id_prueba,1,false,a,'Editado','Descripcion',c,'nuevo',200)->>'version')::int<>2 THEN
    RAISE EXCEPTION 'No se incremento la version';
  END IF;
  BEGIN
-   PERFORM public.editar_o_retirar_mi_articulo(articulo_id_prueba,1,true);
+   PERFORM public.editar_o_retirar_mi_articulo(articulo_id_prueba,1,true,a);
    RAISE EXCEPTION 'Version obsoleta';
  EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
  END;
@@ -152,14 +157,14 @@ BEGIN
  INSERT INTO public.reservas(articulo_id,comprador_id,vendedor_id) VALUES (articulo_id_prueba,b,a);
  SET LOCAL ROLE authenticated;
  BEGIN
-   PERFORM public.editar_o_retirar_mi_articulo(articulo_id_prueba,2,true);
+   PERFORM public.editar_o_retirar_mi_articulo(articulo_id_prueba,2,true,a);
    RAISE EXCEPTION 'Retiro de articulo con reserva activa';
  EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
  END;
  RESET ROLE;
  UPDATE public.reservas SET estado='cancelada' WHERE articulo_id=articulo_id_prueba;
  SET LOCAL ROLE authenticated;
- IF (public.editar_o_retirar_mi_articulo(articulo_id_prueba,2,true)->>'retirado')::boolean IS NOT TRUE THEN
+ IF (public.editar_o_retirar_mi_articulo(articulo_id_prueba,2,true,a)->>'retirado')::boolean IS NOT TRUE THEN
    RAISE EXCEPTION 'No se retiro el articulo';
  END IF;
  IF EXISTS (SELECT FROM public.articulos a WHERE a.id=articulo_id_prueba) THEN RAISE EXCEPTION 'Articulo retirado visible'; END IF;

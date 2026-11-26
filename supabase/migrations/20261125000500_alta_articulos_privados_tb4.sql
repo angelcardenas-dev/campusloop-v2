@@ -42,7 +42,7 @@ CREATE POLICY universidades_editor_articulo_lectura ON public.universidades FOR 
 CREATE POLICY universidades_editor_articulo_bloqueo ON public.universidades FOR UPDATE TO tb4_editor_articulos USING (activa) WITH CHECK (false);
 
 CREATE FUNCTION public.crear_mi_articulo(p_clave uuid,p_titulo text,p_descripcion text,p_categoria_id uuid,
-  p_condicion text,p_precio_centimos bigint,p_campus_id uuid,p_ruta text)
+  p_condicion text,p_precio_centimos bigint,p_campus_id uuid,p_ruta text,p_actor_esperado uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
 AS $f$
 DECLARE
@@ -53,7 +53,7 @@ DECLARE
  articulo record;
  universidad uuid;
 BEGIN
- IF actor IS NULL OR NOT EXISTS(SELECT FROM public.perfiles WHERE id=actor AND vendedor_activado) THEN
+ IF actor IS NULL OR actor IS DISTINCT FROM p_actor_esperado OR NOT EXISTS(SELECT FROM public.perfiles WHERE id=actor AND vendedor_activado) THEN
    RAISE insufficient_privilege;
  END IF;
  IF p_clave IS NULL OR p_ruta IS NULL OR char_length(p_ruta)>500 OR p_categoria_id IS NULL OR p_campus_id IS NULL
@@ -101,7 +101,7 @@ END;
 $f$;
 
 DO $acl$
-DECLARE firma regprocedure := 'public.crear_mi_articulo(uuid,text,text,uuid,text,bigint,uuid,text)'::regprocedure;
+DECLARE firma regprocedure := 'public.crear_mi_articulo(uuid,text,text,uuid,text,bigint,uuid,text,uuid)'::regprocedure;
         permiso record;
 BEGIN
  EXECUTE pg_catalog.format('REVOKE ALL ON FUNCTION %s FROM PUBLIC',firma);
@@ -112,10 +112,10 @@ BEGIN
  END LOOP;
 END;
 $acl$;
-GRANT EXECUTE ON FUNCTION public.crear_mi_articulo(uuid,text,text,uuid,text,bigint,uuid,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.crear_mi_articulo(uuid,text,text,uuid,text,bigint,uuid,text,uuid) TO authenticated;
 GRANT tb4_editor_articulos TO CURRENT_USER WITH SET TRUE;
 GRANT CREATE ON SCHEMA public TO tb4_editor_articulos;
-ALTER FUNCTION public.crear_mi_articulo(uuid,text,text,uuid,text,bigint,uuid,text) OWNER TO tb4_editor_articulos;
+ALTER FUNCTION public.crear_mi_articulo(uuid,text,text,uuid,text,bigint,uuid,text,uuid) OWNER TO tb4_editor_articulos;
 REVOKE CREATE ON SCHEMA public FROM tb4_editor_articulos;
 REVOKE tb4_editor_articulos FROM CURRENT_USER;
 COMMIT;

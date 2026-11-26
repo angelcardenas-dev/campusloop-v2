@@ -23,7 +23,7 @@ CREATE POLICY categorias_editor_articulo_lectura ON public.categorias FOR SELECT
 CREATE POLICY categorias_editor_articulo_bloqueo ON public.categorias FOR UPDATE TO tb4_editor_articulos USING (activa) WITH CHECK (false);
 
 CREATE FUNCTION public.editar_o_retirar_mi_articulo(
-    p_id uuid,p_version integer,p_retirar boolean,p_titulo text DEFAULT NULL,p_descripcion text DEFAULT NULL,
+    p_id uuid,p_version integer,p_retirar boolean,p_actor_esperado uuid,p_titulo text DEFAULT NULL,p_descripcion text DEFAULT NULL,
     p_categoria_id uuid DEFAULT NULL,p_condicion text DEFAULT NULL,p_precio_centimos bigint DEFAULT NULL
 )
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
@@ -35,7 +35,7 @@ DECLARE
     articulo record;
     instante timestamptz;
 BEGIN
-    IF actor IS NULL OR NOT EXISTS(SELECT FROM public.perfiles WHERE id=actor AND vendedor_activado) THEN
+    IF actor IS NULL OR actor IS DISTINCT FROM p_actor_esperado OR NOT EXISTS(SELECT FROM public.perfiles WHERE id=actor AND vendedor_activado) THEN
         RAISE insufficient_privilege;
     END IF;
     IF p_id IS NULL OR p_version IS NULL OR p_version < 1 OR p_retirar IS NULL THEN RAISE invalid_parameter_value; END IF;
@@ -76,22 +76,22 @@ BEGIN
 END;
 $f$;
 
-REVOKE ALL ON FUNCTION public.editar_o_retirar_mi_articulo(uuid,integer,boolean,text,text,uuid,text,bigint) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.editar_o_retirar_mi_articulo(uuid,integer,boolean,uuid,text,text,uuid,text,bigint) FROM PUBLIC;
 DO $acl$
 DECLARE permiso record;
 BEGIN
   FOR permiso IN SELECT r.rolname FROM pg_proc p CROSS JOIN LATERAL aclexplode(p.proacl) a
     JOIN pg_roles r ON r.oid=a.grantee
-    WHERE p.oid='public.editar_o_retirar_mi_articulo(uuid,integer,boolean,text,text,uuid,text,bigint)'::regprocedure AND a.grantee<>p.proowner
+    WHERE p.oid='public.editar_o_retirar_mi_articulo(uuid,integer,boolean,uuid,text,text,uuid,text,bigint)'::regprocedure AND a.grantee<>p.proowner
   LOOP
-    EXECUTE pg_catalog.format('REVOKE ALL ON FUNCTION public.editar_o_retirar_mi_articulo(uuid,integer,boolean,text,text,uuid,text,bigint) FROM %I CASCADE',permiso.rolname);
+    EXECUTE pg_catalog.format('REVOKE ALL ON FUNCTION public.editar_o_retirar_mi_articulo(uuid,integer,boolean,uuid,text,text,uuid,text,bigint) FROM %I CASCADE',permiso.rolname);
   END LOOP;
 END;
 $acl$;
-GRANT EXECUTE ON FUNCTION public.editar_o_retirar_mi_articulo(uuid,integer,boolean,text,text,uuid,text,bigint) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.editar_o_retirar_mi_articulo(uuid,integer,boolean,uuid,text,text,uuid,text,bigint) TO authenticated;
 GRANT tb4_editor_articulos TO CURRENT_USER WITH SET TRUE;
 GRANT CREATE ON SCHEMA public TO tb4_editor_articulos;
-ALTER FUNCTION public.editar_o_retirar_mi_articulo(uuid,integer,boolean,text,text,uuid,text,bigint) OWNER TO tb4_editor_articulos;
+ALTER FUNCTION public.editar_o_retirar_mi_articulo(uuid,integer,boolean,uuid,text,text,uuid,text,bigint) OWNER TO tb4_editor_articulos;
 REVOKE CREATE ON SCHEMA public FROM tb4_editor_articulos;
 REVOKE tb4_editor_articulos FROM CURRENT_USER;
 COMMIT;
