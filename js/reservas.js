@@ -1,7 +1,7 @@
 import { obtenerClienteSupabase } from './supabase-cliente.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const CAMPOS = 'id,articulo_id,comprador_id,vendedor_id,conversacion_id,estado,lugar_publico_id,lugar_personalizado_nombre,lugar_referencia_publica,punto_propuesto_por,estado_punto,creado_en,actualizado_en,version';
+const CAMPOS = 'id,articulo_id,comprador_id,vendedor_id,conversacion_id,estado,lugar_publico_id,lugar_personalizado_nombre,lugar_referencia_publica,punto_propuesto_por,estado_punto,creado_en,actualizado_en,version,motivo_cierre,confirmada_compra_en,confirmada_venta_en';
 const MENSAJES = {
   VALIDACION: 'Revisa los datos de la reserva.',
   NO_AUTORIZADO: 'Inicia sesión con una cuenta registrada.',
@@ -72,8 +72,40 @@ export function consultarMisReservas({ signal } = {}) {
       id: fila.id, articuloId: fila.articulo_id, compradorId: fila.comprador_id, vendedorId: fila.vendedor_id,
       conversacionId: fila.conversacion_id, estado: fila.estado, version: fila.version,
       creadoEn: fila.creado_en, actualizadoEn: fila.actualizado_en,
+      motivoCierre: fila.motivo_cierre, confirmadaCompraEn: fila.confirmada_compra_en, confirmadaVentaEn: fila.confirmada_venta_en,
       puntoEncuentro: { lugarId: fila.lugar_publico_id, nombre: fila.lugar_personalizado_nombre,
         referencia: fila.lugar_referencia_publica, propuestoPor: fila.punto_propuesto_por, estado: fila.estado_punto },
     })));
+  });
+}
+
+export async function gestionarMiReserva({ id, versionEsperada, accion } = {}, { actorEsperado } = {}) {
+  if (!esId(actorEsperado)) return fallo('NO_AUTORIZADO');
+  if (!esId(id) || !Number.isInteger(versionEsperada) || versionEsperada < 1 || versionEsperada > 2147483647
+    || !['confirmar', 'rechazar', 'cancelar', 'confirmar_intercambio'].includes(accion)) return fallo('VALIDACION');
+  return conCuenta(async (sdk, actor) => {
+    if (actor !== actorEsperado) return fallo('NO_AUTORIZADO');
+    const { data, error, status } = await sdk.rpc('gestionar_mi_reserva', {
+      p_id: id, p_version: versionEsperada, p_accion: accion, p_actor_esperado: actorEsperado,
+    });
+    if (error) return errorReserva(error, status);
+    return data?.id === id.toLowerCase() && [data.compradorId, data.vendedorId].includes(actor)
+      ? exito(data) : fallo('SERVIDOR');
+  });
+}
+
+export async function calificarMiIntercambio({ reservaId, estrellas, comentario = null } = {}, { actorEsperado } = {}) {
+  if (!esId(actorEsperado)) return fallo('NO_AUTORIZADO');
+  if (!esId(reservaId) || !Number.isInteger(estrellas) || estrellas < 1 || estrellas > 5
+    || (comentario !== null && (typeof comentario !== 'string' || [...comentario.trim()].length > 1000))) {
+    return fallo('VALIDACION');
+  }
+  return conCuenta(async (sdk, actor) => {
+    if (actor !== actorEsperado) return fallo('NO_AUTORIZADO');
+    const { data, error, status } = await sdk.rpc('calificar_mi_intercambio', {
+      p_reserva_id: reservaId, p_estrellas: estrellas, p_comentario: comentario, p_actor_esperado: actorEsperado,
+    });
+    if (error) return errorReserva(error, status);
+    return data?.reservaId === reservaId.toLowerCase() && data.autorId === actor ? exito(data) : fallo('SERVIDOR');
   });
 }
