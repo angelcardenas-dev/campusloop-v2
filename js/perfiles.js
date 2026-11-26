@@ -27,7 +27,7 @@ function errorPerfil(error, status = error?.status) {
   return fallo('SERVIDOR');
 }
 
-async function conPerfil(operacion, { guardar = false } = {}) {
+async function conPerfil(operacion, { guardar = false, actorEsperado } = {}) {
   try {
     const cliente = await obtenerClienteSupabase();
     if (!cliente.ok) return cliente;
@@ -35,6 +35,7 @@ async function conPerfil(operacion, { guardar = false } = {}) {
     if (error) return errorPerfil(error);
     const usuario = data?.user;
     if (!esId(usuario?.id) || usuario.is_anonymous !== false) return fallo('NO_AUTORIZADO');
+    if (guardar && usuario.id.toLowerCase() !== actorEsperado.toLowerCase()) return fallo('NO_AUTORIZADO');
     if (guardar && !usuario.email_confirmed_at) return fallo('CORREO_PENDIENTE');
 
     const respuesta = await operacion(cliente.datos, usuario.id);
@@ -67,17 +68,19 @@ export function consultarMiPerfil() {
   return conPerfil((cliente, id) => cliente.from('perfiles').select(COLUMNAS).eq('id', id).maybeSingle());
 }
 
-export async function actualizarMiPerfil(entrada) {
+export async function actualizarMiPerfil(entrada, opciones = {}) {
+  const actorEsperado = opciones?.actorEsperado;
+  if (!esId(actorEsperado)) return fallo('NO_AUTORIZADO');
   const { nombreVisible, universidadId, campusId, versionEsperada } = entrada ?? {};
   const nombre = typeof nombreVisible === 'string' ? nombreVisible.trim() : '';
   if ([...nombre].length < 2 || [...nombre].length > 100 || /[\u0000-\u001f\u007f-\u009f<>]/u.test(nombreVisible)
     || !esId(universidadId) || !esId(campusId) || !versionValida(versionEsperada)) return fallo('VALIDACION');
 
-  return conPerfil((cliente, id) => cliente.rpc('actualizar_mi_perfil', {
+  return conPerfil(cliente => cliente.rpc('actualizar_mi_perfil', {
     p_nombre_visible: nombre,
     p_universidad_id: universidadId,
     p_campus_id: campusId,
     p_version_esperada: versionEsperada,
-    p_actor_esperado: id,
-  }).single(), { guardar: true });
+    p_actor_esperado: actorEsperado,
+  }).single(), { guardar: true, actorEsperado });
 }
