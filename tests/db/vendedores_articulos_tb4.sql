@@ -1,0 +1,219 @@
+-- Solo PostgreSQL desechable. Requiere las migraciones de vendedores y edici?n.
+BEGIN;
+INSERT INTO auth.users(id,email_confirmed_at) VALUES
+  ('00000000-0000-4000-8000-000000000031',now()),
+  ('00000000-0000-4000-8000-000000000032',now());
+UPDATE public.perfiles SET nombre_visible='Cuenta sintetica',campus_id='82d7186a-920c-49e2-bcc5-9aaa03ad655e'
+ WHERE id IN ('00000000-0000-4000-8000-000000000031','00000000-0000-4000-8000-000000000032');
+INSERT INTO tb4_ventas_privado.normas(version,vigente) VALUES ('sintetica',true);
+INSERT INTO tb4_ventas_privado.revisores(perfil_id,habilitado) VALUES ('00000000-0000-4000-8000-000000000032',true);
+
+SET LOCAL ROLE authenticated;
+DO $prueba$
+DECLARE
+ a uuid := '00000000-0000-4000-8000-000000000031';
+ b uuid := '00000000-0000-4000-8000-000000000032';
+ k uuid := '00000000-0000-4000-8000-000000000033';
+ s jsonb;
+ n jsonb;
+BEGIN
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a,'is_anonymous',false)::text,true);
+ BEGIN
+   PERFORM public.enviar_solicitud_vendedor(k,false,true,'sintetica',b);
+   RAISE EXCEPTION 'Cambio de sesion aceptado';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+ s := public.enviar_solicitud_vendedor(k,false,true,'sintetica',a);
+ IF s->>'estado'<>'pendiente' OR (s->>'responderAntesDe')::timestamptz-(s->>'enviadaEn')::timestamptz<>interval '48 hours'
+   OR public.enviar_solicitud_vendedor(k,false,true,'sintetica',a) IS DISTINCT FROM s THEN
+    RAISE EXCEPTION 'Solicitud, plazo o reintento incorrectos';
+ END IF;
+ BEGIN
+   PERFORM public.decidir_solicitud_vendedor((s->>'id')::uuid,1,'aprobado','Prueba',a);
+   RAISE EXCEPTION 'Autoactivacion';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+ BEGIN
+   UPDATE public.perfiles SET vendedor_activado=true WHERE id=a;
+   RAISE EXCEPTION 'Escritura directa';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',b,'is_anonymous',false)::text,true);
+ IF EXISTS (SELECT FROM public.consultar_mis_solicitudes())
+    OR (SELECT count(*) FROM public.consultar_solicitudes_revision())<>1 THEN
+   RAISE EXCEPTION 'Aislamiento de solicitudes o cola';
+ END IF;
+ PERFORM public.decidir_solicitud_vendedor((s->>'id')::uuid,1,'aprobado','Revision humana',b);
+ BEGIN
+   PERFORM public.decidir_solicitud_vendedor((s->>'id')::uuid,1,'rechazado','Revision humana',b);
+   RAISE EXCEPTION 'Sobrescritura';
+ EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
+ END;
+ IF EXISTS (SELECT FROM public.consultar_mis_notificaciones()) THEN RAISE EXCEPTION 'Notificacion ajena'; END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a,'is_anonymous',false)::text,true);
+ SELECT * INTO STRICT n FROM public.consultar_mis_notificaciones();
+ IF n->>'tipo'<>'aprobado' OR NOT (SELECT vendedor_activado FROM public.perfiles WHERE id=a) THEN
+   RAISE EXCEPTION 'Aprobacion no atomica';
+ END IF;
+ PERFORM public.marcar_notificacion_leida((n->>'id')::uuid,a);
+ IF EXISTS (SELECT FROM public.consultar_mis_notificaciones(20,true)) THEN RAISE EXCEPTION 'Lectura no guardada'; END IF;
+END;
+$prueba$;
+RESET ROLE;
+
+INSERT INTO storage.objects(bucket_id,name,owner_id,version)
+VALUES ('articulos','00000000-0000-4000-8000-000000000031/verificada.jpg',
+ '00000000-0000-4000-8000-000000000031','fixture');
+INSERT INTO tb4_ventas_privado.fotos_verificadas(ruta,vendedor_id,formato,bytes,ancho,alto,objeto_version,sha256)
+VALUES ('00000000-0000-4000-8000-000000000031/verificada.jpg','00000000-0000-4000-8000-000000000031',
+        'image/jpeg',256,100,100,'fixture',repeat('a',64));
+SET LOCAL ROLE authenticated;
+DO $alta$
+DECLARE
+ actor uuid := '00000000-0000-4000-8000-000000000031';
+ clave uuid := '00000000-0000-4000-8000-000000000035';
+ categoria uuid := '7065c00d-bfe8-4460-ae0c-6978fd7107d9';
+ campus uuid := '82d7186a-920c-49e2-bcc5-9aaa03ad655e';
+ ruta text := actor::text || '/verificada.jpg';
+ resultado jsonb;
+BEGIN
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',actor,'is_anonymous',false)::text,true);
+ BEGIN
+   PERFORM public.crear_mi_articulo(clave,'Alta','Descripcion',categoria,'nuevo',100,campus,actor::text||'/no-verificada.jpg',actor);
+   RAISE EXCEPTION 'Alta sin evidencia';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL;
+ END;
+ resultado := public.crear_mi_articulo(clave,'Alta','Descripcion',categoria,'nuevo',100,campus,ruta,actor);
+ IF resultado IS DISTINCT FROM public.crear_mi_articulo(clave,'Alta','Descripcion',categoria,'nuevo',100,campus,ruta,actor)
+     OR resultado->'imagen'->>'ruta'<>ruta OR resultado->'imagen' ? 'url' THEN
+   RAISE EXCEPTION 'Alta o reintento incorrectos';
+ END IF;
+ IF NOT EXISTS(SELECT FROM public.articulos WHERE id=(resultado->>'id')::uuid
+    AND vendedor_id=actor AND imagen_url IS NULL AND imagen_ruta=ruta) THEN RAISE EXCEPTION 'Referencia incorrecta'; END IF;
+ BEGIN
+   PERFORM public.crear_mi_articulo(clave,'Alterado','Descripcion',categoria,'nuevo',100,campus,ruta,actor);
+   RAISE EXCEPTION 'Reintento alterado';
+ EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
+ END;
+END;
+$alta$;
+RESET ROLE;
+
+INSERT INTO public.articulos(id,vendedor_id,titulo,descripcion,categoria_id,condicion,precio_centimos,campus_id,
+ imagen_bucket,imagen_ruta,imagen_url,imagen_formato,imagen_bytes,imagen_ancho,imagen_alto)
+VALUES ('00000000-0000-4000-8000-000000000034','00000000-0000-4000-8000-000000000031',
+ 'Articulo','Descripcion','7065c00d-bfe8-4460-ae0c-6978fd7107d9','nuevo',100,'82d7186a-920c-49e2-bcc5-9aaa03ad655e',
+ 'articulos','00000000-0000-4000-8000-000000000031/foto.jpg','https://example.invalid/foto.jpg','image/jpeg',100,100,100);
+-- Simula el permiso de operación que inyecta la API de Storage.
+SET LOCAL ROLE authenticated;
+DO $storage$
+DECLARE
+ a uuid := '00000000-0000-4000-8000-000000000031';
+ b uuid := '00000000-0000-4000-8000-000000000032';
+ visibles integer;
+ nombres text[];
+ vinculos jsonb;
+ cantidad_vinculos integer;
+ vinculos_validos integer;
+ escenario text;
+BEGIN
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a,'is_anonymous',false)::text,true);
+ PERFORM set_config('storage.operation','object.upload',true);
+ INSERT INTO storage.objects(bucket_id,name,owner_id) VALUES ('articulos',a::text||'/foto.jpg',a::text);
+ INSERT INTO storage.objects(bucket_id,name,owner_id) VALUES ('articulos',a::text||'/sin-vinculo.jpg',a::text);
+ PERFORM set_config('storage.operation','object.sign',true);
+ IF EXISTS (SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Firma directa habilitada'; END IF;
+ PERFORM set_config('storage.operation','object.get_authenticated',true);
+ SELECT count(*),coalesce(array_agg(name ORDER BY name),ARRAY[]::text[])
+   INTO visibles,nombres FROM storage.objects;
+ SELECT count(*),count(*) FILTER (WHERE art.vendedor_id::text=obj.owner_id
+   AND art.eliminado_en IS NULL),coalesce(jsonb_agg(jsonb_build_object(
+   'id',art.id,'imagen_bucket',art.imagen_bucket,'imagen_ruta',art.imagen_ruta,
+   'vendedor_id',art.vendedor_id,'owner_id',obj.owner_id,
+   'propietario_coincide',art.vendedor_id::text=obj.owner_id,
+   'ruta_propietario_coincide',split_part(art.imagen_ruta,'/',1)=art.vendedor_id::text,
+   'eliminado_en',art.eliminado_en) ORDER BY art.imagen_ruta),'[]'::jsonb)
+   INTO cantidad_vinculos,vinculos_validos,vinculos
+   FROM public.articulos art LEFT JOIN storage.objects obj
+     ON art.imagen_bucket=obj.bucket_id AND art.imagen_ruta=obj.name
+   WHERE art.vendedor_id=a AND art.imagen_bucket='articulos'
+     AND art.imagen_ruta IN (a::text||'/verificada.jpg',a::text||'/foto.jpg');
+ escenario := CASE
+   WHEN visibles=0 THEN 'C: ambas fotografias ocultas'
+   WHEN a::text||'/sin-vinculo.jpg'=ANY(nombres) THEN 'B: fotografia sin vinculo visible'
+   WHEN cantidad_vinculos=2 AND visibles<2 THEN 'A: fotografia vinculada oculta'
+   WHEN visibles=2 AND vinculos_validos=2
+      AND a::text||'/verificada.jpg'=ANY(nombres)
+      AND a::text||'/foto.jpg'=ANY(nombres) THEN 'OK: dos fotografias vinculadas visibles'
+   ELSE 'D: fixture, vinculos o politica incompatibles' END;
+ RAISE NOTICE 'Storage B07: escenario=%, visibles=%, nombres=%, auth.uid=%, current_user=%, session_user=%, auth.jwt=%, storage.operation=%, articulos=%, articulos_con_bucket_ruta_owner=%, vinculos=%',
+   escenario,visibles,nombres,auth.uid(),current_user,session_user,auth.jwt(),
+   current_setting('storage.operation',true),cantidad_vinculos,vinculos_validos,vinculos;
+ IF visibles<>2
+    OR NOT (a::text||'/verificada.jpg'=ANY(nombres))
+    OR NOT (a::text||'/foto.jpg'=ANY(nombres))
+    OR a::text||'/sin-vinculo.jpg'=ANY(nombres)
+    OR cantidad_vinculos<>2 OR vinculos_validos<>2 THEN
+   RAISE EXCEPTION 'Lectura de objeto sin vinculo: %',escenario;
+ END IF;
+ PERFORM set_config('storage.operation','object.list',true);
+ IF EXISTS (SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Listado abierto'; END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a,'is_anonymous',true)::text,true);
+ PERFORM set_config('storage.operation','object.get_authenticated',true);
+ IF EXISTS (SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Lectura desde sesion anonima'; END IF;
+ PERFORM set_config('storage.operation','object.sign',true);
+ IF EXISTS (SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Firma desde sesion anonima'; END IF;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',b,'is_anonymous',false)::text,true);
+ PERFORM set_config('storage.operation','object.upload',true);
+ BEGIN
+   INSERT INTO storage.objects(bucket_id,name,owner_id) VALUES ('articulos',b::text||'/foto.jpg',b::text);
+   RAISE EXCEPTION 'Comprador pudo subir';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+END;
+$storage$;
+RESET ROLE;
+
+SET LOCAL ROLE authenticated;
+DO $prueba$
+DECLARE
+ a uuid := '00000000-0000-4000-8000-000000000031';
+ b uuid := '00000000-0000-4000-8000-000000000032';
+ articulo_id_prueba uuid := '00000000-0000-4000-8000-000000000034';
+ c uuid := '7065c00d-bfe8-4460-ae0c-6978fd7107d9';
+BEGIN
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',b,'is_anonymous',false)::text,true);
+ BEGIN
+   PERFORM public.editar_o_retirar_mi_articulo(articulo_id_prueba,1,true,b);
+   RAISE EXCEPTION 'Usuario sin permiso pudo retirar';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a,'is_anonymous',false)::text,true);
+ IF (public.editar_o_retirar_mi_articulo(articulo_id_prueba,1,false,a,'Editado','Descripcion',c,'nuevo',200)->>'version')::int<>2 THEN
+   RAISE EXCEPTION 'No se incremento la version';
+ END IF;
+ BEGIN
+   PERFORM public.editar_o_retirar_mi_articulo(articulo_id_prueba,1,true,a);
+   RAISE EXCEPTION 'Version obsoleta';
+ EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
+ END;
+ RESET ROLE;
+ INSERT INTO public.reservas(articulo_id,comprador_id,vendedor_id) VALUES (articulo_id_prueba,b,a);
+ SET LOCAL ROLE authenticated;
+ BEGIN
+   PERFORM public.editar_o_retirar_mi_articulo(articulo_id_prueba,2,true,a);
+   RAISE EXCEPTION 'Retiro de articulo con reserva activa';
+ EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
+ END;
+ RESET ROLE;
+ UPDATE public.reservas SET estado='cancelada' WHERE articulo_id=articulo_id_prueba;
+ SET LOCAL ROLE authenticated;
+ IF (public.editar_o_retirar_mi_articulo(articulo_id_prueba,2,true,a)->>'retirado')::boolean IS NOT TRUE THEN
+   RAISE EXCEPTION 'No se retiro el articulo';
+ END IF;
+ IF EXISTS (SELECT FROM public.articulos a WHERE a.id=articulo_id_prueba) THEN RAISE EXCEPTION 'Articulo retirado visible'; END IF;
+END;
+$prueba$;
+RESET ROLE;
+DO $$ BEGIN IF (SELECT count(*) FROM public.reservas WHERE articulo_id='00000000-0000-4000-8000-000000000034') <> 1 THEN RAISE EXCEPTION 'Historial perdido'; END IF; END; $$;
+ROLLBACK;

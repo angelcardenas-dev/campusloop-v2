@@ -316,3 +316,15 @@ for (const [caso, urls] of [
     }
   });
 }
+
+test('GET conserva referencias privadas sin devolver ni firmar una URL', async () => {
+  const { consultar, actividad } = await cargar({
+    fetchDoble: async () => respuesta([fila({ imagen_url: null })]),
+  });
+  const resultado = await consultar(filtros());
+  assert.equal(resultado.ok, true);
+  assert.equal(resultado.datos[0].imagen.acceso, 'privado');
+  assert.equal(resultado.datos[0].imagen.ruta, RUTA);
+  assert.equal(Object.hasOwn(resultado.datos[0].imagen, 'url'), false);
+  assert.equal(actividad.fetch.length, 1);
+});

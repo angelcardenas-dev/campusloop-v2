@@ -1,0 +1,18 @@
+# Conversaciones y mensajes TB4
+
+**Corrección B03.** Las firmas mutadoras son `iniciarMiConversacion(articuloId, { actorEsperado })` y `enviarMiMensaje(datos, { actorEsperado })`. El actor se captura al iniciar la intención y se vuelve a comprobar con Auth antes de llamar a la RPC; la UI descarta formularios y respuestas tardías al cambiar cuenta o sesión. La lectura inicial de mensajes consulta el tramo más reciente y lo presenta en orden ascendente. El cursor avanza hacia mensajes más antiguos; tras reconexión se vuelve a consultar y se deduplica por UUID. La entrega efectiva entre dispositivos por Realtime requiere permisos y publicación verificados en Supabase real.
+
+La migración pendiente `20261125000700` depende de perfiles, del auxiliar privado de cuenta confirmada y de las tablas de las primeras migraciones. La rama local ya incorporó los PR #82 y #83 mediante el merge autorizado de la base de Bernabé; el PR #81 sigue en revisión. Conversar no requiere una reserva. El vínculo opcional de una reserva con una conversación conserva la clave foránea que verifica artículo y participantes. [Especificación TB4](../SPEC_TB4.md)
+
+| Servicio | Contrato |
+| --- | --- |
+| `iniciarMiConversacion(articuloId, { actorEsperado })` | Devuelve la conversación del comprador para el artículo. Deriva comprador de Auth y vendedor del artículo. Devuelve la fila existente al repetir. Un artículo retirado no admite una conversación nueva, pero los participantes conservan sus conversaciones previas. |
+| `enviarMiMensaje({ conversacionId, mensajeId, texto }, { actorEsperado })` | Solo un participante puede enviar. La interfaz conserva el mismo UUID al reintentar. Texto plano recortado, entre 1 y 1000 caracteres. Una repetición idéntica devuelve la fila previa. Cambiar el contenido, participante o conversación con el mismo UUID produce conflicto sin devolver datos ajenos. |
+| `consultarMisConversaciones({ limite, cursor, signal })` | Lee solo conversaciones propias, ordenadas por fecha e ID descendentes. |
+| `consultarMensajes(conversacionId, { limite, cursor, posteriores, signal })` | Consulta el tramo reciente de una conversación autorizada y devuelve la página en orden ascendente. El cursor `{ posicion, id, creadoEn }` de la primera fila retrocede; el de la última recupera posiciones posteriores. |
+
+Las conversaciones mantienen el cursor `{ creadoEn, id }` de la última fila. Los mensajes agregan `posicion`, asignada bajo bloqueo de la conversación; solo esa posición determina la recuperación, incluso cuando `creadoEn` es anterior al de un mensaje ya visible. La fecha textual conserva sus microsegundos para presentación. Los registros anteriores reciben posición en el orden `creado_en,id` al instalar la migración pendiente. El límite por página es de 1 a 50. La UI debe deduplicar por UUID y presentar el texto como texto seguro.
+
+Las dos RPC usan un rol sin login ni acceso a Auth. Ese rol solo puede insertar las columnas permitidas y consultar las conversaciones en las que participa el actor. El cliente conserva lectura por RLS y carece de escritura directa. Agregar una conversación nueva utiliza un bloqueo compartido del artículo, compatible con la edición, retiro y reserva que bloquean la misma fila.
+
+El servicio `suscribirMensajes` y su inventario de Netlify están preparados offline. La UI de Maricielo y la habilitación administrativa de Postgres Changes, junto con su verificación entre dos dispositivos, quedan pendientes. Edición, borrado, adjuntos, bloqueo de usuarios, notificaciones y retención quedan fuera del alcance de estas operaciones. La migración se probó en PostgreSQL desechable y sigue pendiente de aplicación real.

@@ -123,3 +123,18 @@ test('catálogos inválidos o relaciones inventadas fallan antes de consultar', 
   const { api } = await cargar(); const o = opcionesPrueba(); o.campus[0].universidadId = IDS.categoria;
   assert.throws(() => crear(api, { opciones: o })); assert.throws(() => api.opcionesDePresentacion({ estados: Array(1) }));
 });
+
+test('la vista privada admite una firma de la ruta exacta y un fallback sin foto', async () => {
+  const { api } = await cargar();
+  const origen = 'https://fotos.example.invalid';
+  const ruta = IDS.articulo + '/foto.jpg';
+  const dto = { id: IDS.articulo, titulo: 'Artículo', moneda: 'PEN', precioCentimos: 123,
+    estado: 'disponible', imagen: { proveedor: 'supabase', acceso: 'privado', bucket: 'articulos', ruta } };
+  const opciones = { origenesImagen: [origen] };
+  const url = origen + '/storage/v1/object/sign/articulos/' + ruta + '?token=simulado';
+  const expiraEn = new Date(Date.now() + 10000).toISOString();
+  assert.equal(api.adaptarArticulo(dto, opciones).foto, null);
+  assert.equal(api.adaptarArticulo(dto, { ...opciones, presentacionPrivada: { url, expiraEn } }).foto.url, url);
+  const otraRuta = url.replace('/foto.jpg', '/otra.jpg');
+  assert.equal(api.adaptarArticulo(dto, { ...opciones, presentacionPrivada: { url: otraRuta, expiraEn } }).foto, null);
+});
