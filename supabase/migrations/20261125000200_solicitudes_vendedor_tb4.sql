@@ -139,6 +139,23 @@ BEGIN
 END;
 $f$;
 
+CREATE FUNCTION public.consultar_estado_vendedor_tb4(p_actor_esperado uuid)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
+AS $f$
+DECLARE actor uuid := tb4_perfiles_privado.actor_confirmado(); activo boolean; ultimo text;
+BEGIN
+ IF actor IS NULL OR actor IS DISTINCT FROM p_actor_esperado THEN RAISE insufficient_privilege; END IF;
+ SELECT vendedor_activado INTO activo FROM public.perfiles WHERE id=actor;
+ IF NOT FOUND THEN RAISE insufficient_privilege; END IF;
+ IF activo THEN RETURN pg_catalog.jsonb_build_object('actorId',actor,'estado','APROBADO'); END IF;
+ SELECT estado INTO ultimo FROM tb4_ventas_privado.solicitudes WHERE solicitante_id=actor
+   ORDER BY enviada_en DESC,id DESC LIMIT 1;
+ IF ultimo='aprobado' THEN RAISE EXCEPTION USING ERRCODE='PT409',MESSAGE='CONFLICTO'; END IF;
+ RETURN pg_catalog.jsonb_build_object('actorId',actor,'estado',
+   CASE WHEN ultimo='pendiente' THEN 'PENDIENTE' WHEN ultimo='rechazado' THEN 'RECHAZADO' ELSE 'NO_SOLICITADO' END);
+END;
+$f$;
+
 CREATE FUNCTION public.consultar_solicitudes_revision(p_limite integer DEFAULT 20,p_despues_de timestamptz DEFAULT NULL,p_despues_id uuid DEFAULT NULL)
 RETURNS SETOF jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
 AS $f$
@@ -235,6 +252,7 @@ BEGIN
   FOREACH firma IN ARRAY ARRAY[
      'public.enviar_solicitud_vendedor(uuid,boolean,boolean,text,uuid)'::regprocedure,
      'public.consultar_mis_solicitudes(integer,timestamptz,uuid)'::regprocedure,
+     'public.consultar_estado_vendedor_tb4(uuid)'::regprocedure,
      'public.consultar_solicitudes_revision(integer,timestamptz,uuid)'::regprocedure,
      'public.decidir_solicitud_vendedor(uuid,integer,text,text,uuid)'::regprocedure,
      'public.consultar_mis_notificaciones(integer,boolean,timestamptz,uuid)'::regprocedure,

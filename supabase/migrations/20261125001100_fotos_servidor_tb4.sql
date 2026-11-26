@@ -4,13 +4,18 @@ ALTER TABLE tb4_ventas_privado.fotos_verificadas DROP CONSTRAINT fotos_verificad
 CREATE INDEX fotos_verificadas_articulo_idx ON tb4_ventas_privado.fotos_verificadas(articulo_id) WHERE articulo_id IS NOT NULL;
 -- Identidad p_actor solo se admite desde el servidor que verifico Auth.
 CREATE FUNCTION public.tb4_foto_objeto_verificable(p_actor uuid,p_ruta text)
-RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
+RETURNS text LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=''
 AS $f$
- SELECT o.version FROM storage.objects o
+DECLARE version_actual text;
+BEGIN
+ SELECT o.version INTO version_actual FROM storage.objects o
  WHERE o.bucket_id='articulos' AND o.name=p_ruta AND o.owner_id=p_actor::text
  AND split_part(o.name,'/',1)=p_actor::text AND o.version IS NOT NULL
  AND EXISTS (SELECT FROM public.perfiles p WHERE p.id=p_actor AND p.vendedor_activado)
- AND NOT EXISTS (SELECT FROM tb4_ventas_privado.fotos_en_limpieza l WHERE l.ruta=p_ruta);
+ AND NOT EXISTS (SELECT FROM tb4_ventas_privado.fotos_en_limpieza l WHERE l.ruta=p_ruta)
+ FOR SHARE;
+ RETURN version_actual;
+END;
 $f$;
 
 CREATE FUNCTION public.tb4_registrar_foto_verificada(p_actor uuid,p_ruta text,p_objeto_version text,p_sha256 text,
@@ -66,6 +71,9 @@ BEGIN
  SELECT * INTO foto FROM tb4_ventas_privado.fotos_verificadas WHERE ruta=p_ruta AND vendedor_id=actor FOR UPDATE;
  IF NOT FOUND OR foto.objeto_version IS NULL OR foto.sha256 IS NULL OR
    EXISTS(SELECT FROM tb4_ventas_privado.fotos_en_limpieza WHERE ruta=p_ruta) THEN RAISE invalid_parameter_value; END IF;
+ IF public.tb4_foto_objeto_verificable(actor,p_ruta) IS DISTINCT FROM foto.objeto_version THEN
+   RAISE EXCEPTION USING ERRCODE='PT409',MESSAGE='CONFLICTO';
+ END IF;
  SELECT imagen_ruta,version,estado INTO a FROM public.articulos WHERE id=p_id AND vendedor_id=actor
    AND eliminado_en IS NULL FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='PT404',MESSAGE='NO_ENCONTRADO'; END IF;
@@ -90,6 +98,7 @@ REVOKE ALL ON FUNCTION public.tb4_foto_objeto_verificable(uuid,text),
  FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.tb4_foto_objeto_verificable(uuid,text),
  public.tb4_registrar_foto_verificada(uuid,text,text,text,text,integer,integer,integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.tb4_foto_objeto_verificable(uuid,text) TO tb4_editor_articulos;
 REVOKE ALL ON FUNCTION public.reemplazar_mi_foto(uuid,integer,uuid,text,uuid) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.reemplazar_mi_foto(uuid,integer,uuid,text,uuid) TO authenticated;
 GRANT tb4_editor_articulos TO CURRENT_USER WITH SET TRUE;

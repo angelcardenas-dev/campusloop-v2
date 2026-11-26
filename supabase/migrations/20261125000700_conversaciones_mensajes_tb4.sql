@@ -1,5 +1,11 @@
 -- Mensajeria TB4: alta conversacion y envio bajo rol dedicado.
 BEGIN;
+ALTER TABLE public.mensajes ADD COLUMN posicion bigint;
+WITH ordenadas AS (SELECT id, row_number() OVER (PARTITION BY conversacion_id ORDER BY creado_en,id) AS numero FROM public.mensajes)
+UPDATE public.mensajes m SET posicion=o.numero FROM ordenadas o WHERE m.id=o.id;
+ALTER TABLE public.mensajes ALTER COLUMN posicion SET NOT NULL;
+ALTER TABLE public.mensajes ADD CONSTRAINT mensajes_posicion_positiva CHECK(posicion > 0);
+ALTER TABLE public.mensajes ADD CONSTRAINT mensajes_conversacion_posicion_unique UNIQUE(conversacion_id,posicion);
 CREATE ROLE tb4_escritor_mensajes NOLOGIN NOSUPERUSER NOBYPASSRLS;
 GRANT USAGE ON SCHEMA public,tb4_perfiles_privado TO tb4_escritor_mensajes;
 GRANT EXECUTE ON FUNCTION tb4_perfiles_privado.actor_confirmado() TO tb4_escritor_mensajes;
@@ -17,15 +23,18 @@ CREATE POLICY articulos_escritor_mensajes_lectura ON public.articulos FOR SELECT
 CREATE POLICY articulos_escritor_mensajes_bloqueo ON public.articulos FOR UPDATE TO tb4_escritor_mensajes
  USING (eliminado_en IS NULL AND vendedor_id<>(SELECT tb4_perfiles_privado.actor_confirmado())) WITH CHECK (false);
 
-GRANT SELECT (id,articulo_id,comprador_id,vendedor_id,creado_en),INSERT (articulo_id,comprador_id,vendedor_id)
+GRANT SELECT (id,articulo_id,comprador_id,vendedor_id,creado_en),INSERT (articulo_id,comprador_id,vendedor_id),UPDATE(id)
  ON public.conversaciones TO tb4_escritor_mensajes;
 CREATE POLICY conversaciones_escritor_lectura ON public.conversaciones FOR SELECT TO tb4_escritor_mensajes
  USING ((SELECT tb4_perfiles_privado.actor_confirmado()) IN (comprador_id,vendedor_id));
 CREATE POLICY conversaciones_escritor_alta ON public.conversaciones FOR INSERT TO tb4_escritor_mensajes
  WITH CHECK (comprador_id=(SELECT tb4_perfiles_privado.actor_confirmado()) AND comprador_id<>vendedor_id);
+CREATE POLICY conversaciones_escritor_bloqueo ON public.conversaciones FOR UPDATE TO tb4_escritor_mensajes
+ USING ((SELECT tb4_perfiles_privado.actor_confirmado()) IN (comprador_id,vendedor_id)) WITH CHECK (false);
 
-GRANT SELECT (id,conversacion_id,remitente_id,texto,creado_en),INSERT (id,conversacion_id,remitente_id,texto)
+GRANT SELECT (id,conversacion_id,remitente_id,texto,creado_en,posicion),INSERT (id,conversacion_id,remitente_id,texto,posicion)
  ON public.mensajes TO tb4_escritor_mensajes;
+GRANT SELECT (posicion) ON public.mensajes TO authenticated;
 CREATE POLICY mensajes_escritor_lectura ON public.mensajes FOR SELECT TO tb4_escritor_mensajes
  USING (EXISTS(SELECT FROM public.conversaciones c WHERE c.id=conversacion_id));
 CREATE POLICY mensajes_escritor_alta ON public.mensajes FOR INSERT TO tb4_escritor_mensajes
@@ -67,23 +76,26 @@ DECLARE
  actor uuid := tb4_perfiles_privado.actor_confirmado();
  contenido text := pg_catalog.regexp_replace(p_texto,'^[[:space:]]+|[[:space:]]+$','','g');
  fila record;
+ siguiente bigint;
 BEGIN
  IF actor IS NULL OR actor IS DISTINCT FROM p_actor_esperado THEN RAISE insufficient_privilege; END IF;
  IF p_conversacion_id IS NULL OR p_mensaje_id IS NULL OR contenido IS NULL
     OR char_length(contenido) NOT BETWEEN 1 AND 1000 THEN RAISE invalid_parameter_value; END IF;
- IF NOT EXISTS(SELECT FROM public.conversaciones WHERE id=p_conversacion_id) THEN
+ PERFORM FROM public.conversaciones WHERE id=p_conversacion_id FOR UPDATE;
+ IF NOT FOUND THEN
    RAISE EXCEPTION USING ERRCODE='PT404',MESSAGE='NO_ENCONTRADO';
  END IF;
- INSERT INTO public.mensajes(id,conversacion_id,remitente_id,texto)
-   VALUES(p_mensaje_id,p_conversacion_id,actor,contenido) ON CONFLICT(id) DO NOTHING
-   RETURNING id,conversacion_id,remitente_id,texto,creado_en INTO fila;
+ SELECT coalesce(max(posicion),0)+1 INTO siguiente FROM public.mensajes WHERE conversacion_id=p_conversacion_id;
+ INSERT INTO public.mensajes(id,conversacion_id,remitente_id,texto,posicion)
+   VALUES(p_mensaje_id,p_conversacion_id,actor,contenido,siguiente) ON CONFLICT(id) DO NOTHING
+   RETURNING id,conversacion_id,remitente_id,texto,creado_en,posicion INTO fila;
  IF NOT FOUND THEN
-   SELECT id,conversacion_id,remitente_id,texto,creado_en INTO fila FROM public.mensajes WHERE id=p_mensaje_id
+   SELECT id,conversacion_id,remitente_id,texto,creado_en,posicion INTO fila FROM public.mensajes WHERE id=p_mensaje_id
        AND conversacion_id=p_conversacion_id AND remitente_id=actor AND texto=contenido;
    IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='PT409',MESSAGE='CONFLICTO'; END IF;
  END IF;
  RETURN pg_catalog.jsonb_build_object('id',fila.id,'conversacionId',fila.conversacion_id,
-   'remitenteId',fila.remitente_id,'texto',fila.texto,'creadoEn',fila.creado_en);
+   'remitenteId',fila.remitente_id,'texto',fila.texto,'creadoEn',fila.creado_en,'posicion',fila.posicion);
 END;
 $f$;
 

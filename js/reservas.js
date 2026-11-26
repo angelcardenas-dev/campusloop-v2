@@ -41,12 +41,15 @@ async function conCuenta(operacion) {
   }
 }
 
-export async function crearMiReserva({ articuloId, versionArticulo } = {}) {
+export async function crearMiReserva({ articuloId, versionArticulo } = {}, opciones = {}) {
+  const actorEsperado = opciones?.actorEsperado;
+  if (!esId(actorEsperado)) return fallo('NO_AUTORIZADO');
   if (!esId(articuloId) || !Number.isInteger(versionArticulo)
     || versionArticulo < 1 || versionArticulo > 2147483647) return fallo('VALIDACION');
   return conCuenta(async (sdk, actor) => {
+    if (actor.toLowerCase() !== actorEsperado.toLowerCase()) return fallo('NO_AUTORIZADO');
     const { data, error, status } = await sdk.rpc('crear_mi_reserva', {
-      p_articulo_id: articuloId, p_version_articulo: versionArticulo, p_actor_esperado: actor,
+      p_articulo_id: articuloId, p_version_articulo: versionArticulo, p_actor_esperado: actorEsperado,
     });
     if (error) return errorReserva(error, status);
     if (!esId(data?.id) || data.compradorId !== actor || data.articuloId !== articuloId.toLowerCase()
@@ -121,5 +124,39 @@ export async function acordarLugarMiReserva({ id, versionEsperada, lugarId, acep
     });
     if (error) return errorReserva(error, status);
     return data?.id === id.toLowerCase() && data.lugarId === lugarId.toLowerCase() ? exito(data) : fallo('SERVIDOR');
+  });
+}
+
+export function consultarReputacion(usuarioId) {
+  if (!esId(usuarioId)) return Promise.resolve(fallo('VALIDACION'));
+  return conCuenta(async sdk => {
+    const { data, error, status } = await sdk.rpc('consultar_reputacion_tb4', { p_usuario: usuarioId });
+    if (error) return errorReserva(error, status);
+    const valida = valor => valor && Number.isInteger(valor.cantidad) && valor.cantidad >= 0
+      && (valor.cantidad === 0 ? valor.promedio === null
+        : typeof valor.promedio === 'number' && valor.promedio >= 1 && valor.promedio <= 5);
+    if (data?.usuarioId !== usuarioId.toLowerCase() || !valida(data.comprador) || !valida(data.vendedor)) {
+      return fallo('SERVIDOR');
+    }
+    return exito({ usuarioId: data.usuarioId, comprador: { cantidad: data.comprador.cantidad, promedio: data.comprador.promedio },
+      vendedor: { cantidad: data.vendedor.cantidad, promedio: data.vendedor.promedio } });
+  });
+}
+
+export function consultarMisEvaluaciones({ limite = 50 } = {}) {
+  if (!Number.isInteger(limite) || limite < 1 || limite > 50) return Promise.resolve(fallo('VALIDACION'));
+  return conCuenta(async (sdk, actor) => {
+    const { data, error, status } = await sdk.rpc('consultar_mis_evaluaciones_tb4', { p_limite: limite });
+    if (error) return errorReserva(error, status);
+    if (!Array.isArray(data) || data.length > limite
+      || Array.from({ length: data.length }, (_, i) => Object.hasOwn(data, i)).includes(false)
+      || data.some(fila => !esId(fila?.reservaId)
+      || !esId(fila.autorId) || !esId(fila.destinatarioId)
+      || ![fila.autorId, fila.destinatarioId].includes(actor)
+      || !Number.isInteger(fila.estrellas) || fila.estrellas < 1 || fila.estrellas > 5
+      || (fila.comentario !== null && (typeof fila.comentario !== 'string' || [...fila.comentario].length > 1000))
+      || typeof fila.creadaEn !== 'string')) return fallo('SERVIDOR');
+    return exito(data.map(fila => ({ reservaId: fila.reservaId, autorId: fila.autorId,
+      destinatarioId: fila.destinatarioId, estrellas: fila.estrellas, comentario: fila.comentario, creadaEn: fila.creadaEn })));
   });
 }

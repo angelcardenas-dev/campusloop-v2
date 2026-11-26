@@ -75,6 +75,9 @@ BEGIN
  SELECT * INTO foto FROM tb4_ventas_privado.fotos_verificadas
     WHERE ruta=p_ruta AND vendedor_id=actor FOR UPDATE;
  IF NOT FOUND THEN RAISE invalid_parameter_value; END IF;
+ IF public.tb4_foto_objeto_verificable(actor,p_ruta) IS DISTINCT FROM foto.objeto_version THEN
+   RAISE EXCEPTION USING ERRCODE='PT409',MESSAGE='CONFLICTO';
+ END IF;
  IF foto.articulo_id IS NOT NULL THEN
    SELECT id,titulo,descripcion,categoria_id,condicion,precio_centimos,campus_id,version,eliminado_en,estado,creado_en,actualizado_en
      INTO STRICT articulo FROM public.articulos WHERE id=foto.articulo_id;

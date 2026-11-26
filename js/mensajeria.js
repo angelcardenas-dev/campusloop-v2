@@ -46,23 +46,30 @@ async function ejecutarRPC(cliente, nombre, parametros, comprobar) {
   return comprobar(data) ? exito(data) : fallo('SERVIDOR');
 }
 
-export async function iniciarMiConversacion(articuloId) {
+export async function iniciarMiConversacion(articuloId, opciones = {}) {
+  const actorEsperado = opciones?.actorEsperado;
+  if (!esId(actorEsperado)) return fallo('NO_AUTORIZADO');
   if (!esId(articuloId)) return fallo('VALIDACION');
-  return conCuenta((cliente, actor) => ejecutarRPC(cliente, 'iniciar_mi_conversacion',
-    { p_articulo_id: articuloId, p_actor_esperado: actor },
+  return conCuenta((cliente, actor) => actor.toLowerCase() !== actorEsperado.toLowerCase() ? fallo('NO_AUTORIZADO')
+    : ejecutarRPC(cliente, 'iniciar_mi_conversacion',
+    { p_articulo_id: articuloId, p_actor_esperado: actorEsperado },
     fila => esId(fila?.id) && fila.articuloId === articuloId.toLowerCase() && fila.compradorId === actor
       && esId(fila.vendedorId) && fila.vendedorId !== actor));
 }
 
-export async function enviarMiMensaje({ conversacionId, mensajeId, texto } = {}) {
+export async function enviarMiMensaje({ conversacionId, mensajeId, texto } = {}, opciones = {}) {
+  const actorEsperado = opciones?.actorEsperado;
+  if (!esId(actorEsperado)) return fallo('NO_AUTORIZADO');
   const contenido = typeof texto === 'string' ? texto.trim() : '';
   if (!esId(conversacionId) || !esId(mensajeId) || !contenido || [...contenido].length > 1000 || contenido.includes('\0')) {
     return fallo('VALIDACION');
   }
-  return conCuenta((cliente, actor) => ejecutarRPC(cliente, 'enviar_mi_mensaje', {
-    p_conversacion_id: conversacionId, p_mensaje_id: mensajeId, p_texto: contenido, p_actor_esperado: actor,
+  return conCuenta((cliente, actor) => actor.toLowerCase() !== actorEsperado.toLowerCase() ? fallo('NO_AUTORIZADO')
+    : ejecutarRPC(cliente, 'enviar_mi_mensaje', {
+    p_conversacion_id: conversacionId, p_mensaje_id: mensajeId, p_texto: contenido, p_actor_esperado: actorEsperado,
   }, fila => fila?.id === mensajeId.toLowerCase() && fila.conversacionId === conversacionId.toLowerCase()
-    && fila.remitenteId === actor && fila.texto === contenido));
+    && fila.remitenteId === actor && fila.texto === contenido
+    && Number.isSafeInteger(fila.posicion) && fila.posicion > 0));
 }
 
 function paginaValida(limite, cursor) {
@@ -71,19 +78,21 @@ function paginaValida(limite, cursor) {
       && Number.isFinite(Date.parse(cursor.creadoEn))));
 }
 
-async function leer(consulta, { cursor, limite, ascendente, signal }, convertir) {
+async function leer(consulta, { cursor, limite, ascendente, signal, invertir = false, porPosicion = false }, convertir) {
   if (cursor) {
     const operador = ascendente ? 'gt' : 'lt';
-    consulta = consulta.or('creado_en.' + operador + '.' + cursor.creadoEn
-      + ',and(creado_en.eq.' + cursor.creadoEn + ',id.' + operador + '.' + cursor.id + ')');
+    consulta = porPosicion ? consulta.or('posicion.' + operador + '.' + cursor.posicion)
+      : consulta.or('creado_en.' + operador + '.' + cursor.creadoEn
+        + ',and(creado_en.eq.' + cursor.creadoEn + ',id.' + operador + '.' + cursor.id + ')');
   }
-  consulta = consulta.order('creado_en', { ascending: ascendente }).order('id', { ascending: ascendente }).limit(limite);
+  consulta = porPosicion ? consulta.order('posicion', { ascending: ascendente }).limit(limite)
+    : consulta.order('creado_en', { ascending: ascendente }).order('id', { ascending: ascendente }).limit(limite);
   if (signal) consulta = consulta.abortSignal(signal);
   const { data, error, status } = await consulta;
   if (error) return errorServicio(error, status);
   if (!Array.isArray(data)) return fallo('SERVIDOR');
   const filas = data.map(convertir);
-  return filas.every(Boolean) ? exito(filas) : fallo('SERVIDOR');
+  return filas.every(Boolean) ? exito(invertir ? filas.reverse() : filas) : fallo('SERVIDOR');
 }
 
 export async function consultarMisConversaciones({ limite = 50, cursor, signal } = {}) {
@@ -99,16 +108,19 @@ export async function consultarMisConversaciones({ limite = 50, cursor, signal }
   ));
 }
 
-export async function consultarMensajes(conversacionId, { limite = 50, cursor, signal } = {}) {
-  if (!esId(conversacionId) || !paginaValida(limite, cursor)) return fallo('VALIDACION');
+export async function consultarMensajes(conversacionId, { limite = 50, cursor, posteriores = false, signal } = {}) {
+  if (!esId(conversacionId) || !paginaValida(limite, cursor)
+    || (cursor && (!Number.isSafeInteger(cursor.posicion) || cursor.posicion < 1))) return fallo('VALIDACION');
   return conCuenta((cliente, actor) => leer(
-    cliente.from('mensajes').select('id,conversacion_id,remitente_id,texto,creado_en,conversaciones!inner(comprador_id,vendedor_id)')
+    cliente.from('mensajes').select('id,conversacion_id,remitente_id,texto,creado_en,posicion,conversaciones!inner(comprador_id,vendedor_id)')
       .eq('conversacion_id', conversacionId)
       .or('comprador_id.eq.' + actor + ',vendedor_id.eq.' + actor, { referencedTable: 'conversaciones' }),
-    { cursor, limite, ascendente: true, signal },
+    { cursor, limite, ascendente: posteriores && !!cursor, invertir: !(posteriores && cursor), porPosicion: true, signal },
     fila => esId(fila?.id) && fila.conversacion_id === conversacionId.toLowerCase() && esId(fila.remitente_id)
-      && typeof fila.texto === 'string' && typeof fila.creado_en === 'string' ? {
-        id: fila.id, conversacionId: fila.conversacion_id, remitenteId: fila.remitente_id, texto: fila.texto, creadoEn: fila.creado_en,
+      && typeof fila.texto === 'string' && typeof fila.creado_en === 'string'
+      && Number.isSafeInteger(fila.posicion) && fila.posicion > 0 ? {
+        id: fila.id, conversacionId: fila.conversacion_id, remitenteId: fila.remitente_id, texto: fila.texto,
+        creadoEn: fila.creado_en, posicion: fila.posicion,
       } : null,
   ));
 }

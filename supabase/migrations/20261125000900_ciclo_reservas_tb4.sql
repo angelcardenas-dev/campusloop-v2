@@ -137,11 +137,11 @@ BEGIN
 END;
 $acl$;
 GRANT EXECUTE ON FUNCTION public.gestionar_mi_reserva(uuid,integer,text,uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION tb4_reservas_privado.expirar_pendientes() TO CURRENT_USER;
 GRANT tb4_gestor_reservas TO CURRENT_USER WITH SET TRUE;
 GRANT CREATE ON SCHEMA public,tb4_reservas_privado TO tb4_gestor_reservas;
 ALTER FUNCTION public.gestionar_mi_reserva(uuid,integer,text,uuid) OWNER TO tb4_gestor_reservas;
 ALTER FUNCTION tb4_reservas_privado.expirar_pendientes() OWNER TO tb4_gestor_reservas;
+GRANT EXECUTE ON FUNCTION tb4_reservas_privado.expirar_pendientes() TO CURRENT_USER;
 REVOKE CREATE ON SCHEMA public,tb4_reservas_privado FROM tb4_gestor_reservas;
 REVOKE tb4_gestor_reservas FROM CURRENT_USER;
 COMMIT;

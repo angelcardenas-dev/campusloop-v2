@@ -76,6 +76,7 @@ BEGIN
  END;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',vendedor,'is_anonymous',false)::text,true);
  IF NOT EXISTS(SELECT FROM public.mensajes WHERE id=mensaje) THEN RAISE EXCEPTION 'Vendedor no puede leer'; END IF;
+ IF (SELECT posicion FROM public.mensajes WHERE id=mensaje)<>1 THEN RAISE EXCEPTION 'No puede leer posicion'; END IF;
  BEGIN
    PERFORM public.enviar_mi_mensaje(conversacion,mensaje_vendedor,'Suplantado',comprador);
    RAISE EXCEPTION 'Identidad suplantada';
@@ -98,6 +99,10 @@ BEGIN
  END;
  IF has_function_privilege('anon','public.iniciar_mi_conversacion(uuid,uuid)','EXECUTE')
     OR has_function_privilege('anon','public.enviar_mi_mensaje(uuid,uuid,text,uuid)','EXECUTE')
+    OR NOT has_column_privilege('authenticated','public.mensajes','posicion','SELECT')
+    OR has_column_privilege('anon','public.mensajes','posicion','SELECT')
+    OR has_column_privilege('authenticated','public.mensajes','posicion','INSERT')
+    OR has_column_privilege('authenticated','public.mensajes','posicion','UPDATE')
     OR has_schema_privilege('tb4_escritor_mensajes','auth','USAGE')
     OR has_any_column_privilege('tb4_escritor_mensajes','auth.users','SELECT') THEN
     RAISE EXCEPTION 'ACL de mensajeria inesperada';

@@ -63,3 +63,40 @@ test('limita TTL y usa el token del lector para comprobar visibilidad antes y de
   visible = false;
   assert.equal((await handler(solicitud({ accion: 'firmar', articuloId: id }))).status, 404);
 });
+
+test('objeto retirado o version cambiada impiden aceptar evidencia anterior', async () => {
+  let registrar = 0;
+  const eliminado = crearHandlerFotos({ env, verificar: auth, fetchImpl: async url => {
+    if (url.endsWith('tb4_foto_objeto_verificable')) return Response.json('version-1');
+    if (url.includes('/object/authenticated/')) return new Response(null, { status: 404 });
+    registrar++;
+    return Response.json(true);
+  } });
+  assert.equal((await eliminado(solicitud({ accion: 'verificar', ruta }))).status, 404);
+  assert.equal(registrar, 0);
+  const cambiada = crearHandlerFotos({ env, verificar: auth, fetchImpl: async url => {
+    if (url.endsWith('tb4_foto_objeto_verificable')) return Response.json('version-1');
+    if (url.includes('/object/authenticated/')) return new Response(bytes);
+    return new Response(null, { status: 409 });
+  } });
+  assert.equal((await cambiada(solicitud({ accion: 'verificar', ruta }))).status, 409);
+});
+
+test('firma no acepta URL externa ni sesion invalidada durante la solicitud', async () => {
+  let comprobaciones = 0;
+  const preparar = (signedURL, verificar = auth) => crearHandlerFotos({ env, verificar,
+    fetchImpl: async url => {
+      if (url.includes('/rest/v1/articulos?')) return Response.json([{
+        vendedor_id: actor, imagen_bucket: 'articulos', imagen_ruta: ruta, imagen_url: null,
+      }]);
+      if (url.endsWith('tb4_foto_vinculada')) return Response.json(true);
+      return Response.json({ signedURL });
+    } });
+  const externa = preparar('https://externo.example.invalid/storage/v1/object/sign/articulos/' + ruta + '?token=x');
+  assert.equal((await externa(solicitud({ accion: 'firmar', articuloId: id }))).status, 502);
+  const sesion = preparar('/object/sign/articulos/' + ruta + '?token=x', async () => {
+    comprobaciones++;
+    return comprobaciones === 1 ? { ok: true, actor } : { ok: false, codigo: 'NO_AUTORIZADO' };
+  });
+  assert.notEqual((await sesion(solicitud({ accion: 'firmar', articuloId: id }))).status, 200);
+});

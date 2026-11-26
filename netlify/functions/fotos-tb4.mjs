@@ -134,6 +134,9 @@ export function crearHandlerFotos({ env = process.env, fetchImpl = fetch,
       if (despues?.imagen_ruta !== ruta || despues.imagen_url !== null || despues.imagen_bucket !== 'articulos') {
         return respuesta(404, null, 'NO_ENCONTRADO');
       }
+      const vigente = await verificar({ token, signal });
+      if (!vigente.ok) return respuesta(vigente.codigo === 'NO_AUTORIZADO' ? 403 : 503, null, vigente.codigo);
+      if (vigente.actor !== usuario.actor) return respuesta(403, null, 'NO_AUTORIZADO');
       return respuesta(200, { url: url.href, expiraEn });
     } catch {
       return respuesta(502, null, 'SERVIDOR');

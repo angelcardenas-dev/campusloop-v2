@@ -84,6 +84,11 @@ UPDATE public.reservas SET creado_en=clock_timestamp()-interval '49 hours'
  WHERE articulo_id='00000000-0000-4000-8000-000000000096';
 DO $exp$
 BEGIN
+ IF NOT has_function_privilege(current_user,'tb4_reservas_privado.expirar_pendientes()','EXECUTE')
+   OR has_function_privilege('authenticated','tb4_reservas_privado.expirar_pendientes()','EXECUTE')
+   OR has_function_privilege('anon','tb4_reservas_privado.expirar_pendientes()','EXECUTE') THEN
+   RAISE EXCEPTION 'ACL de expiracion administrativa';
+ END IF;
  IF tb4_reservas_privado.expirar_pendientes()<>1 OR tb4_reservas_privado.expirar_pendientes()<>0 THEN RAISE EXCEPTION 'Expiracion'; END IF;
  IF (SELECT count(*) FROM public.articulos WHERE id IN ('00000000-0000-4000-8000-000000000094',
  '00000000-0000-4000-8000-000000000095','00000000-0000-4000-8000-000000000096') AND estado='disponible')<>3

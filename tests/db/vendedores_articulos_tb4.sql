@@ -61,6 +61,9 @@ END;
 $prueba$;
 RESET ROLE;
 
+INSERT INTO storage.objects(bucket_id,name,owner_id,version)
+VALUES ('articulos','00000000-0000-4000-8000-000000000031/verificada.jpg',
+ '00000000-0000-4000-8000-000000000031','fixture');
 INSERT INTO tb4_ventas_privado.fotos_verificadas(ruta,vendedor_id,formato,bytes,ancho,alto,objeto_version,sha256)
 VALUES ('00000000-0000-4000-8000-000000000031/verificada.jpg','00000000-0000-4000-8000-000000000031',
         'image/jpeg',256,100,100,'fixture',repeat('a',64));
@@ -107,6 +110,12 @@ DO $storage$
 DECLARE
  a uuid := '00000000-0000-4000-8000-000000000031';
  b uuid := '00000000-0000-4000-8000-000000000032';
+ visibles integer;
+ nombres text[];
+ vinculos jsonb;
+ cantidad_vinculos integer;
+ vinculos_validos integer;
+ escenario text;
 BEGIN
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a,'is_anonymous',false)::text,true);
  PERFORM set_config('storage.operation','object.upload',true);
@@ -115,10 +124,43 @@ BEGIN
  PERFORM set_config('storage.operation','object.sign',true);
  IF EXISTS (SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Firma directa habilitada'; END IF;
  PERFORM set_config('storage.operation','object.get_authenticated',true);
- IF (SELECT count(*) FROM storage.objects)<>1 THEN RAISE EXCEPTION 'Lectura de objeto sin vinculo'; END IF;
+ SELECT count(*),coalesce(array_agg(name ORDER BY name),ARRAY[]::text[])
+   INTO visibles,nombres FROM storage.objects;
+ SELECT count(*),count(*) FILTER (WHERE art.vendedor_id::text=obj.owner_id
+   AND art.eliminado_en IS NULL),coalesce(jsonb_agg(jsonb_build_object(
+   'id',art.id,'imagen_bucket',art.imagen_bucket,'imagen_ruta',art.imagen_ruta,
+   'vendedor_id',art.vendedor_id,'owner_id',obj.owner_id,
+   'propietario_coincide',art.vendedor_id::text=obj.owner_id,
+   'ruta_propietario_coincide',split_part(art.imagen_ruta,'/',1)=art.vendedor_id::text,
+   'eliminado_en',art.eliminado_en) ORDER BY art.imagen_ruta),'[]'::jsonb)
+   INTO cantidad_vinculos,vinculos_validos,vinculos
+   FROM public.articulos art LEFT JOIN storage.objects obj
+     ON art.imagen_bucket=obj.bucket_id AND art.imagen_ruta=obj.name
+   WHERE art.vendedor_id=a AND art.imagen_bucket='articulos'
+     AND art.imagen_ruta IN (a::text||'/verificada.jpg',a::text||'/foto.jpg');
+ escenario := CASE
+   WHEN visibles=0 THEN 'C: ambas fotografias ocultas'
+   WHEN a::text||'/sin-vinculo.jpg'=ANY(nombres) THEN 'B: fotografia sin vinculo visible'
+   WHEN cantidad_vinculos=2 AND visibles<2 THEN 'A: fotografia vinculada oculta'
+   WHEN visibles=2 AND vinculos_validos=2
+      AND a::text||'/verificada.jpg'=ANY(nombres)
+      AND a::text||'/foto.jpg'=ANY(nombres) THEN 'OK: dos fotografias vinculadas visibles'
+   ELSE 'D: fixture, vinculos o politica incompatibles' END;
+ RAISE NOTICE 'Storage B07: escenario=%, visibles=%, nombres=%, auth.uid=%, current_user=%, session_user=%, auth.jwt=%, storage.operation=%, articulos=%, articulos_con_bucket_ruta_owner=%, vinculos=%',
+   escenario,visibles,nombres,auth.uid(),current_user,session_user,auth.jwt(),
+   current_setting('storage.operation',true),cantidad_vinculos,vinculos_validos,vinculos;
+ IF visibles<>2
+    OR NOT (a::text||'/verificada.jpg'=ANY(nombres))
+    OR NOT (a::text||'/foto.jpg'=ANY(nombres))
+    OR a::text||'/sin-vinculo.jpg'=ANY(nombres)
+    OR cantidad_vinculos<>2 OR vinculos_validos<>2 THEN
+   RAISE EXCEPTION 'Lectura de objeto sin vinculo: %',escenario;
+ END IF;
  PERFORM set_config('storage.operation','object.list',true);
  IF EXISTS (SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Listado abierto'; END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a,'is_anonymous',true)::text,true);
+ PERFORM set_config('storage.operation','object.get_authenticated',true);
+ IF EXISTS (SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Lectura desde sesion anonima'; END IF;
  PERFORM set_config('storage.operation','object.sign',true);
  IF EXISTS (SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Firma desde sesion anonima'; END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',b,'is_anonymous',false)::text,true);

@@ -42,6 +42,7 @@ const RECURSOS = [
   'js/perfiles.js',
   'js/reservas.js',
   'js/mensajeria.js',
+  'js/mensajeria-tiempo-real.js',
   'js/operaciones-tb4.js',
   'js/landing.js',
   'js/imagenes.js',

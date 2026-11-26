@@ -21,6 +21,37 @@ BEGIN
 END;
 $verificar$;
 RESET ROLE;
+UPDATE storage.objects SET version='obsoleta' WHERE name='00000000-0000-4000-8000-000000000101/primera.png';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000000101","is_anonymous":false}',true);
+DO $obsoleta$
+BEGIN
+ BEGIN
+  PERFORM public.crear_mi_articulo('00000000-0000-4000-8000-000000000102','Foto','Ejemplo',
+   '7065c00d-bfe8-4460-ae0c-6978fd7107d9','nuevo',100,'82d7186a-920c-49e2-bcc5-9aaa03ad655e',
+   '00000000-0000-4000-8000-000000000101/primera.png','00000000-0000-4000-8000-000000000101');
+  RAISE EXCEPTION 'B06: alta acepto evidencia obsoleta';
+ EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
+ END;
+END;
+$obsoleta$;
+RESET ROLE;
+DELETE FROM storage.objects WHERE name='00000000-0000-4000-8000-000000000101/primera.png';
+SET LOCAL ROLE authenticated;
+DO $alta_ausente$
+BEGIN
+ BEGIN
+  PERFORM public.crear_mi_articulo('00000000-0000-4000-8000-000000000102','Foto','Ejemplo',
+   '7065c00d-bfe8-4460-ae0c-6978fd7107d9','nuevo',100,'82d7186a-920c-49e2-bcc5-9aaa03ad655e',
+   '00000000-0000-4000-8000-000000000101/primera.png','00000000-0000-4000-8000-000000000101');
+  RAISE EXCEPTION 'B06: alta acepto objeto ausente';
+ EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
+ END;
+END;
+$alta_ausente$;
+RESET ROLE;
+INSERT INTO storage.objects(bucket_id,name,owner_id,version) VALUES
+ ('articulos','00000000-0000-4000-8000-000000000101/primera.png','00000000-0000-4000-8000-000000000101','v1');
 SET LOCAL ROLE authenticated;
 DO $reemplazar$
 DECLARE a uuid:='00000000-0000-4000-8000-000000000101';
@@ -43,10 +74,47 @@ BEGIN
  IF NOT EXISTS(SELECT FROM public.articulos WHERE id=id_articulo AND imagen_ruta=primera) THEN
    RAISE EXCEPTION 'Se perdio la primera foto';
  END IF;
+ PERFORM set_config('tb4.test.articulo',id_articulo::text,true);
+END;
+$reemplazar$;
+RESET ROLE;
+UPDATE storage.objects SET version='obsoleta' WHERE name='00000000-0000-4000-8000-000000000101/segunda.png';
+SET LOCAL ROLE authenticated;
+DO $version$
+DECLARE a uuid:='00000000-0000-4000-8000-000000000101'; id_articulo uuid:=current_setting('tb4.test.articulo')::uuid;
+BEGIN
+ BEGIN
+  PERFORM public.reemplazar_mi_foto(id_articulo,1,'00000000-0000-4000-8000-000000000103',a::text||'/segunda.png',a);
+  RAISE EXCEPTION 'B06: reemplazo acepto evidencia obsoleta';
+ EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
+ END;
+END;
+$version$;
+RESET ROLE;
+DELETE FROM storage.objects WHERE name='00000000-0000-4000-8000-000000000101/segunda.png';
+SET LOCAL ROLE authenticated;
+DO $ausente$
+DECLARE a uuid:='00000000-0000-4000-8000-000000000101'; id_articulo uuid:=current_setting('tb4.test.articulo')::uuid;
+BEGIN
+ BEGIN
+  PERFORM public.reemplazar_mi_foto(id_articulo,1,'00000000-0000-4000-8000-000000000103',a::text||'/segunda.png',a);
+  RAISE EXCEPTION 'B06: reemplazo acepto objeto ausente';
+ EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL;
+ END;
+END;
+$ausente$;
+RESET ROLE;
+INSERT INTO storage.objects(bucket_id,name,owner_id,version) VALUES
+ ('articulos','00000000-0000-4000-8000-000000000101/segunda.png','00000000-0000-4000-8000-000000000101','v2');
+SET LOCAL ROLE authenticated;
+DO $final$
+DECLARE a uuid:='00000000-0000-4000-8000-000000000101'; id_articulo uuid:=current_setting('tb4.test.articulo')::uuid;
+ clave uuid:='00000000-0000-4000-8000-000000000103'; segunda text:=a::text||'/segunda.png';
+BEGIN
  IF public.reemplazar_mi_foto(id_articulo,1,clave,segunda,a)->>'ruta'<>segunda THEN RAISE EXCEPTION 'Reemplazo'; END IF;
  IF public.reemplazar_mi_foto(id_articulo,1,clave,segunda,a)->>'version'<>'2' THEN RAISE EXCEPTION 'Reintento'; END IF;
 END;
-$reemplazar$;
+$final$;
 RESET ROLE;
 DO $historia$
 BEGIN

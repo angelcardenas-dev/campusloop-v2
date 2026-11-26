@@ -1,4 +1,3 @@
-import { consultarMiPerfil } from './perfiles.js';
 import { obtenerClienteSupabase } from './supabase-cliente.js';
 import { validarConfiguracionPublica } from './config-publica.js';
 
@@ -67,17 +66,23 @@ export function consultarMisSolicitudes({ limite = 20, cursor } = {}) {
 }
 export async function consultarEstadoVendedor({ signal } = {}) {
   if (signal?.aborted) return fallo('RED');
-  const perfil = await consultarMiPerfil();
-  if (signal?.aborted) return fallo('RED');
-  if (!perfil.ok) return perfil;
-  if (perfil.datos.vendedorActivado) return exito({ estado: 'APROBADO' });
-  const solicitudes = await consultarMisSolicitudes({ limite: 1 });
-  if (signal?.aborted) return fallo('RED');
-  if (!solicitudes.ok) return solicitudes;
-  if (!Array.isArray(solicitudes.datos)) return fallo('SERVIDOR');
-  const estado = solicitudes.datos[0]?.estado ?? 'no_solicitado';
-  if (!['no_solicitado', 'pendiente', 'rechazado'].includes(estado)) return fallo('SERVIDOR');
-  return exito({ estado: estado.toUpperCase() });
+  try {
+    const sdk = await obtenerClienteSupabase();
+    if (!sdk.ok) return sdk;
+    const identidad = async () => {
+      const { data, error } = await sdk.datos.auth.getUser();
+      return !error && data?.user?.is_anonymous === false && idValido(data.user.id) ? data.user.id.toLowerCase() : null;
+    };
+    const actor = await identidad();
+    if (!actor || signal?.aborted) return fallo('NO_AUTORIZADO');
+    const resultado = await sdk.datos.rpc('consultar_estado_vendedor_tb4', { p_actor_esperado: actor });
+    if (signal?.aborted) return fallo('RED');
+    if (resultado.error) return errorOperacion(resultado.error, resultado.status);
+    if (resultado.data?.actorId !== actor
+      || !['APROBADO', 'PENDIENTE', 'RECHAZADO', 'NO_SOLICITADO'].includes(resultado.data.estado)) return fallo('SERVIDOR');
+    if (await identidad() !== actor || signal?.aborted) return fallo('NO_AUTORIZADO');
+    return exito({ estado: resultado.data.estado });
+  } catch (error) { return errorOperacion(error); }
 }
 export function consultarSolicitudesRevision({ limite = 20, cursor } = {}) {
   return ejecutarRPC('consultar_solicitudes_revision', {
