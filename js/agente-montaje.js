@@ -4,6 +4,7 @@ import { conectarMemoriaAgente } from './agente-memoria-conexion.js';
 import { escucharSeleccionCatalogo } from './catalogo.js';
 import { crearProductorContextoCatalogo } from './agente-contexto-catalogo.js';
 import { POLITICA_PROVISIONAL_MEMORIA } from './agente-memoria.js';
+import { conectarClienteWidget } from './agente-integracion-widget.js';
 
 /* Datos: una conexión de ciclo de página por Window, incluso si se reinicia. */
 const conexiones = new WeakMap();
@@ -15,9 +16,12 @@ export function iniciarAgente(documento = globalThis.document, opciones = {}) {
   if (conexiones.has(ventana)) {
     const anterior = conexiones.get(ventana); anterior.mostrar(); return anterior.desconectar;
   }
-  let memoria = null, widgetAnterior = null, activa = true;
+  let memoria = null, clienteWidget = null, widgetAnterior = null, activa = true;
   let dejarSeleccion = () => {};
-  const alOcultar = () => { dejarSeleccion(); memoria?.desmontar(); memoria = null; desmontarAgente(documento); };
+  const alOcultar = () => {
+    dejarSeleccion(); clienteWidget?.desmontar(); clienteWidget = null;
+    memoria?.desmontar(); memoria = null; desmontarAgente(documento);
+  };
   const alMostrar = () => {
     const widget = montarAgente({ documento });
     if (widget !== widgetAnterior) { memoria?.desmontar(); memoria = null; widgetAnterior = widget; }
@@ -35,6 +39,11 @@ export function iniciarAgente(documento = globalThis.document, opciones = {}) {
         });
       });
       opciones.alMontar?.(widget, memoria);
+      // Sin esta dependencia explícita, el montaje normal sigue siendo local.
+      if (opciones.integracion?.habilitada === true && opciones.integracion?.cliente) {
+        try { clienteWidget = conectarClienteWidget({ ...opciones.integracion, widget }); }
+        catch { widget.finalizarSolicitud('El agente no está disponible. Puedes seguir escribiendo localmente.'); }
+      }
     }
   };
   const desconectar = () => {

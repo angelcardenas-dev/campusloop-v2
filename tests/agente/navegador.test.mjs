@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const chrome = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+const chrome = process.env.CAMPUSLOOP_NAVEGADOR ?? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const root = path.resolve(import.meta.dirname, '../..');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 // Dobles explícitos: nunca se enciende un micrófono ni se llama a síntesis real.
@@ -40,7 +40,7 @@ test('Chrome D1.1/D1.3: widget, voz simulada y Web Storage nativo con identidad 
   const pedidos = [], externos = [], errores = [];
   const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.jpg': 'image/jpeg', '.png': 'image/png' };
   const permitidos = new Set(['index.html', 'inicio.html', 'explorar.html', 'css/styles.css', 'css/agente.css',
-    'js/agente-ui.js', 'js/agente-montaje.js', 'js/agente-contexto-catalogo.js', 'js/catalogo.js', 'js/landing.js',
+    'js/agente-ui.js', 'js/agente-montaje.js', 'js/agente-integracion-widget.js', 'js/agente-cliente.js', 'js/agente-contexto-catalogo.js', 'js/catalogo.js', 'js/landing.js',
     'js/agente-memoria.js', 'js/agente-memoria-coordinador.js', 'js/agente-memoria-conexion.js',
     'js/agente-storage-adaptador.js', 'js/agente-memoria-lock.js', 'js/localstorage.js', 'js/auth.js', 'js/config-publica.js', 'js/supabase-cliente.js']);
   const servidor = createServer(async (req, res) => {

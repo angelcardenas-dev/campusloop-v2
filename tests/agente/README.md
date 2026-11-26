@@ -1053,3 +1053,79 @@ Validación actual: 43/43 pruebas en
 El build local publicó 67 archivos, incluidos 14 HTML, con 389 referencias
 locales verificadas. Los dobles son sintéticos: esto no acredita Auth real,
 cuotas globales, llamadas a NVIDIA, servicios de negocio ni despliegue.
+
+## D4A — Conexión offline del widget con el cliente D3
+
+`iniciarAgente(documento, { integracion })` conecta el widget solo si recibe
+`integracion: { habilitada: true, cliente, auth?, aplicarBorrador?, timeoutMs? }`.
+El montaje normal sigue local y no hace peticiones a `/api/agente`. `cliente`
+debe ser `crearClienteAgente({ obtenerToken, fetchImpl, timeoutMs })`; el
+proveedor privado de token sigue pendiente de integración con Auth. Ningún
+módulo de D4A lee claves del SDK o conserva credenciales.
+
+`conectarClienteWidget` verifica `obtenerUsuarioActual({ verificarSesionMemoria:
+true })` antes del envío y antes de presentar una respuesta. Vincula la
+solicitud al usuario y a `sesionId`, observa eventos Auth y cierre local, y
+descarta operaciones antiguas. El evento SDK no autoriza datos por sí mismo.
+Solo admite una solicitud por widget, con cancelación explícita y timeout
+defensivo de 20 s, configurable entre 1 y 30 s. Cancelar la espera local no
+revierte una operación remota ya iniciada. No hay reintentos ni cuota local.
+
+El widget presenta texto mediante `textContent`, reservas propias únicamente
+tras revalidar la sesión y borradores editables de título y descripción. El
+botón de uso del borrador requiere una dependencia explícita y un clic humano;
+el montaje normal lo mantiene deshabilitado. La aplicación segura sobre un
+formulario con cambios previos requiere coordinación con Publicar. D3 no
+devuelve al navegador un DTO de lista de artículos, por lo que D4A no inventa
+tarjetas ni URLs. Cada petición envía `contexto: []`: ni reservas, ni historial,
+ni memoria local se transmiten al modelo. El historial permanece solo en RAM;
+la política D1.3D no cambia. El consentimiento local no autoriza transmitir
+texto libre a NVIDIA.
+
+Validación D4A actual con dobles sintéticos y red bloqueada: 33/33 pruebas nuevas;
+217/217 del grupo agente, 206/206 de Auth/Cuenta/Acceso/Storage, 140/140 de
+Publicar/Catálogo y 103/103 de US17 histórico. PKCE conserva cinco fallos
+preexistentes por un doble que no exporta `CLAVE_CONSENTIMIENTO_MEMORIA`.
+Chrome 157 y Edge 158 fallaron en CDP `Runtime.enable`; no se acreditaron
+capturas ni viewport. Build local: 71 archivos, 14 HTML y 392 referencias
+locales válidas. Esto no acredita Auth real, servicios, cuotas ni NVIDIA.
+D4B–D4F y AG-03 permanecen pendientes.
+
+### Correcciones de coordinación D4A
+
+La pérdida o imposibilidad de verificar identidad elimina inmediatamente los
+resultados y acciones de la sesión anterior del DOM, preservando el compositor
+solo ante errores ordinarios del servicio con identidad todavía verificada.
+El aviso final de identidad, red o timeout se presenta después de limpiar la
+vista. Un rechazo HTTP `NO_AUTORIZADO` invalida también lo ya presentado. La
+huella exige `id` y `sesionId` como strings UUID; no se convierten tipos.
+
+Cada borrador presentado queda vinculado a esa huella y a una generación local.
+Un clic humano inicia una revalidación de Auth antes de llamar al puerto local
+de Publicar. Durante la espera, el botón queda bloqueado; el cambio de sesión,
+logout, timeout, desmontaje, edición o retirada del borrador impiden utilizar
+la respuesta tardía. Un borrador trasladado satisfactoriamente no se vuelve a
+aplicar desde el mismo botón. El puerto de aplicación se limita a una operación
+local y síncrona; una Promise no acredita éxito. La verificación local no
+sustituye autorización del servidor ni permisos RLS.
+
+El historial temporal completo —mensajes del usuario, respuestas y borradores—
+se limita a 20 entradas, además de la bienvenida independiente. Al retirar un
+borrador se elimina su listener. La memoria contextual D1.3D conserva su
+política propia. La UI admite para edición los borradores válidos de D3 por
+puntos de código; antes de trasladarlos exige los límites UTF-16 del
+controlador Publicar (100 para título y 1000 para descripción).
+
+El futuro proveedor productivo de token debe demostrar que el token obtenido
+por D3 pertenece a la misma cuenta y `sesionId` verificados por D4A durante
+esa solicitud. Verificar antes y después no prueba esa vinculación. Sin ese
+puerto, servicios autorizados, cuotas y decisión de privacidad para NVIDIA,
+la activación productiva continúa cerrada.
+
+Las tres regresiones de coordinación fallaron antes de corregir y pasaron
+después. Verificación nueva: 217/217 del grupo agente, 206/206 de
+Auth/Cuenta/Acceso/Storage, 140/140 de Publicar/Catálogo y 103/103 de US17.
+PKCE conserva los cinco fallos preexistentes del doble de memoria. Chrome 157
+volvió a detenerse en CDP `Runtime.enable` antes de sus aserciones; la
+verificación visual permanece pendiente. Build local: 71 archivos, 14 HTML y
+392 referencias locales válidas. AG-03 sigue pendiente.
