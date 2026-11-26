@@ -28,8 +28,9 @@ export function montarAgente({ documento = globalThis.document,
   const ventana = documento.defaultView;
   let viva = true, abierta = false, reconocimiento = null, locucion = null;
   let secuenciaVoz = 0, enviando = false;
-  const historial = [], limpiezas = [];
+  const historial = [], limpiezas = [], temporales = [];
   const accionesMemoria = new Set();
+  const accionesEnvio = new Set(), accionesCancelacion = new Set();
   let mensajeMemoria = null;
   const diagnosticoVoz = { intentos: 0, eventos: [] };
   function registrarVoz(evento, codigo) {
@@ -102,9 +103,10 @@ export function montarAgente({ documento = globalThis.document,
   error.setAttribute('role', 'alert');
   const composer = nodo('div', 'composer');
   const enviar = botonIcono('enviar', 'enviar', 'Enviar mensaje de prueba local'); enviar.type = 'submit';
+  const cancelarSolicitud = boton('cancelar-solicitud', 'Cancelar solicitud'); cancelarSolicitud.hidden = true;
   const micro = botonIcono('micro', 'micro', 'Activar micrófono'); micro.disabled = typeof Reconocimiento !== 'function';
   micro.setAttribute('aria-pressed', 'false'); micro.setAttribute('aria-describedby', vozAviso.id);
-  composer.append(texto, micro, enviar);
+  composer.append(texto, micro, cancelarSolicitud, enviar);
   formulario.append(etiqueta, limite, error, composer);
   const utilidades = nodo('div', 'utilidades');
   const borrar = botonIcono('borrar', 'borrar', 'Borrar conversación local');
@@ -127,23 +129,38 @@ export function montarAgente({ documento = globalThis.document,
   panel.append(cabecera, estado, mensajes, pie);
   raiz.append(abrir, panel); documento.body.append(raiz);
 
-  function informar(mensaje) { if (viva) estado.textContent = mensaje; }
+  function informar(mensaje) {
+    if (viva && (!enviando || mensaje === 'Procesando solicitud…')) estado.textContent = mensaje;
+  }
+  function registrarTemporal(item, rol, limpiar = () => {}) {
+    temporales.push({ item, rol, limpiar });
+    if (temporales.length <= MAX_MENSAJES) return;
+    const antiguo = temporales.shift(); antiguo.limpiar(); antiguo.item.remove();
+    if (antiguo.rol === 'usuario') historial.shift();
+  }
+  function limpiarTemporales() {
+    for (const entrada of temporales) { entrada.limpiar(); entrada.item.remove(); }
+    temporales.length = 0; historial.length = 0;
+  }
   function errorTexto(mensaje = '') {
     error.textContent = mensaje; error.hidden = !mensaje;
     texto.setAttribute('aria-invalid', String(!!mensaje));
     texto.setAttribute('aria-describedby', `${aviso.id} ${vozAviso.id} ${limite.id}${mensaje ? ' ' + error.id : ''}`);
     if (mensaje) informar('Mensaje no enviado · revisa el campo');
   }
-  function agregarMensaje(rol, contenido) {
+  function agregarMensaje(rol, contenido, { bienvenida = false } = {}) {
     const cercaDelFinal = mensajes.scrollHeight - mensajes.scrollTop - mensajes.clientHeight < 48;
     const item = nodo('div', rol === 'usuario' ? 'mensaje-usuario' : 'mensaje-info');
-    item.append(nodo('span', 'sr', rol === 'usuario' ? 'Tú · prueba local: ' : 'Información del asistente: '), nodo('p', 'contenido', contenido));
-    if (rol !== 'usuario') item.append(leer);
+    item.append(nodo('span', 'sr', rol === 'usuario'
+      ? accionesEnvio.size ? 'Tú: ' : 'Tú · prueba local: '
+      : 'Información del asistente: '), nodo('p', 'contenido', contenido));
+    if (bienvenida) item.append(leer);
     mensajes.append(item);
+    if (!bienvenida) registrarTemporal(item, rol);
     if (cercaDelFinal) mensajes.scrollTop = mensajes.scrollHeight;
     return item;
   }
-  agregarMensaje('informacion', BIENVENIDA);
+  agregarMensaje('informacion', BIENVENIDA, { bienvenida: true });
   function estadoLectura(activa) {
     const etiqueta = activa ? 'Detener lectura de bienvenida' : 'Leer bienvenida pública';
     leer.setAttribute('aria-pressed', String(activa)); leer.setAttribute('aria-label', etiqueta); leer.title = etiqueta;
@@ -167,7 +184,8 @@ export function montarAgente({ documento = globalThis.document,
   function cerrar({ devolverFoco = true } = {}) {
     if (!viva) return;
     abierta = false; detenerVoz(); detenerLectura(); panel.hidden = true; informacion.open = false;
-    abrir.hidden = false; abrir.setAttribute('aria-expanded', 'false'); informar(LISTA);
+    abrir.hidden = false; abrir.setAttribute('aria-expanded', 'false');
+    informar(enviando ? 'Procesando solicitud…' : accionesEnvio.size ? 'Integración offline de prueba disponible' : LISTA);
     if (devolverFoco) abrir.focus({ preventScroll: true });
   }
   function abrirPanel() {
@@ -188,9 +206,82 @@ export function montarAgente({ documento = globalThis.document,
     try {
       detenerVoz(); errorTexto(); historial.push({ rol: 'usuario', texto: contenido });
       const item = agregarMensaje('usuario', contenido);
-      if (historial.length > MAX_MENSAJES) { historial.shift(); mensajes.querySelector('.cl-agente-mensaje-usuario')?.remove(); }
-      item.dataset.estado = 'solo-local'; texto.value = ''; ajustarTexto(); informar(PENDIENTE);
-    } finally { enviando = false; enviar.disabled = false; }
+      if (accionesEnvio.size) {
+        item.dataset.estado = 'pendiente'; cancelarSolicitud.hidden = false;
+        informar('Procesando solicitud…');
+        for (const accion of accionesEnvio) {
+          try { Promise.resolve(accion(contenido)).catch(() => finalizarSolicitud('No se pudo completar la solicitud.')); }
+          catch { finalizarSolicitud('No se pudo completar la solicitud.'); }
+        }
+      } else {
+        item.dataset.estado = 'solo-local'; texto.value = ''; ajustarTexto(); informar(PENDIENTE);
+        enviando = false; enviar.disabled = false;
+      }
+    } catch { finalizarSolicitud('No se pudo completar la solicitud.'); }
+  }
+  function finalizarSolicitud(mensaje, contenidoEnviado = null) {
+    if (!viva) return;
+    enviando = false; enviar.disabled = false; cancelarSolicitud.hidden = true;
+    if (contenidoEnviado !== null && texto.value.trim() === contenidoEnviado) { texto.value = ''; ajustarTexto(); }
+    informar(mensaje);
+  }
+  function presentarSalida(salida, aplicarBorrador) {
+    if (!viva || !salida || typeof salida !== 'object') return false;
+    if (salida.tipo === 'mensaje' && typeof salida.mensaje === 'string'
+      && salida.mensaje.trim() && salida.mensaje.length <= 4000) {
+      agregarMensaje('informacion', salida.mensaje); return true;
+    }
+    if (salida.tipo === 'resultado_titular' && salida.datos?.destino === 'titular'
+      && Array.isArray(salida.datos.reservas) && salida.datos.reservas.length <= 24
+      && salida.datos.reservas.every((r, i) => Object.hasOwn(salida.datos.reservas, i)
+        && r && typeof r.id === 'string' && /^[0-9a-f-]{36}$/i.test(r.id)
+        && ['pendiente', 'confirmada', 'cancelada', 'completada'].includes(r.estado))) {
+      const resumen = salida.datos.reservas.length
+        ? salida.datos.reservas.map(r => `Reserva ${r.id}: ${r.estado}`).join('\n')
+        : 'No hay reservas propias registradas.';
+      agregarMensaje('informacion', resumen); return true;
+    }
+    if (salida.tipo === 'borrador_revisable' && salida.datos?.tipo === 'borrador_publicacion'
+      && salida.datos.requiereRevisionHumana === true) {
+      const { titulo, descripcion } = salida.datos.borrador ?? {};
+      if (typeof titulo !== 'string' || !titulo.trim() || Array.from(titulo).length > 100
+        || typeof descripcion !== 'string' || !descripcion.trim() || Array.from(descripcion).length > 1000) return false;
+      const item = nodo('div', 'mensaje-info');
+      item.append(nodo('p', 'contenido', 'Borrador para revisión humana. No se ha publicado.'));
+      const tituloEditable = nodo('input', 'borrador-titulo'); tituloEditable.value = titulo;
+      tituloEditable.maxLength = 100; tituloEditable.setAttribute('aria-label', 'Título del borrador');
+      const descripcionEditable = nodo('textarea', 'borrador-descripcion'); descripcionEditable.value = descripcion;
+      descripcionEditable.maxLength = 1000; descripcionEditable.setAttribute('aria-label', 'Descripción del borrador');
+      const usar = boton('borrador-usar', 'Usar borrador revisado');
+      usar.disabled = typeof aplicarBorrador !== 'function';
+      if (usar.disabled) usar.title = 'Integración con Publicar pendiente';
+      let activo = true, pendiente = false, usado = false;
+      const alUsar = async () => {
+        if (!viva || !activo || pendiente || usado || !item.isConnected || typeof aplicarBorrador !== 'function') return;
+        const borrador = { titulo: tituloEditable.value, descripcion: descripcionEditable.value };
+        if (!borrador.titulo.trim() || borrador.titulo.length > 100
+          || !borrador.descripcion.trim() || borrador.descripcion.length > 1000) {
+          informar('Revisa el título y la descripción del borrador.'); return;
+        }
+        pendiente = true; usar.disabled = true;
+        const vigente = () => viva && activo && item.isConnected
+          && tituloEditable.value === borrador.titulo && descripcionEditable.value === borrador.descripcion;
+        try {
+          const aplicado = await aplicarBorrador(borrador, vigente);
+          if (vigente()) {
+            usado = aplicado === true;
+            informar(usado ? 'Borrador trasladado para revisión en Publicar.'
+              : 'No se pudo trasladar el borrador. Conservamos tus cambios.');
+          }
+        } catch { if (vigente()) informar('No se pudo trasladar el borrador. Conservamos tus cambios.'); }
+        finally { pendiente = false; if (activo) usar.disabled = usado; }
+      };
+      usar.addEventListener('click', alUsar);
+      item.append(tituloEditable, descripcionEditable, usar); mensajes.append(item);
+      registrarTemporal(item, 'borrador', () => { activo = false; usar.disabled = true; usar.removeEventListener('click', alUsar); });
+      return true;
+    }
+    return false;
   }
   function iniciarVoz() {
     if (!viva || !abierta || micro.disabled) return;
@@ -249,9 +340,11 @@ export function montarAgente({ documento = globalThis.document,
   }
   function borrarHistorial() {
     if (!viva) return;
+    for (const accion of accionesCancelacion) { try { accion(); } catch { /* Sin datos de dependencias. */ } }
+    enviando = false; enviar.disabled = false; cancelarSolicitud.hidden = true;
     limpiarMemoria();
-    detenerVoz(); detenerLectura(); historial.length = 0; mensajes.replaceChildren();
-    agregarMensaje('informacion', BIENVENIDA);
+    detenerVoz(); detenerLectura(); limpiarTemporales(); mensajes.replaceChildren();
+    agregarMensaje('informacion', BIENVENIDA, { bienvenida: true });
     informar(recordar.checked && !recordar.disabled
       ? 'Historial visible borrado. Comprobando el borrado del contexto guardado.'
       : 'Historial visible borrado. La memoria no está activa; no se confirmó borrado persistente.');
@@ -286,8 +379,16 @@ export function montarAgente({ documento = globalThis.document,
   }
   function limpiarPorIdentidad() {
     if (!viva) return;
+    for (const accion of accionesCancelacion) { try { accion(); } catch { /* Sin datos de dependencias. */ } }
     recordar.checked = false;
     borrarHistorial(); texto.value = ''; errorTexto(); ajustarTexto(); cerrar({ devolverFoco: abierta });
+  }
+  function limpiarSesionAgente() {
+    if (!viva) return;
+    detenerVoz(); detenerLectura(); limpiarTemporales(); limpiarMemoria();
+    mensajes.replaceChildren(); agregarMensaje('informacion', BIENVENIDA, { bienvenida: true });
+    texto.value = ''; errorTexto(); ajustarTexto();
+    enviando = false; enviar.disabled = false; cancelarSolicitud.hidden = true;
   }
   function notificarMemoria(accion) {
     for (const callback of accionesMemoria) {
@@ -316,10 +417,32 @@ export function montarAgente({ documento = globalThis.document,
   }
   const control = {
     raiz, abrir: abrirPanel, cerrar, borrarHistorial,
+    finalizarSolicitud, presentarSalida,
+    escucharEnvios(callback) {
+      if (!viva || typeof callback !== 'function' || accionesEnvio.size) return () => {};
+      accionesEnvio.add(callback);
+      enviar.setAttribute('aria-label', 'Enviar mensaje al agente');
+      etiqueta.textContent = 'Tu mensaje para el agente';
+      mensajes.setAttribute('aria-label', 'Mensajes temporales del asistente');
+      informar('Integración offline de prueba disponible');
+      return () => {
+        accionesEnvio.delete(callback);
+        if (!accionesEnvio.size) {
+          enviar.setAttribute('aria-label', 'Enviar mensaje de prueba local');
+          etiqueta.textContent = 'Tu mensaje de prueba';
+          mensajes.setAttribute('aria-label', 'Mensajes de prueba del asistente');
+          informar(LISTA);
+        }
+      };
+    },
+    escucharCancelacion(callback) {
+      if (!viva || typeof callback !== 'function') return () => {};
+      accionesCancelacion.add(callback); return () => accionesCancelacion.delete(callback);
+    },
     // Interfaz de memoria para D1.2: copia efímera, sin callbacks de guardado automático.
     // El futuro adaptador debe clasificar contexto permitido; no persistir este texto libre.
     obtenerHistorial: () => historial.map(item => ({ ...item })),
-    presentarMemoria, limpiarMemoria, limpiarPorIdentidad,
+    presentarMemoria, limpiarMemoria, limpiarPorIdentidad, limpiarSesionAgente,
     prepararConsentimientoMemoria({ disponible = false, marcado = false } = {}) {
       consentimiento.hidden = false; recordar.checked = marcado; recordar.disabled = !disponible;
       recordar.setAttribute('aria-label', 'Recordar solo contexto permitido en este navegador');
@@ -339,10 +462,11 @@ export function montarAgente({ documento = globalThis.document,
     desmontar() {
       if (!viva) return;
       const teniaFoco = raiz.contains(documento.activeElement);
-      notificarMemoria('desmontar'); accionesMemoria.clear(); limpiarMemoria();
+      for (const accion of accionesCancelacion) { try { accion(); } catch { /* Sin datos de dependencias. */ } }
+      notificarMemoria('desmontar'); accionesMemoria.clear(); accionesEnvio.clear(); accionesCancelacion.clear(); limpiarMemoria();
       cerrar({ devolverFoco: false }); viva = false;
       for (const limpiar of limpiezas) limpiar();
-      historial.length = 0; diagnosticoVoz.eventos.length = 0; diagnosticoVoz.intentos = 0;
+      limpiarTemporales(); diagnosticoVoz.eventos.length = 0; diagnosticoVoz.intentos = 0;
       texto.value = ''; mensajes.replaceChildren(); raiz.remove();
       if (montajes.get(documento) === control) montajes.delete(documento);
       if (teniaFoco) documento.body.focus({ preventScroll: true });
@@ -354,13 +478,20 @@ export function montarAgente({ documento = globalThis.document,
   escuchar(cerrarBoton, 'click', () => cerrar());
   escuchar(raiz, 'keydown', evento => { if (evento.key === 'Escape' && abierta) { evento.preventDefault(); cerrar(); } });
   escuchar(formulario, 'submit', enviarTexto);
+  escuchar(cancelarSolicitud, 'click', () => {
+    for (const accion of accionesCancelacion) { try { accion(); } catch { /* Sin datos de dependencias. */ } }
+    finalizarSolicitud('Solicitud cancelada. Puedes revisar y reenviar tu texto.');
+  });
   escuchar(texto, 'keydown', evento => {
     if (evento.key === 'Enter' && !evento.shiftKey && !evento.isComposing) enviarTexto(evento);
   });
   escuchar(texto, 'input', () => {
     errorTexto(); ajustarTexto();
+    if (enviando) return;
     if (reconocimiento) detenerVoz(true);
-    else if (!locucion) informar(texto.value.trim() ? 'Escribiendo · el mensaje será solo local' : LISTA);
+    else if (!locucion) informar(texto.value.trim()
+      ? accionesEnvio.size ? 'Escribiendo · revisa el mensaje antes de enviarlo' : 'Escribiendo · el mensaje será solo local'
+      : accionesEnvio.size ? 'Integración offline de prueba disponible' : LISTA);
   });
   escuchar(micro, 'click', iniciarVoz); escuchar(leer, 'click', () => locucion ? detenerLectura(true) : leerBienvenida());
   escuchar(borrar, 'click', () => { borrarHistorial(); notificarMemoria('borrar'); });

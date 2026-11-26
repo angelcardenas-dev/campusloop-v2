@@ -24,6 +24,7 @@ const RECURSOS = [
   'css/agente.css',
   'js/agente-ui.js',
   'js/agente-cliente.js',
+  'js/agente-integracion-widget.js',
   'js/agente-montaje.js',
   'js/agente-contexto-catalogo.js',
   'js/agente-memoria.js',

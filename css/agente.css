@@ -112,6 +112,19 @@
 .cl-agente-texto::placeholder { color: var(--muted); opacity: 1; font-size: 14px; white-space: nowrap; }
 .cl-agente-raiz .cl-agente-texto:focus-visible { outline: none; }
 .cl-agente-raiz .cl-agente-micro, .cl-agente-raiz .cl-agente-enviar { width: 44px; height: 44px; flex-shrink: 0; }
+.cl-agente-raiz .cl-agente-cancelar-solicitud {
+  align-self: center; flex-shrink: 0; border: 0; background: transparent;
+  color: var(--brand-pressed); font: 12px/16px var(--font-family); cursor: pointer;
+}
+.cl-agente-raiz .cl-agente-cancelar-solicitud[hidden] { display: none; }
+.cl-agente-raiz .cl-agente-borrador-titulo,
+.cl-agente-raiz .cl-agente-borrador-descripcion {
+  display: block; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 6px;
+  border: 1px solid var(--muted); border-radius: 6px; color: var(--text);
+  background: var(--surface); font: 14px/20px var(--font-family);
+}
+.cl-agente-raiz .cl-agente-borrador-descripcion { min-height: 72px; resize: vertical; }
+.cl-agente-raiz .cl-agente-borrador-usar { margin-top: 8px; }
 .cl-agente-raiz .cl-agente-micro { color: var(--muted); }
 .cl-agente-raiz .cl-agente-micro[aria-pressed="true"] { color: #991b1b; background: var(--surface-error); }
 .cl-agente-error { margin: 0 4px; color: #991b1b; font-size: 12px; line-height: 17px; }

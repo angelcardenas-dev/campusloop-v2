@@ -52,7 +52,7 @@ async function leerJsonAcotado(response, signal) {
   }
 }
 const UUID_VALIDO = valor => typeof valor === 'string' && UUID.test(valor);
-function validarResultado(datos) {
+export function validarResultado(datos) {
   if (!datos || typeof datos !== 'object' || Array.isArray(datos)) return false;
   if (datos.tipo === 'mensaje') return Object.keys(datos).sort().join(',') === 'mensaje,tipo'
     && typeof datos.mensaje === 'string' && datos.mensaje.trim().length > 0 && datos.mensaje.length <= 4000;
