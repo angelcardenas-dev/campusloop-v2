@@ -61,9 +61,9 @@ END;
 $prueba$;
 RESET ROLE;
 
-INSERT INTO tb4_ventas_privado.fotos_verificadas(ruta,vendedor_id,formato,bytes,ancho,alto)
+INSERT INTO tb4_ventas_privado.fotos_verificadas(ruta,vendedor_id,formato,bytes,ancho,alto,objeto_version,sha256)
 VALUES ('00000000-0000-4000-8000-000000000031/verificada.jpg','00000000-0000-4000-8000-000000000031',
-        'image/jpeg',256,100,100);
+        'image/jpeg',256,100,100,'fixture',repeat('a',64));
 SET LOCAL ROLE authenticated;
 DO $alta$
 DECLARE
@@ -113,7 +113,9 @@ BEGIN
  INSERT INTO storage.objects(bucket_id,name,owner_id) VALUES ('articulos',a::text||'/foto.jpg',a::text);
  INSERT INTO storage.objects(bucket_id,name,owner_id) VALUES ('articulos',a::text||'/sin-vinculo.jpg',a::text);
  PERFORM set_config('storage.operation','object.sign',true);
- IF (SELECT count(*) FROM storage.objects)<>1 THEN RAISE EXCEPTION 'Firma de objeto sin vinculo'; END IF;
+ IF EXISTS (SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Firma directa habilitada'; END IF;
+ PERFORM set_config('storage.operation','object.get_authenticated',true);
+ IF (SELECT count(*) FROM storage.objects)<>1 THEN RAISE EXCEPTION 'Lectura de objeto sin vinculo'; END IF;
  PERFORM set_config('storage.operation','object.list',true);
  IF EXISTS (SELECT FROM storage.objects) THEN RAISE EXCEPTION 'Listado abierto'; END IF;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a,'is_anonymous',true)::text,true);

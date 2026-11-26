@@ -20,7 +20,7 @@ WITH CHECK (bucket_id <> 'articulos' OR (current_user='authenticated' AND (SELEC
 
 CREATE POLICY fotos_tb4_limite_lectura ON storage.objects AS RESTRICTIVE FOR SELECT TO authenticated
 USING (bucket_id <> 'articulos' OR (
-    storage.allow_any_operation(ARRAY['object.get_authenticated','object.sign','object.sign_many'])
+    storage.allow_only_operation('object.get_authenticated')
     AND EXISTS (SELECT FROM public.articulos a WHERE a.imagen_bucket=storage.objects.bucket_id
           AND a.imagen_ruta=storage.objects.name AND a.vendedor_id::text=storage.objects.owner_id
           AND a.eliminado_en IS NULL)));

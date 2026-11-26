@@ -4,6 +4,7 @@ import { validarConfiguracionPublica } from './config-publica.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ERRORES = {
+  CONFIGURACION: 'El servicio de fotografías aún no está configurado.',
   VALIDACION: 'Revisa los datos enviados.',
   NO_AUTORIZADO: 'La sesión no puede realizar esta operación.',
   NO_ENCONTRADO: 'No encontramos el recurso solicitado.',
@@ -21,7 +22,8 @@ const idValido = valor => typeof valor === 'string' && UUID.test(valor);
 function errorOperacion(error, status = error?.status) {
   const http = Number(status);
   if (error?.code === '42501' || http === 401 || http === 403) return fallo('NO_AUTORIZADO');
-  if (error?.code === '22023' || error?.code === '22P02') return fallo('VALIDACION');
+  if (error?.codigo === 'CONFIGURACION') return fallo('CONFIGURACION');
+  if (http === 400 || error?.code === '22023' || error?.code === '22P02') return fallo('VALIDACION');
   if (error?.code === 'PT404' || http === 404) return fallo('NO_ENCONTRADO');
   if (error?.code === 'PT409' || http === 409) {
     const codigo = ['YA_ACTIVADO', 'SOLICITUD_PENDIENTE'].includes(error?.message) ? error.message : 'CONFLICTO';
@@ -119,47 +121,58 @@ export function retirarMiArticulo({ id, versionEsperada } = {}, { actorEsperado 
   return escribirRPC('editar_o_retirar_mi_articulo', { p_id: id, p_version: versionEsperada, p_retirar: true }, actorEsperado);
 }
 
-const FORMATOS = {
-  'image/jpeg': /\.(?:jpg|jpeg)$/,
-  'image/png': /\.png$/,
-  'image/webp': /\.webp$/,
-};
-const TTL_SEGUNDOS = 60;
+async function consultarServidorFotos(datos, signal) {
+  if (signal?.aborted) return fallo('RED');
+  try {
+    const sdk = await obtenerClienteSupabase();
+    if (!sdk.ok) return sdk;
+    const sesion = await sdk.datos.auth.getSession();
+    if (signal?.aborted) return fallo('RED');
+    const token = sesion.data?.session?.access_token;
+    const actor = sesion.data?.session?.user?.id;
+    if (sesion.error || !idValido(actor) || typeof token !== 'string' || !token) return fallo('NO_AUTORIZADO');
+    if (datos.actorEsperado && datos.actorEsperado !== actor) return fallo('NO_AUTORIZADO');
+    const r = await fetch('/.netlify/functions/fotos-tb4', { method: 'POST', redirect: 'error', signal,
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ ...datos, actorEsperado: actor }),
+    });
+    const resultado = await r.json();
+    if (signal?.aborted) return fallo('RED');
+    if (!r.ok || resultado?.ok !== true) return errorOperacion(resultado?.error, r.status);
+    return exito(resultado.datos);
+  } catch (error) {
+    return signal?.aborted ? fallo('RED') : errorOperacion(error);
+  }
+}
+
+export async function verificarMiFoto({ ruta, actorEsperado } = {}, { signal } = {}) {
+  if (!idValido(actorEsperado)) return fallo('NO_AUTORIZADO');
+  if (typeof ruta !== 'string' || ruta.length > 500 || !ruta.startsWith(actorEsperado + '/')) return fallo('VALIDACION');
+  return consultarServidorFotos({ accion: 'verificar', ruta, actorEsperado }, signal);
+}
+
+export function reemplazarMiFoto({ id, versionEsperada, claveIdempotencia, ruta } = {}, { actorEsperado } = {}) {
+  return escribirRPC('reemplazar_mi_foto', {
+    p_id: id, p_version: versionEsperada, p_clave: claveIdempotencia, p_ruta: ruta,
+  }, actorEsperado);
+}
 
 export async function resolverFotoPrivada(id, { signal } = {}) {
   if (!idValido(id)) return fallo('VALIDACION');
-  if (signal?.aborted) return fallo('RED');
+  const configuracion = validarConfiguracionPublica();
+  if (!configuracion.ok) return configuracion;
+  const resultado = await consultarServidorFotos({ accion: 'firmar', articuloId: id }, signal);
+  if (!resultado.ok) return resultado;
   try {
-    const configuracion = validarConfiguracionPublica();
-    if (!configuracion.ok) return configuracion;
-    const sdk = await obtenerClienteSupabase();
-    if (!sdk.ok) return sdk;
-    let consulta = sdk.datos.from('articulos').select(
-      'vendedor_id,imagen_bucket,imagen_ruta,imagen_formato,imagen_bytes,imagen_ancho,imagen_alto',
-    ).eq('id', id);
-    if (signal) consulta = consulta.abortSignal(signal);
-    const { data: foto, error, status } = await consulta.maybeSingle();
-    if (error) return errorOperacion(error, status);
-    if (signal?.aborted) return fallo('RED');
-    if (!foto) return fallo('NO_ENCONTRADO');
-    const { vendedor_id: vendedor, imagen_ruta: ruta, imagen_formato: formato, imagen_bytes: bytes } = foto;
-    if (!idValido(vendedor) || foto.imagen_bucket !== 'articulos' || typeof ruta !== 'string' || ruta.length > 500
-      || !ruta.startsWith(vendedor + '/') || !/^[A-Za-z0-9_-]+\.(jpg|jpeg|png|webp)$/.test(ruta.slice(vendedor.length + 1))
-      || !Object.hasOwn(FORMATOS, formato) || !FORMATOS[formato].test(ruta)
-      || !Number.isSafeInteger(bytes) || bytes < 1 || bytes > 2097152
-      || ![foto.imagen_ancho, foto.imagen_alto].every(n => Number.isInteger(n) && n > 0)) return fallo('SERVIDOR');
-
-    const expiraEn = new Date(Date.now() + TTL_SEGUNDOS * 1000).toISOString();
-    const firma = await sdk.datos.storage.from('articulos').createSignedUrl(ruta, TTL_SEGUNDOS);
-    if (signal?.aborted) return fallo('RED');
-    if (firma.error) return errorOperacion(firma.error);
-    const url = new URL(firma.data.signedUrl);
+    const { url: firma, expiraEn } = resultado.datos;
+    const url = new URL(firma);
     const tokens = url.searchParams.getAll('token');
     if (url.origin !== configuracion.datos.supabaseUrl || url.username || url.password || url.hash
-      || url.pathname !== '/storage/v1/object/sign/articulos/' + ruta || tokens.length !== 1 || !tokens[0]
-      || [...url.searchParams.keys()].length !== 1) return fallo('SERVIDOR');
+      || !/^\/storage\/v1\/object\/sign\/articulos\/[0-9a-f-]{36}\/[A-Za-z0-9_-]+\.(jpe?g|png|webp)$/.test(url.pathname)
+      || tokens.length !== 1 || !tokens[0] || [...url.searchParams.keys()].length !== 1
+      || !(Date.parse(expiraEn) > Date.now())) return fallo('SERVIDOR');
     return exito({ url: url.href, expiraEn });
-  } catch (error) {
-    return errorOperacion(error);
+  } catch {
+    return fallo('SERVIDOR');
   }
 }

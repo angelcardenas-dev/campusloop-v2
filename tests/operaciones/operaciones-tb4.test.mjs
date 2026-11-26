@@ -11,8 +11,12 @@ const origen = 'https://campusloop.invalid';
 
 async function cargar({ error, foto, url, activo = true } = {}) {
   const llamadas = [];
-  const context = createContext({ URL });
+  const context = createContext({ URL, fetch: async (destino, opciones) => {
+    llamadas.push([destino, JSON.parse(opciones.body)]);
+    return { ok: true, json: async () => ({ ok: true, datos: { url, expiraEn: new Date(Date.now() + 60000).toISOString() } }) };
+  } });
   const cliente = {
+    auth: { getSession: async () => ({ data: { session: { access_token: 'simulado', user: { id: vendedor } } } }) },
     async rpc(nombre, parametros) {
       llamadas.push([nombre, { ...parametros }]);
       return error ? { error } : { data: { id } };
@@ -68,20 +72,14 @@ test('oculta datos del error y conserva la versión al retirar', async () => {
   assert.deepEqual(llamadas, [['editar_o_retirar_mi_articulo', { p_id: id, p_version: 2, p_retirar: true, p_actor_esperado: vendedor }]]);
 });
 
-test('firma solo la ruta de la referencia autorizada y rechaza tokens duplicados', async () => {
-  const foto = { vendedor_id: vendedor, imagen_bucket: 'articulos', imagen_ruta: ruta,
-    imagen_formato: 'image/jpeg', imagen_bytes: 100, imagen_ancho: 100, imagen_alto: 100 };
+test('solicita firma al servidor y rechaza tokens duplicados', async () => {
   const base = origen + '/storage/v1/object/sign/articulos/' + ruta;
-  const valido = await cargar({ foto, url: base + '?token=simulado' });
+  const valido = await cargar({ url: base + '?token=simulado' });
   assert.equal((await valido.api.resolverFotoPrivada(id)).ok, true);
-  assert.deepEqual(valido.llamadas.at(-1), ['articulos', ruta, 60]);
-  const invalido = await cargar({ foto, url: base + '?token=uno&token=dos' });
+  assert.deepEqual(valido.llamadas.at(-1), ['/.netlify/functions/fotos-tb4', { accion: 'firmar', articuloId: id, actorEsperado: vendedor }]);
+  const invalido = await cargar({ url: base + '?token=uno&token=dos' });
   assert.equal((await invalido.api.resolverFotoPrivada(id)).ok, false);
-  const ajena = await cargar({ foto: { ...foto, imagen_ruta: id + '/foto.jpg' }, url: base });
-  assert.equal((await ajena.api.resolverFotoPrivada(id)).ok, false);
-  assert.equal(ajena.llamadas.length, 2);
 });
-
 test('el alta remite una referencia sin URL ni atributos de vendedor', async () => {
   const { api, llamadas } = await cargar();
   const resultado = await api.crearMiArticulo({ claveIdempotencia: id, titulo: 'Título', descripcion: 'Descripción',

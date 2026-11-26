@@ -8,6 +8,8 @@ CREATE TABLE tb4_ventas_privado.fotos_verificadas (
     bytes integer NOT NULL CHECK (bytes BETWEEN 1 AND 2097152),
     ancho integer NOT NULL CHECK (ancho > 0),
     alto integer NOT NULL CHECK (alto > 0),
+    objeto_version text NOT NULL CHECK (char_length(objeto_version)>0),
+    sha256 text NOT NULL CHECK (sha256 ~ '^[a-f0-9]{64}$'),
     verificada_en timestamptz NOT NULL DEFAULT clock_timestamp(),
     articulo_id uuid UNIQUE REFERENCES public.articulos(id) ON DELETE RESTRICT,
     clave_idempotencia uuid,
@@ -18,6 +20,11 @@ CREATE TABLE tb4_ventas_privado.fotos_verificadas (
     CHECK ((articulo_id IS NULL) = (clave_idempotencia IS NULL)),
     UNIQUE (vendedor_id,clave_idempotencia)
 );
+CREATE TABLE tb4_ventas_privado.fotos_en_limpieza (
+ ruta text PRIMARY KEY, excluida_en timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+REVOKE ALL ON tb4_ventas_privado.fotos_en_limpieza FROM PUBLIC,anon,authenticated;
+GRANT SELECT ON tb4_ventas_privado.fotos_en_limpieza TO tb4_editor_articulos;
 REVOKE ALL ON tb4_ventas_privado.fotos_verificadas FROM PUBLIC,anon,authenticated;
 GRANT USAGE ON SCHEMA tb4_ventas_privado TO tb4_editor_articulos;
 GRANT SELECT, UPDATE (articulo_id,clave_idempotencia) ON tb4_ventas_privado.fotos_verificadas TO tb4_editor_articulos;
@@ -63,6 +70,8 @@ BEGIN
     OR p_precio_centimos IS NULL OR p_precio_centimos NOT BETWEEN 1 AND 9007199254740991 THEN
    RAISE invalid_parameter_value;
  END IF;
+ PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_ruta,41));
+ IF EXISTS(SELECT FROM tb4_ventas_privado.fotos_en_limpieza WHERE ruta=p_ruta) THEN RAISE invalid_parameter_value; END IF;
  SELECT * INTO foto FROM tb4_ventas_privado.fotos_verificadas
     WHERE ruta=p_ruta AND vendedor_id=actor FOR UPDATE;
  IF NOT FOUND THEN RAISE invalid_parameter_value; END IF;

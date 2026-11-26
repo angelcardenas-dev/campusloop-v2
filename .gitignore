@@ -13,3 +13,5 @@ Thumbs.db
 
 # Artefacto estatico generado para Netlify
 /dist/
+
+/node_modules/
