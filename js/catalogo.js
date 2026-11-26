@@ -89,23 +89,30 @@ function origenesImagenValidos(origenes) {
     try { const url = new URL(origen); return url.protocol === 'https:' && url.origin === origen; } catch { return false; }
   });
 }
-function fotoSegura(foto, origenes) {
+function fotoSegura(foto, origenes, fotoFirmada = false) {
   if (!foto || !texto(foto.alt, 300) || typeof foto.url !== 'string') return null;
   if (/^assets\/images\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:jpe?g|png|webp)$/i.test(foto.url)) return { url: foto.url, alt: foto.alt };
   try {
     const url = new URL(foto.url);
-    if (url.protocol === 'https:' && origenes.includes(url.origin) && !url.username && !url.password && !url.search && !url.hash) return { url: url.href, alt: foto.alt };
+    if (url.protocol !== 'https:' || !origenes.includes(url.origin) || url.username || url.password || url.hash) return null;
+    if (fotoFirmada) {
+      const tokens = url.searchParams.getAll('token');
+      if (!/^\/storage\/v1\/object\/sign\/articulos\/[0-9a-f-]+\/[A-Za-z0-9_-]+\.(?:jpe?g|png|webp)$/.test(url.pathname)
+        || tokens.length !== 1 || !tokens[0] || [...url.searchParams.keys()].length !== 1) return null;
+      return { url: url.href, alt: foto.alt };
+    }
+    if (!url.search) return { url: url.href, alt: foto.alt };
   } catch { /* Una foto insegura se sustituye, sin intentar cargarla. */ }
   return null;
 }
-function validarVista(vista, origenes, detalle, fotoRemotaObligatoria = false) {
+function validarVista(vista, origenes, detalle, fotoRemotaObligatoria = false, fotoFirmada = false) {
   if (!vista || !esId(vista.id) || !texto(vista.titulo, 100) || vista.moneda !== 'PEN'
     || !Number.isSafeInteger(vista.precioCentimos) || vista.precioCentimos < 0) throw new TypeError('Vista inválida');
   for (const clave of ['categoriaTexto', 'ubicacionTexto', 'vendedorTexto', 'estadoTexto']) {
     if (vista[clave] != null && !texto(vista[clave], 200)) throw new TypeError('Texto de vista inválido');
   }
   if (vista.tono != null && !['neutral', 'positivo', 'aviso'].includes(vista.tono)) throw new TypeError('Tono de vista inválido');
-  const foto = fotoSegura(vista.foto, origenes);
+  const foto = fotoSegura(vista.foto, origenes, fotoFirmada);
   // El DTO real exige fotografía HTTPS; conservar el fallback de las vistas de prueba.
   if (fotoRemotaObligatoria && (!foto || !foto.url.startsWith('https://'))) throw new TypeError('Fotografía no permitida');
   return { id: vista.id, titulo: vista.titulo, moneda: 'PEN', precioCentimos: vista.precioCentimos,
@@ -142,16 +149,22 @@ export function adaptarFiltros(seleccion) {
     Array.isArray(seleccion[campo]) ? [...seleccion[campo]] : seleccion[campo]]));
 }
 
-export function adaptarArticulo(dto, { origenesImagen = [] } = {}) {
+export function adaptarArticulo(dto, { origenesImagen = [], presentacionPrivada } = {}) {
   if (!origenesImagenValidos(origenesImagen) || !dto || typeof dto !== 'object' || Array.isArray(dto)
     || typeof dto.estado !== 'string' || !Object.hasOwn(ESTADOS_ARTICULO, dto.estado)
     || !dto.imagen || typeof dto.imagen !== 'object' || Array.isArray(dto.imagen)
-    || dto.imagen.proveedor !== 'supabase' || typeof dto.imagen.url !== 'string') throw new TypeError('DTO incompatible');
+    || dto.imagen.proveedor !== 'supabase' || (typeof dto.imagen.url !== 'string' && dto.imagen.acceso !== 'privado')) throw new TypeError('DTO incompatible');
   const estado = ESTADOS_ARTICULO[dto.estado];
+  const privada = dto.imagen.acceso === 'privado';
+  let foto = privada ? null : { url: dto.imagen.url, alt: dto.titulo };
+  if (privada && dto.imagen.bucket === 'articulos' && Date.parse(presentacionPrivada?.expiraEn) > Date.now()) {
+    const firma = fotoSegura({ url: presentacionPrivada.url, alt: dto.titulo }, origenesImagen, true);
+    if (firma && new URL(firma.url).pathname === '/storage/v1/object/sign/articulos/' + dto.imagen.ruta) foto = firma;
+  }
   const vista = validarVista({ id: dto.id, titulo: dto.titulo, moneda: dto.moneda, precioCentimos: dto.precioCentimos,
     categoriaTexto: dto.categoriaNombre ?? null, ubicacionTexto: dto.campusNombre ?? null,
     vendedorTexto: dto.vendedorNombre ?? null, estadoTexto: estado.texto, tono: estado.tono,
-    foto: { url: dto.imagen.url, alt: dto.titulo } }, origenesImagen, {}, true);
+    foto }, origenesImagen, {}, !privada, privada);
   // La ruta de detalle la decide el controlador; no aceptar enlaces ni campos privados del DTO.
   const { detalle, ...presentacion } = vista;
   return presentacion;
@@ -167,7 +180,7 @@ export function escucharSeleccionCatalogo(raiz, callback) {
   return () => oyentes.delete(callback);
 }
 
-export function crearControladorCatalogo({ modo = 'pendiente', consultarCatalogo, adaptarFiltros, adaptarArticulo,
+export function crearControladorCatalogo({ modo = 'pendiente', consultarCatalogo, adaptarFiltros, adaptarArticulo, resolverFotoPrivada,
   opciones = {}, origenesImagen = [], detalle = {}, alCambiar = () => {}, alSeleccionar, timeoutMs = 15000 } = {}) {
   const catalogos = opcionesDePresentacion(opciones);
   if (!origenesImagenValidos(origenesImagen) || !Number.isInteger(timeoutMs)
@@ -228,7 +241,17 @@ export function crearControladorCatalogo({ modo = 'pendiente', consultarCatalogo
         if (cerrada || turno !== secuencia) return null;
         if (respuesta?.ok === false) return publicar({ estado: 'error', codigo: 'CONSULTA', mensaje: mensajeError(respuesta?.error?.codigo), vistas: [] });
         if (respuesta?.ok !== true || respuesta.error !== null || !Array.isArray(respuesta.datos) || respuesta.datos.length > 100) throw new TypeError('Respuesta inválida');
-        const vistas = Array.from(respuesta.datos, item => validarVista(adaptarArticulo(item), origenesImagen, detalle, modo === 'real'));
+        const prepararVistas = Promise.all(respuesta.datos.map(async item => {
+          const privada = item?.imagen?.acceso === 'privado';
+          const firma = privada && typeof resolverFotoPrivada === 'function'
+            ? await resolverFotoPrivada(item.id, { signal: aborto.signal }) : null;
+          const vista = privada
+            ? adaptarArticulo(item, { origenesImagen, presentacionPrivada: firma?.ok ? firma.datos : null })
+            : adaptarArticulo(item);
+          return validarVista(vista, origenesImagen, detalle, modo === 'real' && !privada, privada);
+        }));
+        const vistas = await Promise.race([prepararVistas, interrumpida]);
+        if (cerrada || turno !== secuencia) return null;
         if (new Set(vistas.map(v => v.id)).size !== vistas.length) throw new TypeError('Identificadores repetidos');
         return publicar({ estado: vistas.length ? 'listo' : 'vacio', vistas,
           mensaje: vistas.length ? `${modo === 'prueba' ? 'Prueba offline: ' : ''}${vistas.length} ${vistas.length === 1 ? 'artículo' : 'artículos'} en esta respuesta. Total del catálogo no informado.`
