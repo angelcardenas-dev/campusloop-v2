@@ -10,7 +10,7 @@
 <body class="home-page account-page">
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
   <p id="account-demo" class="visually-hidden">Los datos del perfil y la actividad están pendientes de integración.</p>
-  <p id="account-static" class="visually-hidden">Acción demostrativa sin funcionamiento. No edita el perfil, no abre operaciones ni calificaciones y no guarda información.</p>
+  <p id="account-static" class="visually-hidden">Editar perfil se habilita cuando tu sesión y tu perfil terminan de cargarse.</p>
   <p id="account-pending" class="visually-hidden">Opción pendiente de integración. Esta pantalla no realiza búsquedas ni abre otra página.</p>
 
   <div class="home-header-band">
@@ -49,9 +49,34 @@
           <img class="account-avatar" id="cuenta-avatar" src="assets/icons/usuarios.svg" width="88" height="88" alt="" hidden>
           <h2 class="account-name" id="account-name">Perfil pendiente de integración</h2>
           <p class="account-university" id="cuenta-universidad">Universidad y campus pendientes de integración</p>
+          <p class="account-university" id="cuenta-perfil-estado" role="status" aria-live="polite" hidden></p>
+          <p id="cuenta-perfil-reintentar-zona" hidden><button id="cuenta-perfil-reintentar" class="button button-outline account-action" type="button">Reintentar perfil</button></p>
           <p class="account-email" id="cuenta-correo" hidden></p>
           <p class="account-verified" id="cuenta-verificado" hidden></p>
-          <button class="button button-outline account-action" type="button" aria-disabled="true" aria-describedby="account-static">Editar perfil</button>
+          <button id="cuenta-editar" class="button button-outline account-action" type="button" aria-disabled="true" aria-describedby="account-static" aria-controls="cuenta-editar-zona" aria-expanded="false">Editar perfil</button>
+          <div id="cuenta-editar-zona" hidden>
+            <form id="cuenta-editar-form" class="auth-form" aria-label="Editar perfil" novalidate>
+              <div class="field">
+                <label for="cuenta-editar-nombre">Nombre visible</label>
+                <input class="form-control" id="cuenta-editar-nombre" name="nombre" type="text" autocomplete="name" required aria-describedby="cuenta-editar-nombre-error">
+                <p class="field-hint" id="cuenta-editar-nombre-error" hidden></p>
+              </div>
+              <div class="field">
+                <label for="cuenta-editar-universidad">Universidad</label>
+                <select class="form-control" id="cuenta-editar-universidad" name="universidad" required disabled aria-describedby="cuenta-editar-universidad-error"></select>
+                <p class="field-hint" id="cuenta-editar-universidad-error" hidden></p>
+              </div>
+              <div class="field">
+                <label for="cuenta-editar-campus">Campus</label>
+                <select class="form-control" id="cuenta-editar-campus" name="campus" required disabled aria-describedby="cuenta-editar-campus-error"></select>
+                <p class="field-hint" id="cuenta-editar-campus-error" hidden></p>
+              </div>
+              <p id="cuenta-editar-mensaje" role="status" aria-live="polite" hidden></p>
+              <p id="cuenta-editar-reintentar-zona" hidden><button id="cuenta-editar-reintentar" class="button button-outline account-action" type="button">Reintentar directorio</button></p>
+              <button id="cuenta-editar-guardar" class="button button-primary account-action" type="submit">Guardar cambios</button>
+              <button id="cuenta-editar-cancelar" class="button button-outline account-action" type="button">Cancelar</button>
+            </form>
+          </div>
           <p id="cuenta-cerrar-sesion-zona" hidden><button id="cuenta-cerrar-sesion" class="button button-outline account-action" type="button">Cerrar sesión</button></p>
 
           <section class="account-seller" aria-labelledby="account-seller-title">
