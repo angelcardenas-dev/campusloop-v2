@@ -8,5 +8,10 @@ Thumbs.db
 # Registros temporales
 *.log
 
+# Metadatos temporales de Supabase CLI
+/supabase/.temp/
+
 # Artefacto estatico generado para Netlify
 /dist/
+
+/node_modules/

@@ -109,6 +109,11 @@ function normalizarImagen(fila, origen) {
   if (!archivo || archivo[1] !== fila.vendedor_id.toLowerCase()
     || !EXTENSIONES_IMAGEN[formato].includes(archivo[2])) return null;
 
+  if (url === null) {
+    if (bucket !== 'articulos' || bytes > 2097152) return null;
+    return { proveedor: 'supabase', acceso: 'privado', bucket, ruta, formato, bytes, ancho, alto };
+  }
+
   // El origen HTTPS ya está validado. Comparar el texto evita normalizar segmentos de la ruta.
   const urlEsperada = `${origen}/storage/v1/object/public/${bucket}/${ruta}`;
   if (url !== urlEsperada || CONTROLES.test(url)) return null;
