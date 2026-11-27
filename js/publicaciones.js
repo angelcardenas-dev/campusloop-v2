@@ -124,6 +124,51 @@
             && Number.isSafeInteger(dto.version) && dto.version > 0;
     }
 
+    // Presentación aislada de las publicaciones propias. No consulta ni altera
+    // servicios: los estados `listo` y `vacio` solo deben recibir datos de una
+    // futura dependencia autorizada (en pruebas se pueden inyectar fixtures).
+    function presentarMisPublicaciones({ documento = global.document, estado = "pendiente", publicaciones = [], mensaje } = {}) {
+        const region = documento?.getElementById("estado-mis-publicaciones");
+        const lista = documento?.getElementById("lista-mis-publicaciones");
+        if (!region || !lista) return false;
+        const textos = {
+            pendiente: "Integración pendiente: las publicaciones propias se mostrarán cuando esté conectado el servicio autorizado.",
+            cargando: "Consultando tus publicaciones…",
+            error: "No se pudieron consultar tus publicaciones. Conservamos el formulario; puedes volver a intentarlo cuando el servicio esté disponible.",
+            vacio: "Todavía no tienes publicaciones.",
+            listo: "",
+        };
+        if (!Object.hasOwn(textos, estado)) return false;
+        region.textContent = typeof mensaje === "string" && mensaje.trim() ? mensaje : textos[estado];
+        region.dataset.estado = estado;
+        lista.replaceChildren();
+        if (estado !== "listo" || !Array.isArray(publicaciones)) return true;
+        for (const articulo of publicaciones) {
+            if (!articulo || typeof articulo !== "object" || typeof articulo.id !== "string"
+                || typeof articulo.titulo !== "string" || typeof articulo.descripcion !== "string"
+                || !ESTADOS.has(articulo.estado) || !Number.isSafeInteger(articulo.precioCentimos)
+                || articulo.precioCentimos <= 0 || articulo.moneda !== "PEN") continue;
+            const tarjeta = documento.createElement("article");
+            tarjeta.className = "own-publication-card";
+            const titulo = documento.createElement("h3");
+            titulo.textContent = articulo.titulo;
+            const descripcion = documento.createElement("p");
+            descripcion.textContent = articulo.descripcion;
+            const precio = documento.createElement("p");
+            precio.textContent = `S/ ${(articulo.precioCentimos / 100).toFixed(2)}`;
+            const estadoArticulo = documento.createElement("p");
+            estadoArticulo.className = "own-publication-status";
+            estadoArticulo.textContent = `Estado: ${articulo.estado}`;
+            tarjeta.append(titulo, descripcion, precio, estadoArticulo);
+            lista.append(tarjeta);
+        }
+        if (!lista.children.length) {
+            region.textContent = "El servicio no devolvió publicaciones con un formato reconocido.";
+            region.dataset.estado = "error";
+        } else region.textContent = `${lista.children.length} ${lista.children.length === 1 ? "publicación" : "publicaciones"} consultadas.`;
+        return true;
+    }
+
     function crearControladorPublicaciones({ documento = global.document, servicios = {}, prepararPublicacion,
         opcionesCatalogo, verificarVendedor, resolverContextoStorage, observarCambioIdentidad,
         serviciosImagenes = {}, imagenes = global.CampusLoopImagenes, timeoutMs = TIMEOUT_MS } = {}) {
@@ -581,7 +626,7 @@
         return () => { for (const fn of limpiar.splice(0)) fn(); };
     }
 
-    global.CampusLoopPublicaciones = Object.freeze({ crearControladorPublicaciones, validarArticulo, validarDtoPublicacion });
+    global.CampusLoopPublicaciones = Object.freeze({ crearControladorPublicaciones, validarArticulo, validarDtoPublicacion, presentarMisPublicaciones });
     if (global.document) global.document.addEventListener("DOMContentLoaded", () => {
         const dependencias = global.CampusLoopPublicacionesDependencias || {};
         const controlador = crearControladorPublicaciones({ documento: global.document, imagenes: global.CampusLoopImagenes, ...dependencias });
