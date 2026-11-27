@@ -1220,9 +1220,34 @@ main.page-width > section + section { margin-top: var(--space-24); }
 
 /*RESPONSIVE (Celular)*/
 @media (max-width: 767px) {
+
+    /* Oculta el indicador visual del scroll en las páginas Matías, pero deja
+       el desplazamiento táctil y de teclado habilitado. En escritorio queda
+       visible el scrollbar nativo. */
+    html:has(body.matias-page) {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    html:has(body.matias-page)::-webkit-scrollbar,
+    body.matias-page::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
     
     /* Ajustes generales */
-    .activate-container, 
+    .activate-container {
+        padding-bottom: calc(var(--bottom-nav-height, 4.25rem) + 2rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* La barra de Publicar es position:fixed y sale del flujo del documento.
+       El espacio al final del body permite desplazar la última tarjeta por
+       encima de esa barra, incluso cuando DevTools emula una pantalla baja. */
+    body.matias-page.publish-page {
+        padding-bottom: calc(var(--bottom-nav-height, 5rem) + env(safe-area-inset-bottom, 0px) + 1rem);
+    }
+
     .publish-container {
         padding-bottom: 2rem;
     }
@@ -1376,6 +1401,41 @@ main.page-width > section + section { margin-top: var(--space-24); }
 
 .publish-page .publish-field-error[hidden] {
     display: none;
+}
+
+.own-publications {
+    margin-top: 1.5rem;
+    border: 1px solid #D9E0F2;
+    border-radius: 12px;
+    background: #FFFFFF;
+}
+
+.own-publications > [role="status"] {
+    color: #4B5563;
+}
+
+.own-publications-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 1rem;
+}
+
+.own-publication-card {
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    overflow-wrap: anywhere;
+}
+
+.own-publication-card h3 {
+    margin: 0 0 0.5rem;
+    color: #1F2937;
+}
+
+.own-publication-status {
+    color: #4B5563;
+    font-weight: 600;
 }
 
 
