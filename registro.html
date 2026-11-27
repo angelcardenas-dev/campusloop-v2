@@ -39,18 +39,22 @@
 
           <div class="auth-field">
             <label for="universidad">Universidad</label>
-            <select class="auth-control" id="universidad" name="universidad" required aria-describedby="universidad-error">
+            <select class="auth-control" id="universidad" name="universidad" required aria-describedby="universidad-estado universidad-error">
               <option value="" selected disabled>Catálogo pendiente de integración</option>
             </select>
+            <p id="universidad-estado" class="auth-hint" role="status" aria-live="polite" hidden></p>
+            <p id="universidad-reintentar-zona" hidden><button id="universidad-reintentar" class="button button-outline" type="button">Reintentar universidades</button></p>
             <p id="universidad-error" class="auth-hint" hidden></p>
           </div>
 
           <div class="auth-field">
             <label for="campus">Campus</label>
-            <select class="auth-control" id="campus" name="campus" required disabled aria-describedby="campus-hint campus-error">
+            <select class="auth-control" id="campus" name="campus" required disabled aria-describedby="campus-hint campus-estado campus-error">
               <option value="" selected disabled>Primero selecciona una universidad</option>
             </select>
             <p id="campus-hint" class="visually-hidden">El campus se habilita después de seleccionar una universidad.</p>
+            <p id="campus-estado" class="auth-hint" role="status" aria-live="polite" hidden></p>
+            <p id="campus-reintentar-zona" hidden><button id="campus-reintentar" class="button button-outline" type="button">Reintentar campus</button></p>
             <p id="campus-error" class="auth-hint" hidden></p>
           </div>
 
